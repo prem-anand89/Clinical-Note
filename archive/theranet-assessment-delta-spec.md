@@ -1179,3 +1179,121 @@ and `cardiothoracic_assessments` are still not-yet-created tables, same
 dormant-instrument pattern (`responses jsonb` + computed columns) as
 already specified in §8.3/§11.4/§19. This session locked field content
 and UI behavior, not the schema itself.
+
+---
+
+## 33. Fascial Manipulation (FM — Stecco Method) Integration
+
+### 33.1 Architectural Placement & Multi-Table Synchronization
+Fascial Manipulation is incorporated as a dedicated specialty assessment module within the clinical note, architecturally integrated with Tier 1 core fields while maintaining clinical fidelity to Luigi Stecco's biomechanical model.
+
+- **Unified Segment Assessment (`#fm-seg-table`):**
+  - Columns: Segment, Side (Lt/Rt/Bil), Duration, Past Trauma, Pre-VRS (0–10), Painful Movements (auto-suggested from Aggravating Factors).
+  - Adding a segment via `addFmSegment(date, segment)` creates synchronized rows across:
+    1. Segment Assessment Table
+    2. Palpation Verification (PV) Grid
+    3. Movement Verification (Mo/Ve) Table
+  - Real-time two-way synchronization: edits to segment name, side, or Pre-VRS instantly propagate across all three views via event delegation on `data-seg-id`.
+
+### 33.2 Stecco FM Taxonomy & Segment Normalization
+- Hip segment normalized strictly as **CX (Coxa)** (supersedes non-standard "CO").
+- Caput has 3 sub-zones: CP1, CP2, CP3.
+- Coccyx is assigned to PV (Pelvis).
+- Taxonomy depth is scoped to the **Segment level** for primary assessment.
+- Full 14-segment catalog:
+  `CL` (Colum), `SC` (Scapula), `TH` (Thorax), `HU` (Humerus), `CU` (Cubitus), `CA` (Carpus), `DI` (Digiti Manus), `CX` (Coxa), `GE` (Genu), `TA` (Talus), `PE` (Pes), `PV` (Pelvis), `LU` (Lumbus), `CP` (Caput).
+
+### 33.3 Palpation Verification (PV) Grid with Mode Toggle
+- **Touch Ergonomics & Gesture Safety:**
+  - Double-tap and long-press shortcuts removed to eliminate inadvertent data entry during rapid tactile evaluation on touchscreens/tablets.
+  - Dedicated Segmented Mode Toggle: `[🔍 Palpation Mode]` vs. `[🛠 Treatment Mode]`.
+- **Palpation Mode:**
+  - Single tap cycles density grade: `Empty → 1 → 2 → 2+ → 3 → 3+ → Empty`.
+  - Palette uses de-saturated, low-contrast pastel tones (`#FEF9C3`, `#FEF08A`, `#FDE68A`, `#FECACA`, `#FCA5A5`) with dark text for enhanced clinical legibility and reduced visual fatigue.
+- **Treatment Mode:**
+  - Single tap toggles treatment state (`data-treated="true"`).
+  - Treated points are styled with a bold teal border (`box-shadow: inset 0 0 0 2.5px var(--clinical)`).
+  - Elimination of checkmarks (`✓`) in treated cells to avoid clutter and preserve density readability.
+- **Smart Density & Pattern Summary:**
+  - Auto-computes highest density findings across planes and sides.
+  - Pattern recognition: automatically detects fascial diagonals (e.g., "AN-ME diagonal (rt) — 2 segments") when ≥2 segments share the same plane.
+  - Session statistics: tracks treated point count vs. untreated significant points (grade ≥2).
+
+### 33.4 Movement Verification (Mo/Ve) & Hypothesis Sequence Builder
+- **Mo/Ve Table:**
+  - Pre-VRS automatically sourced from Segment Assessment.
+  - Post-VRS clickable scale (0–10).
+  - Real-time Δ change computation with directional delta indicators (green ▼ for improvement, red ▲ for aggravation).
+- **Hypothesis Sequence Builder:**
+  - Allows step-wise sequence construction: Step order, Plane, Segment, Side.
+  - Auto-derives diagonal nomenclature based on plane consensus.
+
+### 33.5 History Auto-Population Engine (`syncFmHistory`)
+- Auto-syncs between Tier 1 History Cards and the FM History Table:
+  - Past Surgery → Type: Surgery, auto-maps Region to FM Segment.
+  - Past Injury / Trauma → Type: Trauma, auto-maps Region + Side.
+  - Pain Episodes → Type: Pa Prev (Pain Previous).
+  - Secondary Complaints → Type: Pa Conc (Pain Concomitant).
+- Date formatting: formats standard `YYYY-MM-DD` inputs as compact `MMM YYYY` (e.g., `Jan 2024`) for History, and `DD/MM/YY` for the PV Grid to conserve horizontal space.
+
+---
+
+## 34. Mobile & iPad-First UX Overhaul
+
+### 34.1 Dropdown-Free Chief Complaints Intake
+Native vertical dropdowns (`<select>`) have been eliminated from the primary intake flow to prevent cumbersome vertical scrolling on iPads and mobile devices:
+- **Anatomical Region:** Replaced with a wrapping chip grid (9 direct touch buttons). Single tap sets region, dispatches reactive updates to Objective ROM/MMT defaults, and triggers Aggravating Factors movement chip generation.
+- **Hidden Input Compatibility:** A hidden `<input type="hidden" id="region">` preserves full backward compatibility with downstream event listeners.
+
+### 34.2 Linear Onset Mechanism & Cascading Drill-Down Chips
+- **Onset Engine ("How did this begin"):**
+  - Flattened into a 4-way direct mechanism choice: `[Insidious (Gradual)]`, `[Sudden (Traumatic)]`, `[Post-Surgical]`, `[Flare-up]`.
+  - Immediate Onset Timeline row: `[<1 wk]`, `[1-4 wks]`, `[1-3 mos]`, `[3-6 mos]`, `[6+ mos]`, `[Years]`.
+- **Cascading Surgical Drill-Down:**
+  - Selecting `[Post-Surgical]` reveals a two-tier horizontal chip hierarchy:
+    1. Category row: `[Knee]`, `[Hip]`, `[Shoulder]`, `[Spine]`, `[Other]`.
+    2. Sub-procedure row (e.g., Knee → `[ACL Reconstruction]`, `[TKR]`, `[Meniscectomy]`, `[Patellar Tendon Repair]`).
+  - Replaces a 30-item vertical dropdown with two rapid thumb taps.
+
+### 34.3 Layout & Structural Refinement
+- **Consolidation of Context & Pain Profile:** The artificial "Context" boundary divider was dissolved. Primary Symptoms, Pain Severity (compact NRS 0–10 tap scale), Pain Pattern, and Aggravating/Easing factors are unified into a single coherent **"Symptoms & Triggers"** card.
+- **Reveal Card Standardization:** Replaced high-contrast gradients and heavy left-borders with clean, subdued nested card containers (`var(--surface)` background with `1px solid var(--line)`), creating design parity across all conditional inputs.
+- **Grid Stretching Fix:** Applied `justify-self: start` to `.segmented` toggle containers inside responsive grids (`.rc-grid`), preventing pill groups from stretching awkwardly across empty space.
+
+---
+
+## 35. Visceral Manipulation (VM), CST Foundations & Internal Dysfunctions
+
+### 35.1 Manual Therapy Expansion
+- Added `[Visceral Manipulation (VM)]` and `[Craniosacral Therapy (CST)]` modality chips to the Intervention section (Section 6) Manual Therapy panel.
+
+### 35.2 Internal Dysfunctions Sub-Module
+- Added an **Internal / Visceral Dysfunctions** card directly within Tier 1 *Medical Conditions*.
+- Structured system-level chips: `[Digestive / GI]`, `[Gynaecological]`, `[Urological]`, `[Hepatic / Liver]`, `[Renal / Kidney]`, `[Endocrine]`.
+- Narrative freetext detail box for visceral symptom descriptions, surgical adhesions, or visceral mobility restrictions.
+- **Placement Rationale:** Sits alongside comorbidities during subjective intake where visceral restrictions impacting fascial lines or somatic pain patterns are naturally gathered.
+
+---
+
+## 36. Tier 1 Objective General Palpation & Design System Polish
+
+### 36.1 General Palpation Elevated to Tier 1
+- General Palpation is promoted to a **Tier 1 (always visible)** card in the Objective section (Section 4), distinct from the specialty FM PV grid.
+- Captures:
+  - Tenderness: Segmented toggle (`Localised` / `Diffuse` / `None`).
+  - Tone: Segmented toggle (`Hypertonic` / `Normal` / `Hypotonic`).
+  - Tissue Texture: Multi-select chips (`Thickened`, `Fibrotic`, `Oedematous`, `Normal / Supple`).
+  - Specific palpation findings freetext.
+
+### 36.2 Design System Tokens & Density Optimization
+- **Component Footprint Reduction:**
+  - `.chip`: Reduced padding (`5px 11px`) and font size (`12px`), saving ~40% vertical and horizontal whitespace.
+  - `.segmented button`: Compact padding (`6px 12px`, `11.5px` font).
+  - `.nrs-scale button`: Reduced from 32×32px to 26×26px (24×24px on mobile), preventing line breaks on narrow screens.
+  - Card and field padding tightened systematically (`16px 18px` card padding, `14px` field margins).
+- **CSS-Only Checkmarks:** Replaced ~200 inline SVG checkmark elements with CSS `::before` pseudo-elements on `.chip.selected`, stripping significant DOM weight and accelerating rendering performance.
+- **Responsive Touch Breakpoints:**
+  - Mobile (≤767px): Horizontal touch-scrolling with snap for segmented toggles; stacked grid inputs.
+  - iPad (768–1024px): Balanced touch targets optimized for thumb interaction.
+  - Desktop (≥1025px): Full sidebar layout with structured column grids.
+

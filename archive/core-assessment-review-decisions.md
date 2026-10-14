@@ -1730,3 +1730,29 @@ FMS and Y-Balance do not require new tables — FMS fits the existing dormant-in
 - `protocol_library.phases` (JSONB) gains two new keys per phase entry:
   `patient_summary`, `patient_precautions` (§14/§18) — patient-facing
   content, same record as the clinical phase data, not a separate table.
+
+---
+
+## 20. Addendum — Fascial Manipulation (FM), Mobile-First Chief Complaints & Tier 1 Palpation
+
+### 20.1 Fascial Manipulation (Stecco Method) Module
+- **Biomechanical Model & Taxonomy:** Scoped to Segment level. Hip is standardized as `CX` (Coxa). Caput divided into `CP1`, `CP2`, `CP3`. Pelvis contains Coccyx. Full 14-segment catalog: `CL`, `SC`, `TH`, `HU`, `CU`, `CA`, `DI`, `CX`, `GE`, `TA`, `PE`, `PV`, `LU`, `CP`.
+- **Palpation Verification (PV) Grid Modes:** Segmented toggle for `[🔍 Palpation Mode]` (single tap cycles density 1 → 2 → 2+ → 3 → 3+ using soft pastel colors) vs. `[🛠 Treatment Mode]` (single tap sets treated state with thick teal outline, eliminating checkmarks). Double-tap and long-press gestures removed for touchscreen safety.
+- **Smart Pattern Detection:** Automatically identifies fascial diagonals (e.g., "AN-ME diagonal (rt)") when ≥2 segments share the same plane, and tallies treated vs untreated grade ≥2 density points.
+- **Three-Table Unified Sync:** Adding a segment via `addFmSegment()` binds Segment Assessment, PV Grid, and Movement Verification (Mo/Ve) tables in real-time.
+- **History Auto-Sync (`syncFmHistory`):** Pulls Past Surgeries, Injuries, and Pain Episodes into FM History, formatting dates to `MMM YYYY` and routing Secondary Complaints to `Pa Conc` (concomitant pain).
+
+### 20.2 Chief Complaints & Onset UX Overhaul (iPad-First)
+- **Elimination of Dropdowns:** Anatomical Region converted to a 9-item wrapping chip grid. Hidden input dispatches change events to preserve reactive ROM/MMT defaults and aggravating factor chips.
+- **Linear Onset Engine:** Direct choice of Onset Mechanism (`Insidious` / `Sudden` / `Post-Surgical` / `Flare-up`) + immediate Onset Timeline chips (`<1 wk` to `Years`).
+- **Cascading Surgical Drill-Down:** Selecting Post-Surgical reveals category chips (Knee/Hip/Shoulder/Spine/Other) followed by specific procedure chips, eliminating 30-item scrolling dropdowns.
+- **Unified Symptoms & Triggers:** Dissolved the disconnected Context divider; merged Primary Symptoms, compact NRS 0–10 scale (26×26px), pain pattern, aggravating and easing movement chips into a single card.
+- **Visual Design Parity:** Standardized reveal containers with clean neutral surfaces (`var(--surface)` with `1px solid var(--line)`) and applied `justify-self: start` to `.segmented` controls to prevent awkward pill stretching.
+
+### 20.3 Visceral Manipulation (VM) & Internal Dysfunctions
+- Added `[Visceral Manipulation (VM)]` and `[Craniosacral Therapy (CST)]` modality chips under Intervention Manual Therapy.
+- Added Internal / Visceral Dysfunctions card inside Tier 1 *Medical Conditions* with system chips (Digestive, Gynaecological, Urological, Hepatic, Renal, Endocrine) and freetext notes.
+
+### 20.4 Objective General Palpation Elevated to Tier 1
+- Promoted General Palpation from Tier 2 to a Tier 1 (always visible) card in Objective (Section 4): includes Tenderness toggle, Tone toggle, Tissue Texture chips (Thickened, Fibrotic, Oedematous, Normal), and findings freetext.
+

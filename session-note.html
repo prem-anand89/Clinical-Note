@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thera.Net — Session Note (prototype)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#262626; --ink-soft:#3f4549; --ink-faint:#8A9CA0;
+    --surface:#f5f5f4; --card:#fff; --line:#e2e2e1; --line-soft:#ECEBE5;
+    --clinical:#2c5f63; --clinical-dim:#e4edec; --clinical-ring:#2c5f6333;
+    --amber:#9c6f1e; --amber-dim:#f5eedf; --rust:#a6552f; --good:#2E7D32; --bad:#B3261E;
+    --radius-md:12px; --radius-sm:8px; --radius-pill:999px;
+    --shadow:0 1px 2px rgba(38,38,36,.06),0 2px 8px rgba(38,38,36,.05);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--surface);color:var(--ink);font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.4;-webkit-font-smoothing:antialiased;padding-bottom:96px;}
+  h1,h2{font-family:'Fraunces',Georgia,serif;margin:0;font-weight:600;}
+  button{font:inherit;color:inherit;}
+  .wrap{max-width:560px;margin:0 auto;padding:0 16px;}
+
+  /* prototype toolbar (not part of the real note) */
+  .proto{background:#262626;color:#ddd;font-size:12px;padding:8px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+  .proto select,.proto button{font-size:12px;border-radius:6px;border:1px solid #555;background:#333;color:#eee;padding:4px 8px;}
+  .proto .stat{margin-left:auto;font-variant-numeric:tabular-nums;}
+
+  /* sticky context header */
+  .head{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);box-shadow:var(--shadow);}
+  .head .wrap{padding-top:10px;padding-bottom:10px;}
+  .head .who{display:flex;align-items:baseline;gap:8px;justify-content:space-between;}
+  .head h1{font-size:19px;}
+  .head .sess{font-size:12px;font-weight:700;color:var(--clinical);}
+  .ctx{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
+  .tag{font-size:11.5px;font-weight:600;background:var(--clinical-dim);color:var(--clinical);padding:3px 9px;border-radius:var(--radius-pill);}
+  .tag.warn{background:var(--amber-dim);color:var(--amber);}
+  .prec{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+
+  section.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-md);box-shadow:var(--shadow);padding:14px 14px 16px;margin-top:14px;}
+  .h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .h h2{font-size:15px;}
+  .h .done{font-size:11px;font-weight:700;color:var(--good);display:none;}
+  section.ok .h .done{display:inline;}
+  .lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-faint);margin:12px 0 6px;}
+  .lbl:first-of-type{margin-top:0;}
+
+  .chip,.seg button,.nrs button{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-soft);font-weight:600;font-size:13px;padding:9px 13px;border-radius:var(--radius-pill);cursor:pointer;min-height:40px;}
+  .chip.selected,.seg button.selected,.nrs button.selected{background:var(--clinical);border-color:var(--clinical);color:#fff;}
+  .chip.ghost,.seg button.ghost{box-shadow:inset 0 0 0 2px var(--clinical-ring);}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .seg{display:flex;gap:6px;flex-wrap:wrap;}
+  .seg button{flex:1 1 auto;text-align:center;border-radius:var(--radius-sm);min-width:64px;white-space:normal;}
+  .nrs{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+  .nrs button{padding:10px 0;text-align:center;border-radius:var(--radius-sm);font-size:15px;}
+  .hint{font-size:12px;color:var(--ink-faint);margin-top:6px;}
+  .hint b{color:var(--ink-soft);}
+  input[type=text],input[type=date]{width:100%;font:inherit;border:1px solid var(--line);border-radius:var(--radius-sm);padding:10px 12px;background:#fff;min-height:42px;}
+  input:focus{outline:2px solid var(--clinical);outline-offset:1px;}
+  .link{background:none;border:none;color:var(--clinical);font-weight:700;font-size:13px;cursor:pointer;padding:6px 0;}
+
+  /* safety */
+  .safe{width:100%;padding:14px;border-radius:var(--radius-md);border:1.5px dashed var(--clinical);background:#fff;color:var(--clinical);font-weight:700;font-size:15px;cursor:pointer;}
+  .safe.on{background:var(--clinical);color:#fff;border-style:solid;}
+  .flags .chip.selected{background:var(--bad);border-color:var(--bad);}
+  .dispo{margin-top:12px;border:1px solid #E9D3AC;background:var(--amber-dim);border-radius:var(--radius-md);padding:12px;}
+  .dispo .t{font-weight:700;color:#8C5A1E;margin-bottom:8px;}
+  .err{color:var(--bad);font-weight:600;font-size:13px;margin-top:8px;}
+
+  /* measures */
+  .m{border-top:1px solid var(--line-soft);padding:12px 0;}
+  .m:first-of-type{border-top:none;padding-top:0;}
+  .m .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px;}
+  .m .name{font-weight:700;}
+  .m .x{background:none;border:none;color:var(--ink-faint);font-size:18px;cursor:pointer;line-height:1;}
+  .m .trend{font-size:12px;color:var(--ink-faint);}
+  .step{display:flex;align-items:center;gap:8px;}
+  .step .b{width:46px;height:46px;border-radius:var(--radius-sm);border:1px solid var(--line);background:#fff;font-size:22px;font-weight:700;color:var(--clinical);cursor:pointer;}
+  .step .val{min-width:84px;text-align:center;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .step .same{margin-left:auto;font-size:12px;font-weight:700;border:1px solid var(--clinical);color:var(--clinical);background:#fff;border-radius:var(--radius-pill);padding:8px 12px;cursor:pointer;}
+  .delta{font-size:12px;font-weight:700;margin-left:4px;}
+  .delta.good{color:var(--good);} .delta.bad{color:var(--bad);} .delta.flat{color:var(--ink-faint);}
+  .addm{width:100%;margin-top:6px;}
+  .m.carried{background:repeating-linear-gradient(135deg,#fff,#fff 8px,var(--amber-dim) 8px,var(--amber-dim) 16px);border-radius:var(--radius-sm);padding-left:8px;padding-right:8px;}
+  .m .badge{font-size:11px;font-weight:700;color:var(--amber);}
+  .picker{margin-top:10px;padding:10px;background:var(--surface);border-radius:var(--radius-md);}
+  .picker .row{display:flex;gap:6px;margin-top:8px;}
+  .picker .row input{flex:1;}
+
+  /* intervention */
+  .same-last{width:100%;padding:13px;border-radius:var(--radius-md);border:1.5px solid var(--clinical);background:var(--clinical-dim);color:var(--clinical);font-weight:700;cursor:pointer;margin-bottom:10px;}
+  .dose{margin-top:6px;}
+  .dose input{margin-top:6px;}
+  .warnbox{margin-top:12px;border:1px solid #E9D3AC;background:var(--amber-dim);border-radius:var(--radius-md);padding:10px 12px;font-size:13px;color:#6b4515;}
+
+  /* bottom bar */
+  .bar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--card);border-top:1px solid var(--line);box-shadow:0 -2px 10px rgba(0,0,0,.06);}
+  .bar .wrap{display:flex;align-items:center;gap:12px;padding-top:10px;padding-bottom:10px;}
+  .dots{display:flex;gap:5px;flex:1;}
+  .dots i{width:10px;height:10px;border-radius:50%;background:var(--line);display:block;}
+  .dots i.on{background:var(--clinical);}
+  .go{border:none;background:var(--clinical);color:#fff;font-weight:700;font-size:15px;padding:13px 26px;border-radius:var(--radius-pill);cursor:pointer;}
+  #checkpanel{display:none;margin-top:14px;}
+  .locked main{pointer-events:none;opacity:.7;}
+  .banner{display:none;background:var(--clinical);color:#fff;font-weight:600;padding:10px 16px;text-align:center;font-size:13px;}
+  .locked .banner{display:block;}
+  details.pl{margin-top:18px;font-size:12px;}
+  details.pl pre{background:#262626;color:#cfe;padding:12px;border-radius:var(--radius-md);overflow:auto;max-height:300px;}
+</style>
+</head>
+<body>
+
+<div class="proto">
+  <span>PROTOTYPE · mock data, nothing is saved</span>
+  <select id="scenario">
+    <option value="tkr">A · TKR, visit 6 (has last visit)</option>
+    <option value="thr">B · THR, visit 1 (no history)</option>
+    <option value="gen">C · General, no assessment, no history</option>
+  </select>
+  <button type="button" id="reset">Reset</button>
+  <span class="stat">taps <b id="taps">0</b> · <b id="secs">0</b>s</span>
+</div>
+
+<div class="banner">Note completed — read-only (prototype)</div>
+
+<header class="head"><div class="wrap">
+  <div class="who"><h1 id="pname">—</h1><span class="sess" id="sess"></span></div>
+  <div class="ctx" id="ctx"></div>
+  <div class="prec" id="prec"></div>
+</div></header>
+
+<main class="wrap">
+
+  <!-- 1. SUBJECTIVE -->
+  <section class="card" id="s-sub">
+    <div class="h"><h2>Subjective</h2><span class="done">✓</span></div>
+    <div class="lbl">Pain now (0–10) <span id="pain-last" style="text-transform:none;letter-spacing:0;font-weight:500;"></span></div>
+    <div class="nrs" id="nrs"></div>
+    <div class="lbl">Since last visit</div>
+    <div class="seg" id="since"></div>
+    <button type="button" class="link" id="add-comment">+ Add comment</button>
+    <input type="text" id="comment" placeholder="Optional one-liner" style="display:none;">
+  </section>
+
+  <!-- 2. SAFETY -->
+  <section class="card" id="s-safe">
+    <div class="h"><h2>Safety check</h2><span class="done">✓</span></div>
+    <button type="button" class="safe" id="safe-ok">Tap to confirm: no concerns today</button>
+    <div class="lbl">…or flag a concern</div>
+    <div class="chips flags" id="flags"></div>
+    <div class="dispo" id="dispo" style="display:none;">
+      <div class="t">⚠ Action needed before completing</div>
+      <div class="seg" id="dispo-action"></div>
+      <div style="margin-top:8px;"><input type="text" id="dispo-note" placeholder="What you did / advice given"></div>
+    </div>
+  </section>
+
+  <!-- 3. MEASURES -->
+  <section class="card" id="s-meas">
+    <div class="h"><h2>Measures</h2><span class="done">✓</span></div>
+    <button type="button" class="same-last" id="repeat-measures" style="display:none;">Repeat last values <span style="font-weight:500;">(marked “carried” until you confirm)</span></button>
+    <div id="measures"></div>
+    <button type="button" class="chip addm" id="add-measure">+ Add measure</button>
+    <div class="picker" id="picker" style="display:none;">
+      <div class="chips" id="lib"></div>
+      <div class="row"><input type="text" id="cm-name" placeholder="Custom measure name"><input type="text" id="cm-unit" placeholder="unit" style="max-width:90px;"><button type="button" class="chip" id="cm-add">Add</button></div>
+    </div>
+  </section>
+
+  <!-- 4. INTERVENTION -->
+  <section class="card" id="s-int">
+    <div class="h"><h2>Intervention</h2><span class="done">✓</span></div>
+    <button type="button" class="same-last" id="same-last">Same as last visit</button>
+    <div class="chips" id="tx"></div>
+    <div id="doses"></div>
+  </section>
+
+  <!-- 5. ASSESSMENT & PLAN -->
+  <section class="card" id="s-ap">
+    <div class="h"><h2>Assessment &amp; plan</h2><span class="done">✓</span></div>
+    <div class="lbl">Assessment</div>
+    <div class="seg" id="assess"></div>
+    <div id="escalate"></div>
+    <div class="lbl">Plan</div>
+    <div class="seg" id="plan"></div>
+    <div class="lbl">HEP adherence</div>
+    <div class="seg" id="hep"></div>
+    <div class="lbl">Next visit</div>
+    <div class="chips" id="next"></div>
+    <input type="date" id="next-date" style="margin-top:8px;">
+  </section>
+
+  <div class="warnbox" id="checkpanel" role="alert"></div>
+
+  <details class="pl"><summary>Payload preview (draft SessionNotePayload 1.1)</summary><pre id="payload"></pre></details>
+</main>
+
+<div class="bar"><div class="wrap">
+  <div class="dots" id="dots"></div>
+  <button type="button" class="go" id="complete">Complete</button>
+</div></div>
+
+<script>
+(function(){
+  /* ================= CONFIG (data, not code paths) ================= */
+  // One renderer draws any measure. A "pack" is only a starting list of ids.
+  var MEASURES = {
+    knee_flex:  {label:'Knee flexion (AROM)',        kind:'num', unit:'°', step:5, min:0, max:160, start:90, better:'up'},
+    knee_ext:   {label:'Knee extension deficit',     kind:'num', unit:'°', step:1, min:0, max:40,  start:0,  better:'down'},
+    ext_lag:    {label:'Extension lag (SLR)',         kind:'num', unit:'°', step:1, min:0, max:40,  start:0,  better:'down'},
+    hip_flex:   {label:'Hip flexion (AROM)',         kind:'num', unit:'°', step:5, min:0, max:140, start:80, better:'up'},
+    girth:      {label:'Swelling — girth',           kind:'num', unit:'cm', step:0.5, min:20, max:80, start:40, better:'down'},
+    tug:        {label:'Timed Up & Go',              kind:'num', unit:'s', step:1, min:3, max:90, start:15, better:'down'},
+    sts30:      {label:'30-s sit-to-stand',          kind:'num', unit:'reps', step:1, min:0, max:40, start:8, better:'up'},
+    swelling:   {label:'Swelling',                   kind:'chips', options:['None','Mild','Moderate','Marked'], order:'worse-up'},
+    wound:      {label:'Wound',                      kind:'chips', options:['Healed','Healing well','Concern']},
+    gait_aid:   {label:'Gait aid',                   kind:'chips', options:['None','Stick','Crutches','Frame/walker']},
+    wb_status:  {label:'Weight-bearing',             kind:'chips', options:['NWB','TDWB','PWB','WBAT','FWB']},
+    slr:        {label:'Straight leg raise',         kind:'chips', options:['Able','With lag','Unable']},
+    abd_str:    {label:'Hip abductor strength (MMT)',kind:'chips', options:['2','3','3+','4','4+','5']},
+    precautions:{label:'Precautions followed',       kind:'chips', options:['Yes','Partly','No']}
+  };
+  var PACKS = {
+    tkr: {label:'Post-op TKR', measures:['knee_flex','knee_ext','ext_lag','swelling','wound','gait_aid','wb_status'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
+    thr: {label:'Post-op THR', measures:['hip_flex','abd_str','wound','gait_aid','wb_status','precautions'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
+    gen: {label:'General MSK', measures:[], extraSafety:[]}
+  };
+  var SAFETY_BASE = ['New or worsening pain / swelling','Fall or near-fall','Feeling unwell (fever, chest pain, breathlessness)'];
+  var DISPO_ACTIONS = ['Monitor + safety-net','Contacted surgeon / GP','Urgent referral','Emergency'];
+  var TX = ['Joint mobilisation','MFR','Taping/KT','Dry needling','TENS','IFC','Ultrasound','Heat/ice','NMES','Strengthening','Closed-chain','Open-chain','Stretching / ROM','Balance','Gait training'];
+  var ASSESS = ['Improving','Unchanged','Regressed','Flare'];
+  var PLAN = ['Continue','Progress','Modify','Review','Discharge'];
+
+  /* ================= MOCK SCENARIOS ================= */
+  var SCENARIOS = {
+    tkr: { name:'Anita R. (mock)', pack:'tkr', session:'Session 6 of 12', tags:['Post-op TKR (R)','Week 5','Phase 2','WBAT'],
+      precautions:'Mock precautions — per surgeon protocol. Real values come from the Core Assessment.',
+      last:{pain:4, since:'', measures:{knee_flex:85, knee_ext:8, ext_lag:5, swelling:'Moderate', wound:'Healing well', gait_aid:'Frame/walker', wb_status:'WBAT'},
+            tx:['Joint mobilisation','Strengthening','Heat/ice'], plan:'Continue', assess:'Improving', lastAssessWasRegressed:false},
+      baseline:{knee_flex:60, knee_ext:15} },
+    thr: { name:'Rahul S. (mock)', pack:'thr', session:'Session 1 of 10', tags:['Post-op THR (L)','Week 2','Phase 1','PWB'],
+      precautions:'Mock precautions — per surgeon protocol.', last:null, baseline:{} },
+    gen: { name:'Meera K. (mock)', pack:'gen', session:'Session 3', tags:['No assessment on file'], precautions:'', last:null, baseline:{} }
+  };
+
+  /* ================= STATE ================= */
+  var $ = function(id){ return document.getElementById(id); };
+  var sc, S, taps, t0, timer;
+  function fresh(){
+    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false};
+    taps = 0; t0 = null; clearInterval(timer); $('taps').textContent = '0'; $('secs').textContent = '0';
+  }
+  function startTimer(){
+    if(t0) return; t0 = Date.now();
+    timer = setInterval(function(){ $('secs').textContent = Math.round((Date.now()-t0)/1000); }, 500);
+  }
+  document.addEventListener('click', function(e){
+    if(e.target.closest('.proto') || S.locked) return;
+    if(e.target.closest('button')){ taps++; $('taps').textContent = taps; startTimer(); }
+  }, true);
+
+  /* ================= RENDER HELPERS ================= */
+  function seg(host, opts, get, set, ghost){
+    host.innerHTML = '';
+    opts.forEach(function(o){
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = o;
+      if(get() === o) b.classList.add('selected');
+      if(ghost && ghost === o && get() !== o) b.classList.add('ghost');
+      b.addEventListener('click', function(){ set(get() === o ? '' : o); seg(host, opts, get, set, ghost); update(); });
+      host.appendChild(b);
+    });
+  }
+  function lastOf(id){ return sc.last && sc.last.measures[id] !== undefined ? sc.last.measures[id] : null; }
+
+  /* ================= SECTIONS ================= */
+  function renderHeader(){
+    $('pname').textContent = sc.name; $('sess').textContent = sc.session;
+    $('ctx').innerHTML = sc.tags.map(function(t,i){ return '<span class="tag'+(sc.tags[0]==='No assessment on file'?' warn':'')+'">'+t+'</span>'; }).join('');
+    $('prec').textContent = sc.precautions;
+  }
+  function renderSubjective(){
+    var nrs = $('nrs'); nrs.innerHTML = '';
+    for(var i=0;i<=10;i++){ (function(n){
+      var b = document.createElement('button'); b.type='button'; b.textContent = n;
+      if(S.pain===n) b.classList.add('selected');
+      b.addEventListener('click', function(){ S.pain = (S.pain===n?null:n); renderSubjective(); update(); });
+      nrs.appendChild(b); })(i); }
+    $('pain-last').textContent = sc.last ? '· last visit: '+sc.last.pain : '';
+    seg($('since'), ['Better','Same','Worse'], function(){ return S.since; }, function(v){ S.since = v; });
+  }
+  function safetyItems(){ return SAFETY_BASE.concat(PACKS[sc.pack].extraSafety); }
+  function renderSafety(){
+    var ok = $('safe-ok'); ok.classList.toggle('on', S.safeOk);
+    ok.textContent = S.safeOk ? '✓ No concerns today' : 'Tap to confirm: no concerns today';
+    var f = $('flags'); f.innerHTML = '';
+    safetyItems().forEach(function(t){
+      var b = document.createElement('button'); b.type='button'; b.className='chip'+(S.flags.indexOf(t)>-1?' selected':''); b.textContent = t;
+      b.addEventListener('click', function(){
+        var i = S.flags.indexOf(t); if(i>-1) S.flags.splice(i,1); else S.flags.push(t);
+        if(S.flags.length) S.safeOk = false;
+        renderSafety(); update();
+      });
+      f.appendChild(b);
+    });
+    $('dispo').style.display = S.flags.length ? 'block' : 'none';
+    seg($('dispo-action'), DISPO_ACTIONS, function(){ return S.dispoAction; }, function(v){ S.dispoAction = v; });
+  }
+  $('safe-ok').addEventListener('click', function(){ S.safeOk = !S.safeOk; if(S.safeOk) S.flags = []; renderSafety(); update(); });
+
+  function measureIds(){ return S.order; }
+  function renderMeasures(){
+    $('repeat-measures').style.display = (sc.last && S.order.length) ? 'block' : 'none';
+    var host = $('measures'); host.innerHTML = '';
+    if(!S.order.length){ host.innerHTML = '<div class="hint">No pinned measures yet — add the ones you track. They carry forward to the next visit automatically.</div>'; }
+    S.order.forEach(function(id){
+      var def = MEASURES[id] || S.custom.filter(function(c){ return c.id===id; })[0];
+      var last = lastOf(id), base = sc.baseline[id];
+      var row = document.createElement('div'); row.className = 'm'+(S.carried[id]?' carried':'');
+      var trend = [];
+      if(base !== undefined) trend.push('baseline '+base+(def.unit||''));
+      if(last !== null) trend.push('last '+last+(def.unit&&typeof last==='number'?def.unit:''));
+      row.innerHTML = '<div class="top"><span class="name">'+def.label+'</span><span class="trend">'+trend.join(' · ')+(S.carried[id]?' <span class=\"badge\">carried — confirm</span>':'')+'</span><button type="button" class="x" aria-label="Remove for this visit">×</button></div><div class="ctl"></div>';
+      row.querySelector('.x').addEventListener('click', function(){ S.order.splice(S.order.indexOf(id),1); delete S.measures[id]; renderMeasures(); update(); });
+      var ctl = row.querySelector('.ctl');
+      if(def.kind === 'chips'){
+        var wrap = document.createElement('div'); wrap.className = 'seg'; ctl.appendChild(wrap);
+        seg(wrap, def.options, function(){ return S.measures[id] || ''; }, function(v){ delete S.carried[id]; if(v) S.measures[id] = v; else delete S.measures[id]; renderMeasures(); }, last);
+      } else {
+        renderStepper(ctl, id, def, last);
+      }
+      host.appendChild(row);
+    });
+  }
+  function renderStepper(ctl, id, def, last){
+    ctl.innerHTML = '';
+    var box = document.createElement('div'); box.className = 'step';
+    var minus = mk('b','−'), plus = mk('b','+'), val = document.createElement('div'); val.className = 'val';
+    function mk(c,t){ var b = document.createElement('button'); b.type='button'; b.className=c; b.textContent=t; return b; }
+    function draw(){
+      var v = S.measures[id];
+      val.innerHTML = (v===undefined?'—':v+'<span style="font-size:13px;color:var(--ink-faint);font-weight:600;"> '+(def.unit||'')+'</span>');
+      var old = box.querySelector('.delta'); if(old) old.remove();
+      if(v!==undefined && last!==null){
+        var d = Math.round((v-last)*10)/10, cls = d===0?'flat':((def.better==='up'?d>0:d<0)?'good':'bad');
+        var s = document.createElement('span'); s.className='delta '+cls; s.textContent = (d>0?'+':'')+d+' vs last'; val.appendChild(s);
+      }
+    }
+    function clearCarried(){ if(S.carried[id]){ delete S.carried[id]; ctl.closest('.m').classList.remove('carried'); var bd = ctl.closest('.m').querySelector('.badge'); if(bd) bd.remove(); } }
+    function nudge(dir){
+      var cur = S.measures[id]; if(cur===undefined) cur = (last!==null?last:def.start);
+      else cur = cur + dir*def.step;
+      cur = Math.max(def.min, Math.min(def.max, Math.round(cur*10)/10));
+      S.measures[id] = cur; clearCarried(); draw(); update();
+    }
+    minus.addEventListener('click', function(){ if(S.measures[id]===undefined && last!==null){ S.measures[id]=last; clearCarried(); draw(); update(); } else nudge(-1); });
+    plus.addEventListener('click',  function(){ if(S.measures[id]===undefined && last!==null){ S.measures[id]=last; clearCarried(); draw(); update(); } else nudge(1); });
+    box.appendChild(minus); box.appendChild(val); box.appendChild(plus);
+    if(last!==null){
+      var same = mk('same','= '+last); same.addEventListener('click', function(){ S.measures[id]=last; clearCarried(); draw(); update(); });
+      box.appendChild(same);
+    }
+    ctl.appendChild(box); draw();
+  }
+  $('repeat-measures').addEventListener('click', function(){
+    S.order.forEach(function(id){ var l = lastOf(id); if(l!==null){ S.measures[id]=l; S.carried[id]=true; } });
+    renderMeasures(); update();
+  });
+  function renderPicker(){
+    var lib = $('lib'); lib.innerHTML = '';
+    Object.keys(MEASURES).filter(function(id){ return S.order.indexOf(id)===-1; }).forEach(function(id){
+      var b = document.createElement('button'); b.type='button'; b.className='chip'; b.textContent = MEASURES[id].label;
+      b.addEventListener('click', function(){ S.order.push(id); $('picker').style.display='none'; renderMeasures(); update(); });
+      lib.appendChild(b);
+    });
+  }
+  $('add-measure').addEventListener('click', function(){ var p=$('picker'); p.style.display = p.style.display==='none'?'block':'none'; renderPicker(); });
+  $('cm-add').addEventListener('click', function(){
+    var n = $('cm-name').value.trim(); if(!n) return;
+    var id = 'custom_'+(S.custom.length+1);
+    S.custom.push({id:id,label:n,kind:'num',unit:$('cm-unit').value.trim(),step:1,min:0,max:999,start:0,better:'up'});
+    S.order.push(id); $('cm-name').value=''; $('cm-unit').value=''; $('picker').style.display='none'; renderMeasures(); update();
+  });
+
+  function renderIntervention(){
+    $('same-last').style.display = sc.last ? 'block' : 'none';
+    var host = $('tx'); host.innerHTML = '';
+    TX.forEach(function(t){
+      var b = document.createElement('button'); b.type='button'; b.className='chip'+(S.tx.indexOf(t)>-1?' selected':'');
+      if(sc.last && sc.last.tx.indexOf(t)>-1 && S.tx.indexOf(t)===-1) b.classList.add('ghost');
+      b.textContent = t;
+      b.addEventListener('click', function(){ var i=S.tx.indexOf(t); if(i>-1){ S.tx.splice(i,1); delete S.doses[t]; } else S.tx.push(t); renderIntervention(); update(); });
+      host.appendChild(b);
+    });
+    var d = $('doses'); d.innerHTML = '';
+    S.tx.forEach(function(t){
+      var box = document.createElement('div'); box.className='dose';
+      if(S.doses[t] === undefined){
+        var l = document.createElement('button'); l.type='button'; l.className='link'; l.textContent = '+ dose / note for '+t;
+        l.addEventListener('click', function(){ S.doses[t]=''; renderIntervention(); });
+        box.appendChild(l);
+      } else {
+        var i = document.createElement('input'); i.type='text'; i.placeholder = t+' — e.g. 3×10, 5 min, grade III'; i.value = S.doses[t];
+        i.addEventListener('input', function(){ S.doses[t] = i.value; update(); });
+        box.appendChild(i);
+      }
+      d.appendChild(box);
+    });
+  }
+  $('same-last').addEventListener('click', function(){ S.tx = sc.last.tx.slice(); S.doses = {}; renderIntervention(); update(); });
+
+  function renderAP(){
+    seg($('assess'), ASSESS, function(){ return S.assess; }, function(v){ S.assess = v; renderEscalation(); }, sc.last && sc.last.assess);
+    seg($('plan'), PLAN, function(){ return S.plan; }, function(v){ S.plan = v; }, sc.last && sc.last.plan);
+    seg($('hep'), ['Full','Partial','None'], function(){ return S.hep; }, function(v){ S.hep = v; });
+    var n = $('next'); n.innerHTML = '';
+    [['+2 days',2],['+3 days',3],['+1 week',7]].forEach(function(p){
+      var b = document.createElement('button'); b.type='button'; b.className='chip'; b.textContent = p[0];
+      b.addEventListener('click', function(){ var d=new Date(); d.setDate(d.getDate()+p[1]); S.nextDate = d.toISOString().slice(0,10); $('next-date').value = S.nextDate; update(); });
+      n.appendChild(b);
+    });
+    renderEscalation();
+  }
+  $('next-date').addEventListener('input', function(){ S.nextDate = this.value; update(); });
+  function renderEscalation(){
+    var h = $('escalate'); h.innerHTML = '';
+    if(S.assess==='Regressed' || S.assess==='Flare'){
+      var again = sc.last && sc.last.lastAssessWasRegressed;
+      h.innerHTML = '<div class="warnbox">'+(S.assess==='Flare'?'Flare':'Regression')+' recorded. Consider referral / escalation or a Core Assessment follow-up.'+
+        (again?' <b>Second regressed visit in a row.</b>':'')+'<input type="text" id="esc" placeholder="Optional: escalation / referral note" style="margin-top:8px;" value="'+S.escalation.replace(/"/g,'&quot;')+'"></div>';
+      $('esc').addEventListener('input', function(){ S.escalation = this.value; update(); });
+    }
+  }
+
+  /* ================= PROGRESS + PAYLOAD ================= */
+  function dispoComplete(){ return !S.flags.length || (S.dispoAction && $('dispo-note').value.trim()); }
+  function safetyAnswered(){ return S.safeOk || S.flags.length>0; }
+  function sectionDone(){
+    return {
+      sub: S.pain!==null && !!S.since,
+      safe: safetyAnswered() && dispoComplete(),
+      meas: S.order.length>0 && S.order.every(function(id){ return S.measures[id]!==undefined; }),
+      int: S.tx.length>0,
+      ap: !!S.assess && !!S.plan
+    };
+  }
+  function update(){
+    var d = sectionDone(), map = {sub:'s-sub',safe:'s-safe',meas:'s-meas',int:'s-int',ap:'s-ap'};
+    Object.keys(map).forEach(function(k){ $(map[k]).classList.toggle('ok', !!d[k]); });
+    $('dots').innerHTML = Object.keys(map).map(function(k){ return '<i class="'+(d[k]?'on':'')+'"></i>'; }).join('');
+    $('payload').textContent = JSON.stringify(payload(), null, 2);
+  }
+  function payload(){
+    var meas = S.order.filter(function(id){ return S.measures[id]!==undefined; }).map(function(id){
+      var def = MEASURES[id] || S.custom.filter(function(c){ return c.id===id; })[0];
+      var o = {id:id, value:S.measures[id]}; if(S.carried[id]) o.carried = true; if(def.unit) o.unit = def.unit; if(id.indexOf('custom_')===0) o.label = def.label; return o; });
+    return {
+      version:'1.1', kind:'session', enrollmentId:'(mock)',
+      context:{pack:sc.pack, session:sc.session},
+      subjective:{painNrs:S.pain, sinceLast:S.since||null, oneLiner:$('comment').value||''},
+      safety:{confirmedNoConcerns:S.safeOk, flags:S.flags, disposition: S.flags.length ? {action:S.dispoAction, note:$('dispo-note').value} : null},
+      measures:meas,
+      intervention:{treatments:S.tx, doses:S.doses, sameAsLast: !!sc.last && S.tx.length===sc.last.tx.length && S.tx.every(function(t){ return sc.last.tx.indexOf(t)>-1; })},
+      assessment:S.assess||null, plan:S.plan||null, hepAdherence:S.hep||null, nextVisit:S.nextDate||null,
+      escalationNote:S.escalation||null
+    };
+  }
+  $('dispo-note').addEventListener('input', update);
+  $('add-comment').addEventListener('click', function(){ this.style.display='none'; $('comment').style.display='block'; $('comment').focus(); });
+  $('comment').addEventListener('input', update);
+
+  /* ================= COMPLETE (hard = safety only; rest warns) ================= */
+  function lock(){
+    S.locked = true; document.body.classList.add('locked'); $('complete').style.display='none';
+    clearInterval(timer);
+    var secs = t0 ? Math.round((Date.now()-t0)/1000) : 0;
+    var p = $('checkpanel'); p.style.display='block';
+    p.innerHTML = '<b>Completed in '+secs+' s with '+taps+' taps.</b> (prototype timing, target ≈ 60 s / 12 taps)';
+    window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
+  }
+  $('complete').addEventListener('click', function(){
+    var p = $('checkpanel'); p.style.display='block';
+    if(!safetyAnswered()){
+      p.innerHTML = '<b style="color:#B3261E;">Can’t complete yet.</b> Confirm “no concerns” or flag a concern in the Safety check.';
+      $('s-safe').scrollIntoView({behavior:'smooth',block:'center'}); return;
+    }
+    if(!dispoComplete()){
+      p.innerHTML = '<b style="color:#B3261E;">Can’t complete yet.</b> A flagged concern needs an action and a note.';
+      $('dispo').scrollIntoView({behavior:'smooth',block:'center'}); return;
+    }
+    var gaps = [];
+    if(S.pain===null) gaps.push('Pain'); if(!S.assess) gaps.push('Assessment'); if(!S.plan) gaps.push('Plan');
+    var nCar = Object.keys(S.carried).length; if(nCar) gaps.push(nCar+' measure'+(nCar>1?'s':'')+' carried forward, not re-checked');
+    if(gaps.length){
+      p.innerHTML = '<b>Not yet documented:</b> '+gaps.join(' · ')+'<div style="margin-top:8px;display:flex;gap:12px;"><button type="button" class="link" id="cp-back">Go back</button><button type="button" class="link" id="cp-go">Complete anyway</button></div>';
+      $('cp-back').addEventListener('click', function(){ p.style.display='none'; });
+      $('cp-go').addEventListener('click', lock); return;
+    }
+    lock();
+  });
+
+  /* ================= SCENARIO LOADING ================= */
+  function load(key){
+    document.body.classList.remove('locked'); $('complete').style.display='';
+    fresh(); sc = SCENARIOS[key];
+    // starting measures: last visit's pinned set > pack (from assessment template) > empty (manual)
+    var ids = sc.last ? Object.keys(sc.last.measures) : PACKS[sc.pack].measures;
+    S.order = ids.slice();
+    $('checkpanel').style.display='none'; $('comment').style.display='none'; $('comment').value=''; $('add-comment').style.display='';
+    $('dispo-note').value=''; $('next-date').value=''; $('picker').style.display='none';
+    renderHeader(); renderSubjective(); renderSafety(); renderMeasures(); renderIntervention(); renderAP(); update();
+  }
+  $('scenario').addEventListener('change', function(){ load(this.value); });
+  $('reset').addEventListener('click', function(){ load($('scenario').value); });
+  load('tkr');
+})();
+</script>
+</body>
+</html>

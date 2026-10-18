@@ -300,3 +300,13 @@ Group A tool mapping for all 6 conditions + MSK collapse / "Show anyway" / overr
 - Stale nested clone `thera-net/` (commit cad0e55, Sep 12) deleted; it held nothing unique (clean tree, no unpushed commits, no stashes).
 - `body-chart.png` is **required** by `clinical-note.html` (the Body Chart module loads it from the same folder) — keep it next to the HTML. The app already ships the same image at `src/assets/body-chart.png`.
 - **Deferred:** extending the body chart with Fascial Manipulation segments. FM keeps its own segment / PV-grid UI; the port reuses `BodyChart.tsx` unchanged.
+
+## Session Note prototype (`session-note.html`) — short per-visit / daily-log SOAP note
+Separate file, mock data only, nothing saved. Upgrade path for the live app's existing light session note (`noteMode: 'session'`, `SessionNotePayload` 1.0 → draft 1.1, additive). Built for regular package patients and post-op (TKR/THR) daily logs. Home-visit specifics deliberately parked.
+- **One layout, config-driven.** A single renderer draws any measure (stepper or chips) from a registry; a "pack" (TKR, THR, General MSK) is only a starting list of measure ids plus extra safety items — no per-condition UI or logic. Start list priority: last visit's pinned measures > pack from the assessment template > empty (manual "+ Add measure" with a custom name/unit fallback).
+- **Fast path.** Pain, since-last, one active safety confirmation, measures, "Same as last visit" for treatments, assessment, plan. Measured: ~11 taps for a fully carried-forward TKR note (target ≈ 12 taps / 60 s). Tap counter + timer in the prototype toolbar.
+- **Carried-forward values are marked.** "Repeat last values" copies the last visit's measures but flags each one `carried` (hatched row, payload `carried: true`) until the therapist touches it; completing with carried values shows an overridable warning. Avoids silent note cloning.
+- **Safety.** Active "no concerns today" tap (never pre-ticked); flagging opens an action + note card; that is the only hard block on Complete. Pain/assessment/plan gaps and carried measures only warn ("Complete anyway").
+- **Escalation prompt** on Regressed/Flare, with a "second regressed visit in a row" hint pointing to a Core Assessment follow-up.
+- **Trend hint** per measure shows baseline (from the assessment) and last value; measure ids should be shared with the Core Assessment ROM/MMT ids so baseline and daily values plot on one line.
+- **Open:** clinician review of the TKR/THR measure lists and precautions (mock text in the prototype); whether the safety tap is mandatory for all notes or post-op packs only; lock-on-complete vs editable; where home-visit data lives.

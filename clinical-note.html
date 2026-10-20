@@ -583,7 +583,34 @@
   .pv-cell.grade-3 { background:#FECACA; color:#1A2B2E; }
   .pv-cell.grade-3plus { background:#FCA5A5; color:#1A2B2E; font-weight:700; }
   
-  .pv-cell[data-treated="true"] { box-shadow:inset 0 0 0 2.5px var(--clinical) !important; font-weight:800; }
+  .pv-cell { position:relative; }
+  /* Treated = small corner tick; the grade number stays readable */
+  .pv-cell[data-treated="true"]::after { content:'✓'; position:absolute; top:2px; right:2px; width:13px; height:13px; border-radius:50%; background:var(--clinical); color:#fff; font-size:9px; line-height:13px; font-weight:800; text-align:center; }
+  .pv-cell.pv-picked { box-shadow:0 0 0 3px var(--clinical) !important; z-index:3; }
+  /* Grade picker — one element for the page, positioned at the tapped box */
+  #pv-picker { position:fixed; z-index:60; display:none; background:#fff; border:1px solid #d6d6d4; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.16); padding:6px; }
+  #pv-picker.open { display:block; }
+  #pv-picker .pk-label { display:none; font-size:12.5px; font-weight:700; color:var(--clinical); margin:0 2px 8px; }
+  #pv-picker .pk-row { display:flex; gap:5px; align-items:center; }
+  #pv-picker .pk-sep { width:1px; height:26px; background:var(--line); margin:0 2px; }
+  #pv-picker button { min-width:42px; height:42px; border-radius:8px; border:1px solid var(--line); background:#fff; font:inherit; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; padding:0 9px; }
+  #pv-picker button.g1 { background:#FEF9C3; } #pv-picker button.g2 { background:#FEF08A; } #pv-picker button.g2p { background:#FDE68A; }
+  #pv-picker button.g3 { background:#FECACA; } #pv-picker button.g3p { background:#FCA5A5; }
+  #pv-picker button.cur { outline:3px solid var(--clinical); outline-offset:1px; }
+  #pv-picker .pk-tr { color:var(--clinical); } #pv-picker .pk-tr.on { background:var(--clinical); border-color:var(--clinical); color:#fff; }
+  #pv-picker .pk-tr:disabled { opacity:.35; cursor:default; }
+  #pv-picker .pk-clr { color:#B3261E; }
+  #pv-picker .pk-wide { display:none; }
+  /* Phones: same buttons, as a strip along the bottom within thumb reach */
+  @media (max-width:743.98px) {
+    #pv-picker { left:0 !important; right:0; top:auto !important; bottom:0; border-radius:16px 16px 0 0; padding:10px 12px 18px; box-shadow:0 -6px 20px rgba(0,0,0,.12); }
+    #pv-picker .pk-label { display:flex; justify-content:space-between; }
+    #pv-picker .pk-row { flex-wrap:wrap; gap:6px; }
+    #pv-picker .pk-row button { flex:1 1 15%; height:48px; }
+    #pv-picker .pk-sep, #pv-picker .pk-narrow { display:none; }
+    #pv-picker .pk-wide { display:block; }
+    body.pv-sheet-open { padding-bottom:180px; } /* room to scroll the graded box above the strip */
+  }
   
 
   .seq-builder { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
@@ -2174,13 +2201,9 @@
       <div class="card" style="margin-bottom:14px; padding-left:0; padding-right:0;">
         <div class="card-heading" style="padding:0 28px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
           <span>3. Palpation Verification (CF's &amp; CC's)</span>
-          <div class="segmented" id="pv-mode-toggle">
-            <button type="button" class="selected" data-val="palpation">🔍 Palpation</button>
-            <button type="button" data-val="treatment">🛠 Treatment</button>
-          </div>
         </div>
         <div class="field-note" id="pv-mode-hint" style="padding:0 28px; margin-top:0; margin-bottom:0;">
-          <b>Palpation mode:</b> Tap cycle (1 → 2 → 2+ → 3 → 3+).
+          Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it.
         </div>
         
         <!-- Desktop Sticky Table -->
@@ -7515,85 +7538,100 @@ setupSegmented('patient-progress');
 (function() {
     
 
-    // 2. Tap Cycle & Mode Logic
-    let currentPvMode = 'palpation'; // 'palpation' or 'treatment'
-    const pvToggle = document.getElementById('pv-mode-toggle');
-    const pvHint = document.getElementById('pv-mode-hint');
-    
-    if (pvToggle) {
-        pvToggle.dataset.segmentedBound = '1';
-        pvToggle.querySelectorAll('button').forEach(btn => {
-            btn.addEventListener('click', function() {
-                pvToggle.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-                currentPvMode = this.getAttribute('data-val');
-                
-                if (currentPvMode === 'palpation') {
-                    pvHint.innerHTML = '<b>Palpation mode:</b> Tap cycle (1 → 2 → 2+ → 3 → 3+).';
-                } else {
-                    pvHint.innerHTML = '<b>Treatment mode:</b> Single tap toggles Treatment status (thick teal border). Only cells with density can be treated.';
-                }
-            });
-        });
-    }
-
+    // 2. Grade picker — tap a box, pick its grade. Replaces the old tap-cycle
+    // (one tap too many erased a finding) and the Palpation/Treatment toggle.
     const grades = ["", "1", "2", "2+", "3", "3+"];
     const gradeClasses = {
       "": "", "1": "grade-1", "2": "grade-2", "2+": "grade-2plus", "3": "grade-3", "3+": "grade-3plus"
     };
+    const pickerBtnClass = {"1": "g1", "2": "g2", "2+": "g2p", "3": "g3", "3+": "g3p"};
 
-    function handleCellTap(cell) {
-        if (currentPvMode === 'palpation') {
-            // Cycle grade
-            let currentGrade = cell.getAttribute('data-grade') || "";
-            let currentIndex = grades.indexOf(currentGrade);
-            let nextIndex = (currentIndex + 1) % grades.length;
-            let nextGrade = grades[nextIndex];
-            
-            cell.setAttribute('data-grade', nextGrade);
-            cell.textContent = nextGrade;
-            cell.className = 'pv-cell ' + gradeClasses[nextGrade];
-            
-            // If cleared, also clear treated
-            if (!nextGrade) {
-                cell.setAttribute('data-treated', 'false');
-            }
-        } else {
-            // Toggle treated
-            toggleTreated(cell);
+    function cellLabel(cell) {
+        const seg = cell.closest('tr').querySelector('.pv-seg-name');
+        const col = (window.PV_COLUMNS || []).filter(c => c.plane === cell.dataset.plane)[0];
+        return `${seg && seg.value ? seg.value : 'Segment'} · ${cell.dataset.side} · ${col ? col.code : cell.dataset.plane}`;
+    }
+    function setCell(cell, grade, treated) {
+        cell.setAttribute('data-grade', grade);
+        cell.textContent = grade;
+        cell.className = 'pv-cell ' + gradeClasses[grade];
+        cell.setAttribute('data-treated', grade && treated ? 'true' : 'false');
+        cell.setAttribute('aria-label', cellLabel(cell) + (grade ? `, grade ${grade}` : ', not graded') + (grade && treated ? ', treated' : ''));
+        updateDensitySummary();
+    }
+
+    const picker = document.createElement('div');
+    picker.id = 'pv-picker';
+    picker.setAttribute('role', 'dialog');
+    picker.innerHTML =
+        '<div class="pk-label"><span class="pk-name"></span><span style="color:var(--ink-faint);font-weight:500;">tap outside to close</span></div>' +
+        '<div class="pk-row">' + grades.slice(1).map(g => `<button type="button" class="${pickerBtnClass[g]}" data-grade="${g}">${g}</button>`).join('') +
+        '<span class="pk-sep"></span>' +
+        '<button type="button" class="pk-tr pk-narrow" data-act="treated" aria-label="Treated today">✓</button>' +
+        '<button type="button" class="pk-clr pk-narrow" data-act="clear" aria-label="Clear">⌫</button></div>' +
+        '<div class="pk-row pk-wide" style="margin-top:6px;"><div class="pk-row">' +
+        '<button type="button" class="pk-tr" data-act="treated" style="flex:2 1 60%;">✓ Treated</button>' +
+        '<button type="button" class="pk-clr" data-act="clear" style="flex:1 1 30%;">⌫ Clear</button></div></div>';
+    document.body.appendChild(picker);
+    let pickedCell = null;
+
+    function closePicker() {
+        if (pickedCell) pickedCell.classList.remove('pv-picked');
+        pickedCell = null;
+        picker.classList.remove('open');
+        document.body.classList.remove('pv-sheet-open');
+    }
+    function openPicker(cell) {
+        if (pickedCell) pickedCell.classList.remove('pv-picked');
+        pickedCell = cell;
+        cell.classList.add('pv-picked');
+        const grade = cell.getAttribute('data-grade') || '';
+        const treated = cell.getAttribute('data-treated') === 'true';
+        picker.querySelector('.pk-name').textContent = cellLabel(cell);
+        picker.querySelectorAll('[data-grade]').forEach(b => b.classList.toggle('cur', b.getAttribute('data-grade') === grade));
+        picker.querySelectorAll('[data-act="treated"]').forEach(b => { b.classList.toggle('on', treated); b.disabled = !grade; });
+        picker.classList.add('open');
+        if (window.innerWidth < 744) {
+            // Bottom strip (CSS). Keep the box being graded visible above it.
+            document.body.classList.add('pv-sheet-open');
+            const r = cell.getBoundingClientRect(), sheetTop = picker.getBoundingClientRect().top;
+            if (r.bottom > sheetTop - 8) window.scrollBy({top: r.bottom - sheetTop + 24, behavior: 'smooth'});
+            return;
         }
-        updateDensitySummary();
+        // Above the box; below it when there is no room (top row). Clamp to the screen edges.
+        const r = cell.getBoundingClientRect(), pw = picker.offsetWidth, ph = picker.offsetHeight;
+        let top = r.top - ph - 8;
+        if (top < 8) top = r.bottom + 8;
+        let left = r.left + r.width / 2 - pw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+        picker.style.top = top + 'px';
+        picker.style.left = left + 'px';
     }
 
-    function toggleTreated(cell) {
-        if (!cell.getAttribute('data-grade')) return; // Don't treat empty cells
-        let isTreated = cell.getAttribute('data-treated') === "true";
-        cell.setAttribute('data-treated', !isTreated);
-        updateDensitySummary();
-    }
-
-    // Event Listeners for Grid Interactions
+    picker.addEventListener('click', function(e) {
+        const btn = e.target.closest('button');
+        if (!btn || !pickedCell) return;
+        const cell = pickedCell;
+        const grade = cell.getAttribute('data-grade') || '';
+        const treated = cell.getAttribute('data-treated') === 'true';
+        if (btn.hasAttribute('data-grade')) setCell(cell, btn.getAttribute('data-grade'), treated);
+        else if (btn.getAttribute('data-act') === 'treated') { if (grade) setCell(cell, grade, !treated); }
+        else if (btn.getAttribute('data-act') === 'clear') setCell(cell, '', false);
+        closePicker();
+    });
     document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('pv-cell')) {
-            handleCellTap(e.target);
-        }
+        const cell = e.target.closest('.pv-cell');
+        if (cell) { if (cell === pickedCell) closePicker(); else openPicker(cell); return; }
+        if (pickedCell && !picker.contains(e.target)) closePicker();
     });
-
-
-    
-    // We rely entirely on the Treatment Mode toggle for marking treated cells now.
-    // Removed complex double-tap/long-press logic to avoid misfires during rapid palpation tapping.
-    
-    document.addEventListener('contextmenu', function(e) {
-        if (e.target.classList.contains('pv-cell')) {
-            e.preventDefault();
-            if (currentPvMode === 'treatment') {
-                toggleTreated(e.target);
-            }
-        }
-    });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePicker(); });
+    // Position goes stale when anything scrolls; closing is simpler than tracking.
+    window.addEventListener('scroll', function() { if (pickedCell && window.innerWidth >= 744) closePicker(); }, true);
+    window.addEventListener('resize', closePicker);
 
     // 3. Smart Density & Pattern Summary
+    // Show the same codes as the column headers (AM, An…), not internal plane ids (AN-ME).
+    const planeCode = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
     function updateDensitySummary() {
         const cells = document.querySelectorAll('#fm-pv-table .pv-cell');
         
@@ -7650,7 +7688,7 @@ setupSegmented('patient-progress');
         let findingsHtml = `<div style="margin-bottom:8px;"><b>Highest findings:</b><br>`;
         findings.forEach(f => {
             let tMark = f.isTreated ? '<span style="color:var(--clinical); font-weight:800;">✓</span>' : '';
-            findingsHtml += `<span style="display:inline-block; margin-right:16px;">• ${f.seg} (${f.side}) — ${f.plane}: <span style="background:var(--surface); padding:2px 6px; border:1px solid var(--line); border-radius:4px; font-weight:700;">${f.grade}</span> ${tMark}</span>`;
+            findingsHtml += `<span style="display:inline-block; margin-right:16px;">• ${f.seg} (${f.side}) — ${planeCode(f.plane)}: <span style="background:var(--surface); padding:2px 6px; border:1px solid var(--line); border-radius:4px; font-weight:700;">${f.grade}</span> ${tMark}</span>`;
         });
         findingsHtml += `</div>`;
         
@@ -7662,7 +7700,7 @@ setupSegmented('patient-progress');
                 const [pName, pSide, pKind] = p.split(' ');
                 // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
                 const term = pKind === 'cf' ? 'diagonal' : 'sequence';
-                patternHtml += `<span style="display:inline-block; margin-right:16px;">• ${pName} ${term} ${pSide} — ${count} segments</span>`;
+                patternHtml += `<span style="display:inline-block; margin-right:16px;">• ${planeCode(pName)} ${term} ${pSide} — ${count} segments</span>`;
                 patternsFound = true;
             }
         }
@@ -7723,6 +7761,7 @@ setupSegmented('patient-progress');
         {code:'Er', kind:'cc', plane:'Er',    group:'Retro'},
         {code:'La', kind:'cc', plane:'La',    group:'Retro'}
     ];
+    window.PV_COLUMNS = PV_COLUMNS; // read by the grade picker (separate script)
     const PV_SIDES = ['rt', 'lt'];
     // Stecco segments, head to toe — the one list used by the quick-add chips,
     // the name suggestions and the Hypothesis Builder. Free text still allowed.
@@ -7978,7 +8017,8 @@ setupSegmented('patient-progress');
         });
         
         if (allMatch && firstPlane) {
-            diagOutput.textContent = `${firstPlane} ${firstPlane.indexOf('-') !== -1 ? 'Diagonal' : 'Sequence'}`;
+            const firstCode = (((window.PV_COLUMNS || []).filter(c => c.plane === firstPlane)[0]) || {}).code || firstPlane;
+            diagOutput.textContent = `${firstCode} ${firstPlane.indexOf('-') !== -1 ? 'diagonal' : 'sequence'}`;
             diagOutput.style.color = "var(--clinical)";
             diagOutput.style.fontWeight = "700";
         } else {
@@ -7996,7 +8036,8 @@ setupSegmented('patient-progress');
             div.style.gap = '8px';
             div.style.marginBottom = '8px';
             
-            let planeOpts = planes.map(p => `<option>${p}</option>`).join('');
+            const code = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
+            let planeOpts = planes.map(p => `<option value="${p}">${code(p)}</option>`).join('');
             let segOpts = segments.map(s => `<option>${s}</option>`).join('');
             
             div.innerHTML = `

@@ -339,3 +339,10 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **Labels (#12):** "Traum?" → "Trauma?"; VRS header shows "0–10".
 - **Pending owner decision:** grade palette (#4) — mockup only, not built.
 - "+ Other" moved out of the Segment Assessment header into the quick-add chips as a "Not listed" group; the chip block now sits outside the table's horizontal scroll area so it doesn't scroll away on phones.
+
+### FM PV grid — grade picker (replaces tap-cycle and Palpation/Treatment toggle)
+- **Tap a box, pick the grade.** A small picker opens above the box (below it when there's no room; clamped to the screen edges): `1 · 2 · 2+ · 3 · 3+ · ✓ · ⌫`. The current grade and treated state are highlighted. Picking closes it; tapping elsewhere, Escape or scrolling closes it without changes.
+- **Phones:** the same buttons as a strip along the bottom (48 px), labelled with the box being graded (e.g. "HU · rt · AM"); the page scrolls so that box stays visible above the strip.
+- **Treated** is a small ✓ in the box's corner — the grade number stays readable. Only graded boxes can be treated; changing a grade keeps the treated mark; ⌫ clears both.
+- Removes the old failure where one tap too many erased a finding (3+ wrapped to blank) and the five-tap step-down.
+- Summary and Hypothesis Builder now show header codes (AM, An…) instead of internal plane ids (AN-ME).

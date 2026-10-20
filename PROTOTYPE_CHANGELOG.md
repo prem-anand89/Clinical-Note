@@ -310,3 +310,10 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **Escalation prompt** on Regressed/Flare, with a "second regressed visit in a row" hint pointing to a Core Assessment follow-up.
 - **Trend hint** per measure shows baseline (from the assessment) and last value; measure ids should be shared with the Core Assessment ROM/MMT ids so baseline and daily values plot on one line.
 - **Open:** clinician review of the TKR/THR measure lists and precautions (mock text in the prototype); whether the safety tap is mandatory for all notes or post-op packs only; lock-on-complete vs editable; where home-visit data lives.
+
+### FM PV grid — owner's column order (replaces Gemini's 4+6 split proposal)
+- **Order per side:** `AL, AM, An, Ir, Me | RL, RM, Re, Er, La`, grouped under **Ante** / **Retro** headers; Right and Left both stay visible, same order on each side. CF/CC column tints kept; heavier divider between R and L, lighter between Ante and Retro.
+- **Single source of truth:** `PV_COLUMNS` defines the order; the header rows are rendered from it and every cell carries `data-plane` / `data-side` / `data-kind`. The density summary reads those attributes instead of mapping by column index, so reordering can no longer mislabel a finding. Hypothesis-builder dropdown follows the same order.
+- **bug — wording:** repeated findings were all called "diagonal". Now CFs on one plane = *diagonal*, CCs on one plane = *sequence* (summary and hypothesis builder).
+- **bug — phones:** below 744 px the table was hidden and the planned mobile cards were never built, so phones showed no PV grid. Phones now get the same table, scrolling sideways with Date/Seg pinned; the unused mobile-card markup and CSS were removed.
+- Cell height raised (27 → 35 px); width stays ~31 px because all 20 columns remain visible.

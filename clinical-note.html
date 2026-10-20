@@ -550,14 +550,16 @@
   .pv-container { overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--line); background:#fff; }
   .pv-t { width:100%; border-collapse:collapse; font-size:11px; table-layout:fixed; min-width:860px; }
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
-  .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:32px; }
+  .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
   
   .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
   .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { left:60px; }
 
   .pv-t .pv-cf-head { background:#EEEDFE; color:#5D539E; }
   .pv-t .pv-cc-head { background:#E1F5EE; color:#1F5F5B; }
-  .pv-t .div-left { border-left:3px solid var(--line) !important; }
+  .pv-t .div-left { border-left:4px solid #b9b9b6 !important; }  /* Right | Left */
+  .pv-t .div-group { border-left:2px solid #cfcfcc !important; }  /* Ante | Retro */
+  .pv-t .pv-group-head { background:var(--surface); color:var(--ink-soft); }
 
   .pv-cell {
     width:100%; height:100%; appearance:none; border:none; border-radius:4px;
@@ -580,17 +582,8 @@
   .seq-step { display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); padding:6px 10px; border-radius:var(--radius-pill); font-size:13px; font-weight:600; }
   .seq-step .num { width:16px; height:16px; background:#fff; border:1px solid var(--line); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:var(--ink-faint); }
   
-  .pv-cards-mobile { display:none; }
-  @media (max-width:743.98px) {
-    .pv-container { display:none; }
-    .pv-cards-mobile { display:block; margin-top:14px; }
-    .pv-card { border:1px solid var(--line); border-radius:var(--radius-md); margin-bottom:12px; overflow:hidden; }
-    .pv-card-head { background:var(--surface); padding:8px 12px; font-size:12px; font-weight:700; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; }
-    .pv-card-grid { display:grid; grid-template-columns:repeat(10, 1fr); gap:1px; background:var(--line); border-bottom:1px solid var(--line); }
-    .pv-card-grid > div { background:#fff; padding:4px 2px; text-align:center; font-size:10px; }
-    .pv-card-grid > div.header { font-size:8px; font-weight:700; color:var(--ink-faint); background:var(--surface); }
-    .pv-card-grid .pv-cell { height:36px; }
-  }
+  /* Phones keep the same R + L table: it scrolls sideways with Date/Seg pinned
+     (the sticky columns above). No separate mobile layout to keep in sync. */
 
   /* ---- iPad-first responsive improvements (`tab:` range, 744-999.98px) ---- */
   @media (min-width:744px) and (max-width:999.98px) {
@@ -2188,18 +2181,8 @@
                 <th colspan="10" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
                 <th colspan="10" class="div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
               </tr>
-              <tr>
-                <th colspan="4" class="pv-cf-head">CF's</th>
-                <th colspan="6" class="pv-cc-head">CC's</th>
-                <th colspan="4" class="pv-cf-head div-left">CF's</th>
-                <th colspan="6" class="pv-cc-head">CC's</th>
-              </tr>
-              <tr>
-                <th class="pv-cf-head" style="width:40px">AM</th><th class="pv-cf-head" style="width:40px">RL</th><th class="pv-cf-head" style="width:40px">AL</th><th class="pv-cf-head" style="width:40px">RM</th>
-                <th class="pv-cc-head" style="width:40px">An</th><th class="pv-cc-head" style="width:40px">Re</th><th class="pv-cc-head" style="width:40px">Ir</th><th class="pv-cc-head" style="width:40px">Er</th><th class="pv-cc-head" style="width:40px">Me</th><th class="pv-cc-head" style="width:40px">La</th>
-                <th class="pv-cf-head div-left" style="width:40px">AM</th><th class="pv-cf-head" style="width:40px">RL</th><th class="pv-cf-head" style="width:40px">AL</th><th class="pv-cf-head" style="width:40px">RM</th>
-                <th class="pv-cc-head" style="width:40px">An</th><th class="pv-cc-head" style="width:40px">Re</th><th class="pv-cc-head" style="width:40px">Ir</th><th class="pv-cc-head" style="width:40px">Er</th><th class="pv-cc-head" style="width:40px">Me</th><th class="pv-cc-head" style="width:40px">La</th>
-              </tr>
+              <tr id="pv-head-groups"></tr>
+              <tr id="pv-head-planes"></tr>
             </thead>
             <tbody>
               <!-- JS populates rows -->
@@ -2207,10 +2190,6 @@
           </table>
         </div>
 
-        <!-- Mobile Cards -->
-        <div class="pv-cards-mobile" id="fm-pv-cards" style="padding:0 28px;">
-          <!-- JS populates mobile cards -->
-        </div>
 
         <!-- Density Summary Strip -->
         <div style="margin:16px 28px 0; padding:16px; background:var(--derived); border:1.5px dashed var(--derived-border); border-radius:var(--radius-sm); font-size:13px; display:flex; flex-direction:column; gap:8px;">
@@ -7611,9 +7590,6 @@ setupSegmented('patient-progress');
         let totalPoints = 0;
         let totalUntreatedHigh = 0; // Grade >= 2
         
-        // Define planes mapped to column indexes (Right 0-9, Left 10-19)
-        const planes = ['AN-ME','RE-LA','AN-LA','RE-ME', 'An','Re','Ir','Er','Me','La', 'AN-ME','RE-LA','AN-LA','RE-ME', 'An','Re','Ir','Er','Me','La'];
-        const isRight = (idx) => idx < 10;
         
         cells.forEach(cell => {
             let grade = cell.getAttribute('data-grade');
@@ -7631,13 +7607,11 @@ setupSegmented('patient-progress');
             let segInput = tr.querySelector('td:nth-child(2) input');
             let seg = segInput ? segInput.value : 'Unknown';
             
-            // Find col index for this cell in its row (ignoring first two sticky cols)
-            let cellTds = Array.from(tr.querySelectorAll('td')).slice(2);
-            let colIdx = cellTds.indexOf(cell.closest('td'));
-            
-            let plane = planes[colIdx] || 'Unknown';
-            let side = isRight(colIdx) ? 'rt' : 'lt';
-            let fullPlane = `${plane} (${side})`;
+            // Each cell carries its own plane/side/kind (see PV_COLUMNS)
+            let plane = cell.getAttribute('data-plane') || 'Unknown';
+            let side = cell.getAttribute('data-side') || '?';
+            let kind = cell.getAttribute('data-kind');
+            let fullPlane = `${plane} (${side}) ${kind}`;
             
             planeCounts[fullPlane] = (planeCounts[fullPlane] || 0) + 1;
             
@@ -7670,11 +7644,14 @@ setupSegmented('patient-progress');
         let patternsFound = false;
         for (let [p, count] of Object.entries(planeCounts)) {
             if (count >= 2) {
-                patternHtml += `<span style="display:inline-block; margin-right:16px;">• ${p.split(' ')[0]} diagonal (${p.split(' ')[1].replace('(','').replace(')','')}) — ${count} segments</span>`;
+                const [pName, pSide, pKind] = p.split(' ');
+                // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
+                const term = pKind === 'cf' ? 'diagonal' : 'sequence';
+                patternHtml += `<span style="display:inline-block; margin-right:16px;">• ${pName} ${term} ${pSide} — ${count} segments</span>`;
                 patternsFound = true;
             }
         }
-        if (!patternsFound) patternHtml += `<span style="color:var(--ink-faint);">No clear diagonals (need ≥2 segments on same plane)</span>`;
+        if (!patternsFound) patternHtml += `<span style="color:var(--ink-faint);">No clear diagonal or sequence (needs ≥2 segments on the same plane)</span>`;
         patternHtml += `</div>`;
         
         // Build Footer
@@ -7714,6 +7691,49 @@ setupSegmented('patient-progress');
     const pvTableBody = document.querySelector('#fm-pv-table tbody');
     const moveTableBody = document.querySelector('#fm-move-table tbody');
     
+    // PV grid column order — the ONLY place it is defined. Headers, cells and the
+    // density summary all read this; each cell also carries its own plane/side so
+    // nothing maps a tap to a plane by column position. Same order on R and L.
+    const PV_COLUMNS = [
+        {code:'AL', kind:'cf', plane:'AN-LA', group:'Ante'},
+        {code:'AM', kind:'cf', plane:'AN-ME', group:'Ante'},
+        {code:'An', kind:'cc', plane:'An',    group:'Ante'},
+        {code:'Ir', kind:'cc', plane:'Ir',    group:'Ante'},
+        {code:'Me', kind:'cc', plane:'Me',    group:'Ante'},
+        {code:'RL', kind:'cf', plane:'RE-LA', group:'Retro'},
+        {code:'RM', kind:'cf', plane:'RE-ME', group:'Retro'},
+        {code:'Re', kind:'cc', plane:'Re',    group:'Retro'},
+        {code:'Er', kind:'cc', plane:'Er',    group:'Retro'},
+        {code:'La', kind:'cc', plane:'La',    group:'Retro'}
+    ];
+    const PV_SIDES = ['rt', 'lt'];
+    function pvColClass(sideIdx, colIdx) {
+        if (sideIdx > 0 && colIdx === 0) return 'div-left';
+        if (colIdx > 0 && PV_COLUMNS[colIdx].group !== PV_COLUMNS[colIdx - 1].group) return 'div-group';
+        return '';
+    }
+    (function renderPvHeader() {
+        const groupsRow = document.getElementById('pv-head-groups');
+        const planesRow = document.getElementById('pv-head-planes');
+        if (!groupsRow || !planesRow) return;
+        let g = '', pl = '';
+        PV_SIDES.forEach((side, si) => {
+            let i = 0;
+            while (i < PV_COLUMNS.length) {
+                const name = PV_COLUMNS[i].group;
+                let span = 0;
+                while (i + span < PV_COLUMNS.length && PV_COLUMNS[i + span].group === name) span++;
+                g += `<th colspan="${span}" class="pv-group-head ${pvColClass(si, i)}">${name}</th>`;
+                i += span;
+            }
+            PV_COLUMNS.forEach((c, ci) => {
+                pl += `<th class="${c.kind === 'cf' ? 'pv-cf-head' : 'pv-cc-head'} ${pvColClass(si, ci)}" style="width:40px">${c.code}</th>`;
+            });
+        });
+        groupsRow.innerHTML = g;
+        planesRow.innerHTML = pl;
+    })();
+
     function addFmSegment(dateStr, segStr) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         
@@ -7739,11 +7759,11 @@ setupSegmented('patient-progress');
             trPv.setAttribute('data-seg-id', uniqueId);
             let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);"></td>`;
             htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
-            for(let i=0; i<10; i++) htmlPv += `<td><button type="button" class="pv-cell" data-grade="" data-treated="false"></button></td>`;
-            for(let i=0; i<10; i++) {
-                let extraClass = (i===0) ? 'div-left' : '';
-                htmlPv += `<td class="${extraClass}"><button type="button" class="pv-cell" data-grade="" data-treated="false"></button></td>`;
-            }
+            PV_SIDES.forEach((side, si) => {
+                PV_COLUMNS.forEach((c, ci) => {
+                    htmlPv += `<td class="${pvColClass(si, ci)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
+                });
+            });
             trPv.innerHTML = htmlPv;
             pvTableBody.appendChild(trPv);
         }
@@ -7872,7 +7892,7 @@ setupSegmented('patient-progress');
     const addSeqBtn = document.getElementById('fm-add-seq-step');
     const diagOutput = document.getElementById('fm-hyp-diag');
     
-    const planes = ['AN-ME', 'AN-LA', 'RE-ME', 'RE-LA', 'AN', 'RE', 'IR', 'ER', 'ME', 'LA'];
+    const planes = ['AN-LA', 'AN-ME', 'AN', 'IR', 'ME', 'RE-LA', 'RE-ME', 'RE', 'ER', 'LA']; // same order as PV_COLUMNS
     const segments = ['CP1','CP2','CP3','CL','CX','TH','LU','PV','SC','GE','PE','CX','TA','HU','CU','CA','DI'];
     
     function updateDiagonal() {
@@ -7891,7 +7911,7 @@ setupSegmented('patient-progress');
         });
         
         if (allMatch && firstPlane) {
-            diagOutput.textContent = `${firstPlane} Diagonal`;
+            diagOutput.textContent = `${firstPlane} ${firstPlane.indexOf('-') !== -1 ? 'Diagonal' : 'Sequence'}`;
             diagOutput.style.color = "var(--clinical)";
             diagOutput.style.fontWeight = "700";
         } else {

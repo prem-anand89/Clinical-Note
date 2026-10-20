@@ -543,6 +543,13 @@
   .fm-t { width:100%; border-collapse:collapse; font-size:11.5px; }
   .fm-t th { padding:6px 7px; background:var(--surface); font-size:9.5px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:left; }
   .fm-t td { padding:3px; border:1px solid var(--line); vertical-align:middle; }
+  #fm-seg-table th:first-child, #fm-seg-table td:first-child,
+  #fm-move-table th:first-child, #fm-move-table td:first-child { position:sticky; left:0; z-index:1; background:#fff; box-shadow:2px 0 0 var(--line); }
+  #fm-seg-table th:first-child, #fm-move-table th:first-child { background:var(--surface); }
+  .move-post { display:flex; align-items:center; justify-content:center; gap:4px; }
+  #fm-move-table .move-delta { white-space:nowrap; min-width:44px; }
+  .move-post .mv-b { width:38px; height:38px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; font-size:18px; font-weight:700; color:var(--clinical); cursor:pointer; }
+  .move-post .mv-val { min-width:26px; text-align:center; font-size:15px; font-weight:700; }
   .fm-t td input, .fm-t td select { border:none; background:transparent; font-size:12px; padding:6px; color:var(--ink); font-family:inherit; width:100%; border-radius:4px; }
   .fm-t td input:focus, .fm-t td select:focus { background:var(--surface); outline:none; }
   .fm-t .auto-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--clinical); background:var(--clinical-dim); padding:2px 6px; border-radius:4px; }
@@ -2240,10 +2247,11 @@
           <table class="fm-t" id="fm-move-table">
             <thead>
               <tr>
-                <th style="min-width:140px;">Segment</th>
-                <th style="width:100px;">Pre-VRS (Auto)</th>
-                <th style="min-width:280px;">Post-VRS</th>
-                <th style="width:80px;">Δ Change</th>
+                <th>Segment</th>
+                <th>Movement</th>
+                <th title="Pre-treatment VRS, from table 1">Pre</th>
+                <th title="Post-treatment VRS">Post</th>
+                <th>Δ</th>
               </tr>
             </thead>
             <tbody>
@@ -4045,7 +4053,7 @@
   document.getElementById('add-surgical-row').addEventListener('click', function(){
     addCompactHistoryRow(document.getElementById('surgical-history-rows'), 'Surgery', [
       {label:'Date', type:'date', width:'110px'},
-      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle / Foot','Other']},
+      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Scapula','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle','Foot','Other']},
       {label:'Procedure', placeholder:'e.g. Appendectomy'},
       {label:'Recovery', type:'select', width:'110px', options:['Full', 'Partial', 'Ongoing', 'Unknown']}
     ]);
@@ -4054,7 +4062,7 @@
   document.getElementById('add-trauma-row').addEventListener('click', function(){
     addCompactHistoryRow(document.getElementById('trauma-history-rows'), 'Injury', [
       {label:'Date', type:'date', width:'110px'},
-      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle / Foot','Other']},
+      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Scapula','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle','Foot','Other']},
       {label:'Side', type:'select', width:'80px', options:['Left', 'Right', 'Bilateral', 'N/A']},
       {label:'Injury type', placeholder:'e.g. ACL tear'},
       {label:'Recovery', type:'select', width:'110px', options:['Full', 'Partial', 'Ongoing', 'Unknown']}
@@ -4064,7 +4072,7 @@
   document.getElementById('add-pain-row').addEventListener('click', function(){
     addCompactHistoryRow(document.getElementById('pain-history-rows'), 'Pain', [
       {label:'Date', type:'date', width:'110px'},
-      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle / Foot','Other']},
+      {label:'Region', type:'select', width:'130px', options:['Head / Face', 'Cervical Spine','Thoracic Spine','Lumbar Spine','Scapula','Shoulder','Elbow','Wrist / Hand','Hip','Knee','Ankle','Foot','Other']},
       {label:'Side', type:'select', width:'80px', options:['Left', 'Right', 'Bilateral', 'N/A']},
       {label:'Status', type:'select', width:'120px', options:['Resolved', 'Ongoing intermittent', 'Ongoing constant']}
     ]);
@@ -7614,7 +7622,8 @@ setupSegmented('patient-progress');
             let kind = cell.getAttribute('data-kind');
             let fullPlane = `${plane} (${side}) ${kind}`;
             
-            planeCounts[fullPlane] = (planeCounts[fullPlane] || 0) + 1;
+            // A pattern needs grade 2 or higher on that plane (grade 1 is too faint to count).
+            if (idx >= 2) planeCounts[fullPlane] = (planeCounts[fullPlane] || 0) + 1;
             
             if (idx > highestIndex) {
                 highestIndex = idx;
@@ -7652,7 +7661,7 @@ setupSegmented('patient-progress');
                 patternsFound = true;
             }
         }
-        if (!patternsFound) patternHtml += `<span style="color:var(--ink-faint);">No clear diagonal or sequence (needs ≥2 segments on the same plane)</span>`;
+        if (!patternsFound) patternHtml += `<span style="color:var(--ink-faint);">No clear diagonal or sequence (needs ≥2 segments graded 2 or higher on the same plane)</span>`;
         patternHtml += `</div>`;
         
         // Build Footer
@@ -7747,8 +7756,8 @@ setupSegmented('patient-progress');
                 <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">rt</option><option value="lt">lt</option><option value="bil">bil</option><option value="N/A">N/A</option></select></td>
                 <td><input type="text" class="text-input" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><select class="select-input" style="padding:4px; font-size:12px;"><option>N</option><option>Y</option></select></td>
-                <td><input type="number" class="text-input seg-vrs" style="width:100%; font-size:12px; padding:4px;"></td>
-                <td><input type="text" class="text-input" style="width:100%; font-size:12px; padding:4px;"></td>
+                <td><input type="number" class="text-input seg-vrs" min="0" max="10" inputmode="numeric" placeholder="0–10" style="width:100%; font-size:12px; padding:4px;"></td>
+                <td><input type="text" class="text-input seg-painful" placeholder="e.g. Squat" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><button type="button" class="del-seg-btn" style="border:none; background:transparent; color:var(--ink-faint); cursor:pointer;">×</button></td>
             `;
             segTableBody.appendChild(trSeg);
@@ -7773,16 +7782,11 @@ setupSegmented('patient-progress');
         if (moveTableBody) {
             let trMove = document.createElement('tr');
             trMove.setAttribute('data-seg-id', uniqueId);
-            let nrsHtml = `<div class="nrs-scale move-post-nrs">`;
-            for(let i=0; i<=10; i++) {
-                nrsHtml += `<button type="button" data-val="${i}" style="width:24px; height:24px; padding:0; display:flex; align-items:center; justify-content:center;">${i}</button>`;
-            }
-            nrsHtml += `</div>`;
-            
             trMove.innerHTML = `
                 <td class="move-seg-name" style="font-weight:600; font-size:12px;">${segStr} (rt)</td>
-                <td class="move-prevrs" style="font-size:13px; text-align:center; color:var(--ink-faint);">0</td>
-                <td>${nrsHtml}</td>
+                <td class="move-movement" title="Painful movement from table 1" style="font-size:12px; color:var(--ink-faint);">—</td>
+                <td class="move-prevrs" data-prevrs="" style="font-size:14px; font-weight:700; text-align:center; color:var(--ink-faint);">—</td>
+                <td><div class="move-post"><button type="button" class="mv-b" data-dir="-1" aria-label="Lower post VRS">−</button><span class="mv-val">—</span><button type="button" class="mv-b" data-dir="1" aria-label="Raise post VRS">+</button></div></td>
                 <td class="move-delta" style="font-weight:700; text-align:center;">—</td>
             `;
             moveTableBody.appendChild(trMove);
@@ -7800,7 +7804,7 @@ setupSegmented('patient-progress');
 
     // Sync input changes across the 3 tables via event delegation
     document.addEventListener('input', function(e) {
-        if (!e.target.matches('.seg-name, .seg-side, .seg-vrs')) return;
+        if (!e.target.matches('.seg-name, .seg-side, .seg-vrs, .seg-painful')) return;
         
         let tr = e.target.closest('tr');
         let id = tr.getAttribute('data-seg-id');
@@ -7808,7 +7812,14 @@ setupSegmented('patient-progress');
         
         let name = tr.querySelector('.seg-name').value;
         let side = tr.querySelector('.seg-side').value;
-        let vrs = tr.querySelector('.seg-vrs').value || "0";
+        // VRS is a 0-10 scale; clamp typed values, blank means "not rated".
+        let vrsInput = tr.querySelector('.seg-vrs');
+        if (vrsInput.value !== '') {
+            let n = Math.max(0, Math.min(10, Math.round(Number(vrsInput.value))));
+            if (String(n) !== vrsInput.value) vrsInput.value = isNaN(n) ? '' : n;
+        }
+        let vrs = vrsInput.value;
+        let painful = tr.querySelector('.seg-painful') ? tr.querySelector('.seg-painful').value.trim() : '';
         
         // Update PV Table
         let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
@@ -7825,15 +7836,15 @@ setupSegmented('patient-progress');
             
             let movePreLabel = moveRow.querySelector('.move-prevrs');
             if (movePreLabel) {
-                movePreLabel.textContent = vrs;
+                movePreLabel.textContent = vrs === '' ? '—' : vrs;
                 movePreLabel.setAttribute('data-prevrs', vrs);
             }
-            
-            // Recalculate delta if post-vrs is selected
-            let selectedPost = moveRow.querySelector('.move-post-nrs button.selected');
-            if (selectedPost) {
-                selectedPost.click(); // re-trigger delta calculation
+            let moveMovement = moveRow.querySelector('.move-movement');
+            if (moveMovement) {
+                moveMovement.textContent = painful || '—';
+                moveMovement.style.color = painful ? 'var(--ink)' : 'var(--ink-faint)';
             }
+            recomputeMoveDelta(moveRow);
         }
     });
 
@@ -7854,30 +7865,28 @@ setupSegmented('patient-progress');
         }
     });
 
-    // Handle Mo/Ve NRS clicking
+    // Mo/Ve post-VRS stepper. Delta shows only when both Pre and Post exist,
+    // so a missing Pre never reads as "worse".
+    function recomputeMoveDelta(tr) {
+        let pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
+        let post = tr.dataset.post;
+        let deltaCell = tr.querySelector('.move-delta');
+        if (pre === '' || pre === null || post === undefined || post === '') { deltaCell.innerHTML = '<span style="color:var(--ink-faint);">—</span>'; return; }
+        let delta = Number(post) - Number(pre);
+        if (delta < 0) deltaCell.innerHTML = `<span style="color:#2E7D32;">${delta} ▼</span>`;
+        else if (delta > 0) deltaCell.innerHTML = `<span style="color:#B3261E;">+${delta} ▲</span>`;
+        else deltaCell.innerHTML = '<span style="color:var(--ink-soft);">0 —</span>';
+    }
     document.addEventListener('click', function(e) {
-        if (e.target.closest('.move-post-nrs button')) {
-            let btn = e.target.closest('button');
-            let tr = btn.closest('tr');
-            
-            tr.querySelectorAll('.move-post-nrs button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            
-            let preLabel = tr.querySelector('.move-prevrs');
-            let preVrs = parseInt(preLabel.getAttribute('data-prevrs')) || 0;
-            let postVrs = parseInt(btn.getAttribute('data-val'));
-            
-            let deltaCell = tr.querySelector('.move-delta');
-            let delta = postVrs - preVrs;
-            
-            if (delta < 0) {
-                deltaCell.innerHTML = `<span style="color:#10B981;">${delta} ▼</span>`;
-            } else if (delta > 0) {
-                deltaCell.innerHTML = `<span style="color:var(--r, #EF4444);">+${delta} ▲</span>`;
-            } else {
-                deltaCell.innerHTML = `<span style="color:var(--ink-soft);">0 —</span>`;
-            }
-        }
+        let btn = e.target.closest('#fm-move-table .mv-b');
+        if (!btn) return;
+        let tr = btn.closest('tr');
+        let pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
+        let base = (tr.dataset.post !== undefined && tr.dataset.post !== '') ? Number(tr.dataset.post) : (pre !== '' ? Number(pre) : 5);
+        let next = Math.max(0, Math.min(10, base + Number(btn.getAttribute('data-dir'))));
+        tr.dataset.post = String(next);
+        tr.querySelector('.mv-val').textContent = next;
+        recomputeMoveDelta(tr);
     });
 
     // Inject Initial Mocks
@@ -7964,8 +7973,11 @@ setupSegmented('patient-progress');
     // card — those are a different naming scheme for a different purpose.
     // -----------------------------------------
     window.REGION_TO_FM_SEGMENT = {
+        // Owner rules: Shoulder -> HU, Scapula -> SC, Ankle -> TA, Foot -> PE.
+        // 'Ankle / Foot' is the combined Chief Complaint region; defaults to TA.
         'Head / Face': 'CP1', 'Cervical Spine': 'CL', 'Thoracic Spine': 'TH', 'Lumbar Spine': 'LU',
-        'Shoulder': 'SC', 'Elbow': 'CU', 'Wrist / Hand': 'CA', 'Hip': 'CX', 'Knee': 'GE', 'Ankle / Foot': 'TA'
+        'Scapula': 'SC', 'Shoulder': 'HU', 'Elbow': 'CU', 'Wrist / Hand': 'CA', 'Hip': 'CX', 'Knee': 'GE',
+        'Ankle': 'TA', 'Foot': 'PE', 'Ankle / Foot': 'TA'
     };
     window.LATERALITY_TO_SIDE = { 'Left': 'lt', 'Right': 'rt', 'Bilateral': 'bil', 'N/A': 'N/A' };
 
@@ -8004,6 +8016,44 @@ setupSegmented('patient-progress');
         if(durationInput) durationInput.value = durationStr || '';
         var noteInput = existing.children[5] ? existing.children[5].querySelector('input') : null;
         if(noteInput && noteStr) noteInput.value = noteStr;
+    };
+
+    // Structured FM export for the port (Phase 2) — mirrors what the UI collects.
+    window.getFmData = function() {
+        const val = el => el ? el.value : '';
+        const segments = Array.from(document.querySelectorAll('#fm-seg-table tbody tr')).map(tr => ({
+            id: tr.getAttribute('data-seg-id'), segment: val(tr.querySelector('.seg-name')).trim(), side: val(tr.querySelector('.seg-side')),
+            duration: val(tr.children[2] && tr.children[2].querySelector('input')), trauma: val(tr.children[3] && tr.children[3].querySelector('select')),
+            vrs: val(tr.querySelector('.seg-vrs')) === '' ? null : Number(val(tr.querySelector('.seg-vrs'))),
+            painfulMovements: val(tr.querySelector('.seg-painful')).trim(), autoFilled: tr.classList.contains('fm-auto-row')
+        }));
+        const history = Array.from(document.querySelectorAll('#fm-hist-table tbody tr')).map(tr => ({
+            type: tr.children[0].textContent.trim(), segment: tr.children[1].textContent.trim(), region: tr.children[1].getAttribute('title') || '',
+            date: tr.children[2].textContent.trim(), diagnosis: tr.children[3].textContent.trim(), recovery: val(tr.querySelector('select'))
+        }));
+        const pv = Array.from(document.querySelectorAll('#fm-pv-table .pv-cell')).filter(c => c.getAttribute('data-grade')).map(c => ({
+            segId: c.closest('tr').getAttribute('data-seg-id'), segment: val(c.closest('tr').querySelector('.pv-seg-name')),
+            side: c.dataset.side, plane: c.dataset.plane, kind: c.dataset.kind, grade: c.getAttribute('data-grade'), treated: c.getAttribute('data-treated') === 'true'
+        }));
+        const seqCard = document.getElementById('fm-seq-builder') ? document.getElementById('fm-seq-builder').closest('.card') : null;
+        const hypothesis = seqCard ? {
+            steps: Array.from(seqCard.querySelectorAll('.seq-step')).map(st => { const sel = st.querySelectorAll('select'); return { plane: val(sel[0]), segment: val(sel[1]), side: val(sel[2]) }; }),
+            derived: (document.getElementById('fm-hyp-diag') || {}).textContent || '',
+            tags: Array.from(seqCard.querySelectorAll('#fm-reasoning-tags .chip.selected')).map(c => c.getAttribute('data-chip')),
+            reasoning: val(seqCard.querySelector('textarea'))
+        } : null;
+        const moveCard = document.getElementById('fm-move-table') ? document.getElementById('fm-move-table').closest('.card') : null;
+        const moVe = Array.from(document.querySelectorAll('#fm-move-table tbody tr')).map(tr => {
+            const pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
+            const mv = tr.querySelector('.move-movement').textContent;
+            return { segId: tr.getAttribute('data-seg-id'), movement: mv === '—' ? '' : mv,
+                     pre: pre === '' || pre === null ? null : Number(pre), post: tr.dataset.post === undefined || tr.dataset.post === '' ? null : Number(tr.dataset.post) };
+        });
+        return {
+            segments, history, pv, hypothesis, moVe,
+            sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
+            treatmentNotes: moveCard ? val(moveCard.querySelector('textarea')) : ''
+        };
     };
 
     window.addFmSegment = addFmSegment;
@@ -8147,13 +8197,15 @@ setupSegmented('patient-progress');
                 }
             }
             let tr = document.createElement('tr');
-            let segStr = e.region ? e.region : '';
+            // FM segment code (e.g. Knee -> GE); unmapped regions ('Other') show as typed.
+            let segCode = (window.REGION_TO_FM_SEGMENT || {})[e.region];
+            let segStr = segCode || e.region || '';
             if (e.side && e.side !== 'N/A' && e.side !== 'Select…') {
                 segStr += ` (${e.side.substring(0,2).toLowerCase()})`;
             }
             tr.innerHTML = `
                 <td style="font-size:12px; font-weight:600;">${e.type}</td>
-                <td style="font-size:12px;">${segStr}</td>
+                <td style="font-size:12px; font-weight:600;" title="${e.region}">${segStr}</td>
                 <td style="font-size:12px;">${dateFormatted || ''}</td>
                 <td style="font-size:12px;">${e.diag || ''}</td>
                 <td style="font-size:12px;">

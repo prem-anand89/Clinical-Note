@@ -318,3 +318,12 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **bug — phones:** below 744 px the table was hidden and the planned mobile cards were never built, so phones showed no PV grid. Phones now get the same table, scrolling sideways with Date/Seg pinned; the unused mobile-card markup and CSS were removed.
 - Cell height raised (27 → 35 px); width stays ~31 px because all 20 columns remain visible.
 - CC column headers shown in true case (An, Ir, Me / Re, Er, La); CF headers stay capitals (AL, AM / RL, RM). Hypothesis-builder plane list uses the same case.
+
+### FM section audit fixes (owner-approved items 8, 9, 11, 13, 14)
+- **Region → FM segment codes (one shared map, `REGION_TO_FM_SEGMENT`):** Shoulder → HU, Scapula → SC, Ankle → TA, Foot → PE (plus CP1, CL, TH, LU, CU, CA, CX, GE). History rows' region list now offers Scapula, Ankle and Foot separately; FM History shows the code with the region as a tooltip. The same map drives Chief Complaint → FM routing (Shoulder previously routed to SC).
+- **Patterns need grade ≥ 2:** grade-1 cells no longer form a diagonal / sequence.
+- **Mo/Ve table reorganised:** Segment · Movement (from table 1's painful movements) · Pre (table 1 VRS) · Post (40 px −/+ stepper, 0–10) · Δ. Fits a 390 px phone without scrolling.
+  - bug: with no Pre-VRS, choosing a Post showed a red "+5 ▲"; Δ now shows only when both values exist.
+  - bug: VRS accepted any number (e.g. 15); now clamped to 0–10.
+- **Pinned Segment column** in Segment Assessment and Mo/Ve on phones (PV grid already pinned).
+- **`getFmData()`** exports segments, history, PV findings (plane / side / kind / grade / treated), hypothesis steps, Mo/Ve, session response and notes — the FM payload shape for the port.

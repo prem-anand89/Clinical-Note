@@ -346,3 +346,4 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **Treated** is a small ✓ in the box's corner — the grade number stays readable. Only graded boxes can be treated; changing a grade keeps the treated mark; ⌫ clears both.
 - Removes the old failure where one tap too many erased a finding (3+ wrapped to blank) and the five-tap step-down.
 - Summary and Hypothesis Builder now show header codes (AM, An…) instead of internal plane ids (AN-ME).
+- Picker made smaller and subtler on iPad/desktop (34 px colour-coded buttons, ~272×42 px, lighter border and shadow, sits 5 px from the box); phone strip unchanged (48 px).

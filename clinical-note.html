@@ -588,15 +588,18 @@
   .pv-cell[data-treated="true"]::after { content:'✓'; position:absolute; top:2px; right:2px; width:13px; height:13px; border-radius:50%; background:var(--clinical); color:#fff; font-size:9px; line-height:13px; font-weight:800; text-align:center; }
   .pv-cell.pv-picked { box-shadow:0 0 0 3px var(--clinical) !important; z-index:3; }
   /* Grade picker — one element for the page, positioned at the tapped box */
-  #pv-picker { position:fixed; z-index:60; display:none; background:#fff; border:1px solid #d6d6d4; border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.16); padding:6px; }
+  #pv-picker { position:fixed; z-index:60; display:none; background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 3px 10px rgba(0,0,0,.10); padding:3px; }
   #pv-picker.open { display:block; }
   #pv-picker .pk-label { display:none; font-size:12.5px; font-weight:700; color:var(--clinical); margin:0 2px 8px; }
-  #pv-picker .pk-row { display:flex; gap:5px; align-items:center; }
-  #pv-picker .pk-sep { width:1px; height:26px; background:var(--line); margin:0 2px; }
-  #pv-picker button { min-width:42px; height:42px; border-radius:8px; border:1px solid var(--line); background:#fff; font:inherit; font-weight:700; font-size:14px; color:var(--ink); cursor:pointer; padding:0 9px; }
+  #pv-picker .pk-row { display:flex; gap:3px; align-items:center; }
+  #pv-picker .pk-sep { width:1px; height:18px; background:var(--line); margin:0 2px; }
+  /* About one grid cell in size: subtle, still easy to hit (colour-coded, 34 px) */
+  #pv-picker button { min-width:34px; height:34px; border-radius:6px; border:1px solid transparent; background:#fff; font:inherit; font-weight:700; font-size:12.5px; color:var(--ink); cursor:pointer; padding:0 6px; }
+  #pv-picker button:hover { filter:brightness(.96); }
+  #pv-picker .pk-tr, #pv-picker .pk-clr { border-color:var(--line); }
   #pv-picker button.g1 { background:#FEF9C3; } #pv-picker button.g2 { background:#FEF08A; } #pv-picker button.g2p { background:#FDE68A; }
   #pv-picker button.g3 { background:#FECACA; } #pv-picker button.g3p { background:#FCA5A5; }
-  #pv-picker button.cur { outline:3px solid var(--clinical); outline-offset:1px; }
+  #pv-picker button.cur { outline:2px solid var(--clinical); outline-offset:1px; }
   #pv-picker .pk-tr { color:var(--clinical); } #pv-picker .pk-tr.on { background:var(--clinical); border-color:var(--clinical); color:#fff; }
   #pv-picker .pk-tr:disabled { opacity:.35; cursor:default; }
   #pv-picker .pk-clr { color:#B3261E; }
@@ -606,7 +609,7 @@
     #pv-picker { left:0 !important; right:0; top:auto !important; bottom:0; border-radius:16px 16px 0 0; padding:10px 12px 18px; box-shadow:0 -6px 20px rgba(0,0,0,.12); }
     #pv-picker .pk-label { display:flex; justify-content:space-between; }
     #pv-picker .pk-row { flex-wrap:wrap; gap:6px; }
-    #pv-picker .pk-row button { flex:1 1 15%; height:48px; }
+    #pv-picker .pk-row button { flex:1 1 15%; height:48px; font-size:14px; border-radius:8px; }
     #pv-picker .pk-sep, #pv-picker .pk-narrow { display:none; }
     #pv-picker .pk-wide { display:block; }
     body.pv-sheet-open { padding-bottom:180px; } /* room to scroll the graded box above the strip */
@@ -7600,8 +7603,8 @@ setupSegmented('patient-progress');
         }
         // Above the box; below it when there is no room (top row). Clamp to the screen edges.
         const r = cell.getBoundingClientRect(), pw = picker.offsetWidth, ph = picker.offsetHeight;
-        let top = r.top - ph - 8;
-        if (top < 8) top = r.bottom + 8;
+        let top = r.top - ph - 5;
+        if (top < 8) top = r.bottom + 5;
         let left = r.left + r.width / 2 - pw / 2;
         left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
         picker.style.top = top + 'px';

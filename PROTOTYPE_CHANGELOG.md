@@ -327,3 +327,14 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
   - bug: VRS accepted any number (e.g. 15); now clamped to 0–10.
 - **Pinned Segment column** in Segment Assessment and Mo/Ve on phones (PV grid already pinned).
 - **`getFmData()`** exports segments, history, PV findings (plane / side / kind / grade / treated), hypothesis steps, Mo/Ve, session response and notes — the FM payload shape for the port.
+
+### FM section — round 2 (items 2, 5, 6, 7, 10, 12 + bugs)
+- **Segment quick-add chips (#7):** Trunk (CP1–3, CL, TH, LU, PV) · Upper limb (SC, HU, CU, CA, DI) · Lower limb (CX, GE, TA, PE); one tap adds a row to all three tables. "+ Other" adds a blank row for anything not listed; segment inputs suggest the same codes but stay free text. One canonical list (`FM_SEGMENTS`) feeds chips, suggestions and the Hypothesis Builder.
+- **PV-grid Seg stays editable (#2, owner decision)** and now syncs both ways: editing it updates table 1 and Mo/Ve (previously one-way, so the tables drifted).
+- **Delete asks first (#6)** when the segment has any data (findings, VRS, Mo/Ve post); empty rows delete straight away.
+- **bug:** a deleted auto-filled segment came back on the next Chief Complaint change; it now stays deleted unless that source points to a different segment.
+- **bug:** deleting a segment threw `updateDensitySummary is not defined` (cross-script scope), so the summary never refreshed after a delete. Fixed.
+- **bug (#5):** Hypothesis Builder listed CX twice.
+- **"+ From highest findings" (#10):** adds a builder step for each highest-graded finding (grade ≥ 2), skipping duplicates. Label now "Auto-derived diagonal / sequence".
+- **Labels (#12):** "Traum?" → "Trauma?"; VRS header shows "0–10".
+- **Pending owner decision:** grade palette (#4) — mockup only, not built.

@@ -2122,17 +2122,19 @@
       <div class="card" style="margin-bottom:14px;">
         <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
           <span>1. Segment Assessment</span>
-          <button type="button" class="bulk-clear" id="fm-add-seg" style="padding:4px 10px; font-size:11px;">＋ Add</button>
+          <button type="button" class="bulk-clear" id="fm-add-seg" style="padding:4px 10px; font-size:11px;" title="Add a blank row for a segment not in the list">＋ Other</button>
         </div>
         <div style="overflow-x:auto;">
+          <div id="fm-seg-chips" style="display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px;"></div>
+          <datalist id="fm-seg-codes"></datalist>
           <table class="fm-t" id="fm-seg-table">
             <thead>
               <tr>
                 <th style="width:80px;">Segment</th>
                 <th style="width:70px;">Side</th>
                 <th style="width:100px;">Duration</th>
-                <th style="width:70px;">Traum?</th>
-                <th style="width:60px;">VRS</th>
+                <th style="width:70px;">Trauma?</th>
+                <th style="width:64px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
                 <th style="min-width:150px;">Painful Movements</th>
                 <th style="width:30px;"></th>
               </tr>
@@ -2215,13 +2217,14 @@
         <div class="field" style="margin-bottom:16px;">
           <label>Treatment Sequence <span class="hint">Build from findings</span></label>
           <div class="seq-builder" id="fm-seq-builder">
+             <button type="button" class="add-link" id="fm-seq-from-findings" title="Add a step for each highest-graded finding">＋ From highest findings</button>
              <button type="button" class="add-link" id="fm-add-seq-step">＋ Add Step</button>
           </div>
         </div>
 
         <div class="row-2">
           <div class="field">
-            <label>Auto-Derived Diagonal</label>
+            <label>Auto-derived diagonal / sequence</label>
             <div class="derived-field" style="padding:10px 12px;"><span class="val" id="fm-hyp-diag">None</span></div>
           </div>
           <div class="field">
@@ -7670,6 +7673,8 @@ setupSegmented('patient-progress');
         summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml;
     }
 
+    window.updateDensitySummary = updateDensitySummary;
+
     // Module Visibility — nav-fm's own onclick="openAdvancedModule('fascial-manipulation')"
     // (see that shared function's key==='fascial-manipulation'->'fm' nav-id mapping)
     // already handles showing the section, scrolling to it, and flipping the
@@ -7717,6 +7722,14 @@ setupSegmented('patient-progress');
         {code:'La', kind:'cc', plane:'La',    group:'Retro'}
     ];
     const PV_SIDES = ['rt', 'lt'];
+    // Stecco segments, head to toe — the one list used by the quick-add chips,
+    // the name suggestions and the Hypothesis Builder. Free text still allowed.
+    window.FM_SEGMENT_GROUPS = [
+        {label:'Trunk',      codes:['CP1','CP2','CP3','CL','TH','LU','PV']},
+        {label:'Upper limb', codes:['SC','HU','CU','CA','DI']},
+        {label:'Lower limb', codes:['CX','GE','TA','PE']}
+    ];
+    window.FM_SEGMENTS = window.FM_SEGMENT_GROUPS.reduce((all, g) => all.concat(g.codes), []);
     function pvColClass(sideIdx, colIdx) {
         if (sideIdx > 0 && colIdx === 0) return 'div-left';
         if (colIdx > 0 && PV_COLUMNS[colIdx].group !== PV_COLUMNS[colIdx - 1].group) return 'div-group';
@@ -7752,7 +7765,7 @@ setupSegmented('patient-progress');
             let trSeg = document.createElement('tr');
             trSeg.setAttribute('data-seg-id', uniqueId);
             trSeg.innerHTML = `
-                <td><input type="text" value="${segStr}" class="text-input seg-name" placeholder="e.g. GE" style="width:100%; font-size:12px; padding:4px;"></td>
+                <td><input type="text" value="${segStr}" class="text-input seg-name" list="fm-seg-codes" placeholder="e.g. GE" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">rt</option><option value="lt">lt</option><option value="bil">bil</option><option value="N/A">N/A</option></select></td>
                 <td><input type="text" class="text-input" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><select class="select-input" style="padding:4px; font-size:12px;"><option>N</option><option>Y</option></select></td>
@@ -7768,7 +7781,7 @@ setupSegmented('patient-progress');
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
             let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);"></td>`;
-            htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
+            htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
             PV_SIDES.forEach((side, si) => {
                 PV_COLUMNS.forEach((c, ci) => {
                     htmlPv += `<td class="${pvColClass(si, ci)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
@@ -7802,8 +7815,36 @@ setupSegmented('patient-progress');
         });
     }
 
+    (function renderSegmentChips() {
+        const host = document.getElementById('fm-seg-chips');
+        const dl = document.getElementById('fm-seg-codes');
+        if (dl) dl.innerHTML = window.FM_SEGMENTS.map(c => `<option value="${c}">`).join('');
+        if (!host) return;
+        host.innerHTML = window.FM_SEGMENT_GROUPS.map(g =>
+            `<div><div class="field-note" style="margin:0 0 4px;">${g.label}</div><div class="chip-row">` +
+            g.codes.map(c => `<button type="button" class="chip fm-seg-chip" data-seg="${c}">${c}</button>`).join('') +
+            `</div></div>`).join('');
+        host.addEventListener('click', function(e) {
+            const chip = e.target.closest('.fm-seg-chip');
+            if (!chip) return;
+            const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+            addFmSegment(today, chip.getAttribute('data-seg'));
+        });
+    })();
+
     // Sync input changes across the 3 tables via event delegation
     document.addEventListener('input', function(e) {
+        if (e.target.matches('.pv-seg-name')) {
+            // Seg stays editable in the PV grid; push the change to table 1, whose
+            // own input handler then updates Mo/Ve (and adopts an auto-filled row).
+            const id = e.target.closest('tr').getAttribute('data-seg-id');
+            const segName = document.querySelector(`#fm-seg-table tr[data-seg-id="${id}"] .seg-name`);
+            if (segName && segName.value !== e.target.value) {
+                segName.value = e.target.value;
+                segName.dispatchEvent(new Event('input', {bubbles:true}));
+            }
+            return;
+        }
         if (!e.target.matches('.seg-name, .seg-side, .seg-vrs, .seg-painful')) return;
         
         let tr = e.target.closest('tr');
@@ -7854,6 +7895,19 @@ setupSegmented('patient-progress');
             let tr = e.target.closest('tr');
             let id = tr.getAttribute('data-seg-id');
             if (!id) return;
+            let pvRowCheck = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
+            let moveRowCheck = document.querySelector(`#fm-move-table tr[data-seg-id="${id}"]`);
+            let hasData = Array.from(tr.querySelectorAll('input')).some(i => !i.classList.contains('seg-name') && i.value.trim()) ||
+                (pvRowCheck && pvRowCheck.querySelector('.pv-cell[data-grade]:not([data-grade=""])')) ||
+                (moveRowCheck && moveRowCheck.dataset.post !== undefined);
+            let name = tr.querySelector('.seg-name').value || 'this segment';
+            if (hasData && !window.confirm(`Delete ${name}? Its palpation findings and Mo/Ve entry will be removed too.`)) return;
+            // An auto-filled row the therapist deletes must not reappear on the next
+            // Chief Complaint change (unless that source now points at another segment).
+            if (tr.getAttribute('data-fm-source')) {
+                window.__fmDismissedSources = window.__fmDismissedSources || {};
+                window.__fmDismissedSources[tr.getAttribute('data-fm-source')] = tr.querySelector('.seg-name').value;
+            }
             
             tr.remove();
             let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
@@ -7861,7 +7915,8 @@ setupSegmented('patient-progress');
             let moveRow = document.querySelector(`#fm-move-table tr[data-seg-id="${id}"]`);
             if (moveRow) moveRow.remove();
             
-            updateDensitySummary();
+            // Lives in the PV-grid script's scope; reach it through window.
+            if (window.updateDensitySummary) window.updateDensitySummary();
         }
     });
 
@@ -7903,7 +7958,7 @@ setupSegmented('patient-progress');
     const diagOutput = document.getElementById('fm-hyp-diag');
     
     const planes = ['AN-LA', 'AN-ME', 'An', 'Ir', 'Me', 'RE-LA', 'RE-ME', 'Re', 'Er', 'La']; // same order + case as PV_COLUMNS
-    const segments = ['CP1','CP2','CP3','CL','CX','TH','LU','PV','SC','GE','PE','CX','TA','HU','CU','CA','DI'];
+    const segments = window.FM_SEGMENTS; // canonical list (previously had CX twice)
     
     function updateDiagonal() {
         if (!diagOutput) return;
@@ -7931,8 +7986,7 @@ setupSegmented('patient-progress');
         }
     }
 
-    if (addSeqBtn && seqBuilder) {
-        addSeqBtn.addEventListener('click', function() {
+    function addSeqStep(preset) {
             let div = document.createElement('div');
             div.className = 'seq-step';
             div.style.display = 'flex';
@@ -7957,8 +8011,27 @@ setupSegmented('patient-progress');
                 updateDiagonal();
             });
             
-            seqBuilder.insertBefore(div, addSeqBtn);
+            if (preset) {
+                const sel = div.querySelectorAll('select');
+                if (preset.segment && !Array.from(sel[1].options).some(o => o.value === preset.segment)) sel[1].insertAdjacentHTML('beforeend', `<option>${preset.segment}</option>`);
+                sel[0].value = preset.plane; sel[1].value = preset.segment; sel[2].value = preset.side;
+            }
+            seqBuilder.insertBefore(div, document.getElementById('fm-seq-from-findings') || addSeqBtn);
             updateDiagonal();
+    }
+    if (addSeqBtn && seqBuilder) {
+        addSeqBtn.addEventListener('click', function() { addSeqStep(null); });
+        const fromFindings = document.getElementById('fm-seq-from-findings');
+        if (fromFindings) fromFindings.addEventListener('click', function() {
+            const order = ['', '1', '2', '2+', '3', '3+'];
+            const graded = (window.getFmData ? window.getFmData().pv : []).filter(c => order.indexOf(c.grade) >= 2);
+            if (!graded.length) { window.alert('No findings graded 2 or higher yet.'); return; }
+            const top = Math.max.apply(null, graded.map(c => order.indexOf(c.grade)));
+            const existing = new Set(Array.from(seqBuilder.querySelectorAll('.seq-step')).map(st => Array.from(st.querySelectorAll('select')).map(x => x.value).join('|')));
+            graded.filter(c => order.indexOf(c.grade) === top).slice(0, 6).forEach(c => {
+                const key = [c.plane, c.segment, c.side].join('|');
+                if (!existing.has(key)) { existing.add(key); addSeqStep({plane: c.plane, segment: c.segment, side: c.side}); }
+            });
         });
     }
 
@@ -7989,6 +8062,8 @@ setupSegmented('patient-progress');
         if(!segTableBody) return;
         var existing = segTableBody.querySelector('tr[data-fm-source="' + sourceKey + '"]');
         if(existing && existing.dataset.touched) return;
+        var dismissed = (window.__fmDismissedSources || {})[sourceKey];
+        if(!existing && dismissed !== undefined && dismissed === segStr) return;
         if(!segStr){
             if(existing) existing.remove();
             return;

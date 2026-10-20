@@ -317,3 +317,4 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **bug — wording:** repeated findings were all called "diagonal". Now CFs on one plane = *diagonal*, CCs on one plane = *sequence* (summary and hypothesis builder).
 - **bug — phones:** below 744 px the table was hidden and the planned mobile cards were never built, so phones showed no PV grid. Phones now get the same table, scrolling sideways with Date/Seg pinned; the unused mobile-card markup and CSS were removed.
 - Cell height raised (27 → 35 px); width stays ~31 px because all 20 columns remain visible.
+- CC column headers shown in true case (An, Ir, Me / Re, Er, La); CF headers stay capitals (AL, AM / RL, RM). Hypothesis-builder plane list uses the same case.

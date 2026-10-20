@@ -560,6 +560,7 @@
   .pv-t .div-left { border-left:4px solid #b9b9b6 !important; }  /* Right | Left */
   .pv-t .div-group { border-left:2px solid #cfcfcc !important; }  /* Ante | Retro */
   .pv-t .pv-group-head { background:var(--surface); color:var(--ink-soft); }
+  .pv-t th.pv-cc-head { text-transform:none; font-size:10px; }  /* CCs in true case (An, Ir…); CFs stay capitals (AL, AM…) */
 
   .pv-cell {
     width:100%; height:100%; appearance:none; border:none; border-radius:4px;
@@ -7892,7 +7893,7 @@ setupSegmented('patient-progress');
     const addSeqBtn = document.getElementById('fm-add-seq-step');
     const diagOutput = document.getElementById('fm-hyp-diag');
     
-    const planes = ['AN-LA', 'AN-ME', 'AN', 'IR', 'ME', 'RE-LA', 'RE-ME', 'RE', 'ER', 'LA']; // same order as PV_COLUMNS
+    const planes = ['AN-LA', 'AN-ME', 'An', 'Ir', 'Me', 'RE-LA', 'RE-ME', 'Re', 'Er', 'La']; // same order + case as PV_COLUMNS
     const segments = ['CP1','CP2','CP3','CL','CX','TH','LU','PV','SC','GE','PE','CX','TA','HU','CU','CA','DI'];
     
     function updateDiagonal() {

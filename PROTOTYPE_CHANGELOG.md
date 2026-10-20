@@ -338,3 +338,4 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **"+ From highest findings" (#10):** adds a builder step for each highest-graded finding (grade ≥ 2), skipping duplicates. Label now "Auto-derived diagonal / sequence".
 - **Labels (#12):** "Traum?" → "Trauma?"; VRS header shows "0–10".
 - **Pending owner decision:** grade palette (#4) — mockup only, not built.
+- "+ Other" moved out of the Segment Assessment header into the quick-add chips as a "Not listed" group; the chip block now sits outside the table's horizontal scroll area so it doesn't scroll away on phones.

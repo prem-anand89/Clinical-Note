@@ -2122,11 +2122,13 @@
       <div class="card" style="margin-bottom:14px;">
         <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
           <span>1. Segment Assessment</span>
-          <button type="button" class="bulk-clear" id="fm-add-seg" style="padding:4px 10px; font-size:11px;" title="Add a blank row for a segment not in the list">＋ Other</button>
         </div>
+        <!-- Quick-add: chips render before the "Not listed" group (outside the table's scroll area) -->
+        <div id="fm-seg-chips" style="display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px;">
+          <div class="fm-seg-other"><div class="field-note" style="margin:0 0 4px;">Not listed</div><div class="chip-row"><button type="button" class="chip" id="fm-add-seg" title="Add a blank row for a segment not in the list">＋ Other</button></div></div>
+        </div>
+        <datalist id="fm-seg-codes"></datalist>
         <div style="overflow-x:auto;">
-          <div id="fm-seg-chips" style="display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px;"></div>
-          <datalist id="fm-seg-codes"></datalist>
           <table class="fm-t" id="fm-seg-table">
             <thead>
               <tr>
@@ -7820,10 +7822,10 @@ setupSegmented('patient-progress');
         const dl = document.getElementById('fm-seg-codes');
         if (dl) dl.innerHTML = window.FM_SEGMENTS.map(c => `<option value="${c}">`).join('');
         if (!host) return;
-        host.innerHTML = window.FM_SEGMENT_GROUPS.map(g =>
+        host.insertAdjacentHTML('afterbegin', window.FM_SEGMENT_GROUPS.map(g =>
             `<div><div class="field-note" style="margin:0 0 4px;">${g.label}</div><div class="chip-row">` +
             g.codes.map(c => `<button type="button" class="chip fm-seg-chip" data-seg="${c}">${c}</button>`).join('') +
-            `</div></div>`).join('');
+            `</div></div>`).join(''));
         host.addEventListener('click', function(e) {
             const chip = e.target.closest('.fm-seg-chip');
             if (!chip) return;

@@ -704,6 +704,20 @@
   #screening-toggle{ display:none !important; }   /* the gate card replaces the collapsed header */
   .lean-quick{ display:flex; flex-wrap:wrap; gap:12px 28px; }
   .lean-quick .safety-item{ flex:1 1 220px; margin:0; padding:0; border-bottom:none; }
+  .lean-suggest{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+  .lean-sug{ appearance:none; border:1px dashed #cfcfcc; background:#fff; color:var(--ink-soft); font:inherit; font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:var(--radius-pill); cursor:pointer; }
+  .lean-sug.on{ background:var(--clinical); border-color:var(--clinical); border-style:solid; color:#fff; }
+  .lean-sug-hint{ font-size:12px; color:var(--ink-faint); }
+  .lean-chip.suggested{ border-style:solid; border-color:#E9D3AC; color:var(--amber); background:var(--amber-dim); }
+  .lean-hide{ display:none !important; }
+  /* the old "+ Add" menus duplicate the suggestion chips; keep only their "Custom…" chip */
+  #add-rom-row .chip-add:not(.chip-add-custom), #add-mmt-row .chip-add:not(.chip-add-custom),
+  #add-specialtest-row .chip-add:not(.chip-add-custom), #add-funcscreen-row .chip-add:not(.chip-add-custom),
+  #add-rom-row .add-menu-empty, #add-mmt-row .add-menu-empty, #add-specialtest-row .add-menu-empty, #add-funcscreen-row .add-menu-empty{ display:none; }
+  .card.lean-compact{ padding:14px 16px; margin-bottom:10px !important; }
+  .card.lean-compact > .card-heading{ margin-bottom:8px; }
+  .lean-dock-group{ margin-bottom:12px; }
+  .lean-dock-group:last-child{ margin-bottom:0; }
   #pain-card.lean-nopain{ display:none; }
   .lean-course .segmented{ margin:0; }
 </style>
@@ -1673,7 +1687,6 @@
       <div class="section-title">
         <h2>4. Objective</h2>
       </div>
-      <div class="field-note" style="margin:-6px 2px 14px;">Movement/muscle rows below suggest themselves from the Anatomical Region selected in Chief Complaint — structure only, never pre-filled values. Change Region above to see the suggested set update.</div>
 
       <!-- Shown only while no Region is set in Chief Complaint — one shared
            picker previews suggestions across every field below (ROM, MMT,
@@ -1711,7 +1724,7 @@
       </div>
 
       <!-- Carry-Forward Mock -->
-      <div class="carry-forward" style="margin-bottom:14px;">
+      <div class="carry-forward lean-tucked" style="margin-bottom:14px;">
         <div>
           <strong style="color:var(--ink); font-weight:600;">Last Visit: 12 Oct (2 days ago)</strong><br>
           <span style="font-size:12.5px;">ROM: Flexion 120° (R), Abduction 90° (R) • MMT: Quadriceps 4+ (R)</span>
@@ -1722,11 +1735,12 @@
 
       <div id="msk-objective-wrap">
       <!-- Observation — visual inspection, precedes hands-on Palpation -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">Observation <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">visual inspection — before hands-on exam</span></div>
+      <div class="card" id="card-obs-palp" style="margin-bottom:14px;">
+        <div class="card-heading">Observation &amp; palpation <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">what you see and feel — tap what applies</span></div>
+        <div id="lean-obs-anchor"></div>
 
         <div class="row-2">
-          <div class="field">
+          <div class="field lean-tucked" id="lean-obs-effusion">
             <label>Joint effusion <span class="hint">local tissue trauma</span></label>
             <div class="segmented" id="obs-joint-effusion">
               <button type="button" data-val="None">None</button>
@@ -1735,7 +1749,7 @@
               <button type="button" data-val="Severe">Severe</button>
             </div>
           </div>
-          <div class="field">
+          <div class="field lean-tucked" id="lean-obs-bulk">
             <label>Muscle bulk <span style="font-weight:400;">— vs. unaffected side</span></label>
             <div class="segmented" id="obs-muscle-bulk">
               <button type="button" data-val="Normal">Normal</button>
@@ -1752,7 +1766,7 @@
              Peripheral edema check in the Cardiothoracic module, which
              tracks bilateral/sacral CHF-type edema, not a complaint-region
              finding — same 1+–4+ scale, different clinical question. -->
-        <div class="field" style="margin-bottom:0;">
+        <div class="field lean-tucked" id="lean-obs-edema" style="margin-bottom:0;">
           <label>Pitting edema <span class="hint">local, at/near complaint region — flags autonomic/vascular/CRPS</span></label>
           <div class="segmented" id="obs-pitting-edema">
             <button type="button" data-val="None">None</button>
@@ -1763,7 +1777,7 @@
           </div>
         </div>
 
-        <div class="field" style="margin-top:14px;">
+        <div class="field lean-tucked" id="lean-obs-skin" style="margin-top:14px;">
           <label>Skin / soft tissue</label>
           <div class="chip-row" id="obs-skin-chips">
             <button type="button" class="chip" data-chip="Bruising">Bruising</button>
@@ -1786,26 +1800,21 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field lean-tucked" id="lean-obs-deform">
           <label>Deformity / alignment <span class="hint">options change with the Anatomical Region set in Chief Complaint</span></label>
           <div class="chip-row" id="deformity-chips">
             <div class="field-note" style="margin-top:0;">Select an Anatomical Region above to see region-specific options.</div>
           </div>
         </div>
 
-        <div class="field" style="margin-bottom:0;">
-          <label>Specific findings</label>
+        <div class="field lean-tucked" id="lean-obs-specific" style="margin-bottom:0;">
+          <label>Specific findings <span class="hint">observation</span></label>
           <input type="text" class="text-input" placeholder="e.g. visible quad wasting, well-healed scar lateral knee">
         </div>
-      </div>
 
-      <!-- ROM -->
-      <!-- General Palpation Card -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">Palpation</div>
-        
+        <!-- Palpation fields (merged in from the former Palpation card) -->
         <div class="row-2">
-          <div class="field">
+          <div class="field lean-tucked" id="lean-palp-tender">
             <label>Tenderness</label>
             <div class="segmented">
               <button type="button" data-val="Localised">Localised</button>
@@ -1813,7 +1822,7 @@
               <button type="button" data-val="None">None</button>
             </div>
           </div>
-          <div class="field">
+          <div class="field lean-tucked" id="lean-palp-tone">
             <label>Tone</label>
             <div class="segmented">
               <button type="button" data-val="Hypertonic">Hypertonic</button>
@@ -1823,7 +1832,7 @@
           </div>
         </div>
         
-        <div class="field">
+        <div class="field lean-tucked" id="lean-palp-texture">
           <label>Texture</label>
           <div class="chip-row">
             <button type="button" class="chip" data-chip="Thickened">Thickened</button>
@@ -1833,14 +1842,16 @@
           </div>
         </div>
         
-        <div class="field" style="margin-bottom:0;">
-          <label>Specific findings</label>
+        <div class="field lean-tucked" id="lean-palp-specific" style="margin-bottom:0;">
+          <label>Specific findings <span class="hint">palpation</span></label>
           <input type="text" class="text-input" placeholder="e.g. trigger point in upper trap">
         </div>
       </div>
-      
+
+      <!-- ROM -->
       <div class="card">
         <div class="card-heading">Range of Motion <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" id="rom-region-hint"></span></div>
+        <div class="lean-suggest" id="lean-chips-rom"></div>
         <details class="method-details" data-method="rom" style="margin:0 0 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 12px;"><summary style="cursor:pointer; font-size:12px; font-weight:700; color:var(--clinical);">Method &amp; equipment <span style="font-weight:500; color:var(--ink-faint);">optional — for reproducibility</span></summary><div class="row-2" style="margin-top:10px;"><div><label style="font-size:11px;color:var(--ink-faint);">Test position / method</label><input type="text" class="text-input method-position" placeholder="e.g. Supine, arm at side, stabilising scapula"></div><div><label style="font-size:11px;color:var(--ink-faint);">Symptom response / quality</label><input type="text" class="text-input method-symptoms" placeholder="e.g. Pinch at end range, settles in 10 s"></div></div><div style="margin-top:8px;"><label style="font-size:11px;color:var(--ink-faint);">Equipment</label><div class="chip-row method-equipment" id="method-equipment-rom"><button type="button" class="chip" data-chip="Goniometer" onclick="this.classList.toggle('selected')">Goniometer</button><button type="button" class="chip" data-chip="Inclinometer" onclick="this.classList.toggle('selected')">Inclinometer</button><button type="button" class="chip" data-chip="Handheld dynamometer (HHD)" onclick="this.classList.toggle('selected')">Handheld dynamometer (HHD)</button><button type="button" class="chip" data-chip="Tape measure" onclick="this.classList.toggle('selected')">Tape measure</button><button type="button" class="chip" data-chip="Visual estimate" onclick="this.classList.toggle('selected')">Visual estimate</button></div></div></details>
         <div id="rom-rows"></div>
         <div id="add-rom-row"></div>
@@ -1849,6 +1860,7 @@
       <!-- Strength/MMT -->
       <div class="card">
         <div class="card-heading">Strength / MMT <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="HHD reserved for RTS/Melbourne testing, not routine visits">standard 5/5–0/5 grading</span></div>
+        <div class="lean-suggest" id="lean-chips-mmt"></div>
         <details class="method-details" data-method="mmt" style="margin:0 0 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 12px;"><summary style="cursor:pointer; font-size:12px; font-weight:700; color:var(--clinical);">Method &amp; equipment <span style="font-weight:500; color:var(--ink-faint);">optional — for reproducibility</span></summary><div class="row-2" style="margin-top:10px;"><div><label style="font-size:11px;color:var(--ink-faint);">Test position / method</label><input type="text" class="text-input method-position" placeholder="e.g. Supine, arm at side, stabilising scapula"></div><div><label style="font-size:11px;color:var(--ink-faint);">Symptom response / quality</label><input type="text" class="text-input method-symptoms" placeholder="e.g. Pinch at end range, settles in 10 s"></div></div><div style="margin-top:8px;"><label style="font-size:11px;color:var(--ink-faint);">Equipment</label><div class="chip-row method-equipment" id="method-equipment-mmt"><button type="button" class="chip" data-chip="Goniometer" onclick="this.classList.toggle('selected')">Goniometer</button><button type="button" class="chip" data-chip="Inclinometer" onclick="this.classList.toggle('selected')">Inclinometer</button><button type="button" class="chip" data-chip="Handheld dynamometer (HHD)" onclick="this.classList.toggle('selected')">Handheld dynamometer (HHD)</button><button type="button" class="chip" data-chip="Tape measure" onclick="this.classList.toggle('selected')">Tape measure</button><button type="button" class="chip" data-chip="Visual estimate" onclick="this.classList.toggle('selected')">Visual estimate</button></div></div></details>
         <div id="mmt-rows"></div>
         <div id="add-mmt-row"></div>
@@ -1872,7 +1884,7 @@
       </div>
 
       <!-- Joint mobility -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-jointmob">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Joint mobility <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="Suspected systemic/generalized hypermobility is a separate flag in History → Medical Conditions, not graded here.">Maitland Grade I–IV, local accessory motion</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1884,7 +1896,7 @@
       </div>
 
       <!-- Muscle length -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-musclelength">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Muscle length <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— distinct from Strength/MMT, tests length not contraction</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1896,12 +1908,13 @@
       </div>
 
       <!-- Functional screening -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-funcscreen">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Functional screening <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="Loaded/compound movement quality, distinct from isolated-joint ROM">loaded/compound movements</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
         <div class="collapsible-body">
+        <div class="lean-suggest" id="lean-chips-funcscreen"></div>
         <div id="funcscreen-rows"></div>
         <div id="add-funcscreen-row"></div>
         </div>
@@ -1970,7 +1983,7 @@
       </div>
 
       <!-- Neurodynamics -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-neurodyn">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Neurodynamics <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— structured block, not a Special Test row</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1987,6 +2000,7 @@
       <!-- Special Tests -->
       <div class="card">
         <div class="card-heading">Special Tests <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— provocative / diagnostic</span></div>
+        <div class="lean-suggest" id="lean-chips-specialtest"></div>
         <div id="specialtest-rows"></div>
         <div id="add-specialtest-row"></div>
       </div>
@@ -1997,7 +2011,7 @@
            add-on. Auto-adds on the same triggers as before (Weakness/Numbness chip,
            or Cervical Radiculopathy as Known Condition); manual add always available
            via the toggle below regardless of trigger. -->
-      <div class="card" id="card-obj-neuro-screen">
+      <div class="card lean-tucked" id="card-obj-neuro-screen">
         <div class="card-heading" id="obj-ns-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
           <span>Neurological screen <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="Auto-adds when Weakness/Numbness is selected or Cervical Radiculopathy is the Known Condition">myotomes/dermatomes/reflexes, region-filtered</span></span>
           <button type="button" class="add-link subsection-toggle" data-target="obj-neuro-screen-body">
@@ -2020,6 +2034,13 @@
       </div>
 
       </div><!-- /msk-objective-wrap -->
+
+      <!-- Lean Objective: one explicit statement + "+" chips for the rest of the exam + the single module dock -->
+      <div class="card" id="lean-obj-gate" style="margin-bottom:14px;">
+        <button type="button" class="lean-gate-btn" id="lean-screened">☐ Screened — no other deficits</button>
+        <span class="field-note" id="lean-obj-gate-note" style="margin:0 0 0 10px;">or add more to the exam:</span>
+      </div>
+      <div class="card lean-tucked" id="lean-module-dock" style="margin-bottom:14px;"></div>
     </section>
 
     <!-- =========================================================
@@ -3623,6 +3644,7 @@
     if(weaknessSel || numbnessSel || cervicalRadMatch){
       // Owner decision: suggested only. Accept opens it; nothing opens automatically.
       setSuggestion('neuro-screen', 'Neurological screen', 'myotomes/dermatomes/reflexes · in Objective', function(){
+        if(window.Lean) window.Lean.reveal('o-neuro');
         var body = document.getElementById('obj-neuro-screen-body');
         var toggleBtn = document.querySelector('#obj-ns-toggle-row .subsection-toggle');
         if(body && body.style.display === 'none' && toggleBtn) toggleBtn.click();
@@ -4686,17 +4708,46 @@
   function refreshSmartAdd(key, configLookup){
     var mount = document.getElementById('add-' + key + '-row');
     if(mount && mount._menu) mount._menu.refresh();
+    if(window.leanRenderChips) window.leanRenderChips(key);
   }
+  var SUGGEST_CTX = {};
+  // Lean Objective API: suggestion chips read the same region config the "+ Add" menu uses,
+  // and add a row through the same builders, only on a tap.
+  window.leanSuggest = {
+    items: function(key){
+      var c = SMART_ADD_CONFIGS[key], region = regionSelect.value || previewRegion;
+      return c ? (c[region] || []).slice() : [];
+    },
+    active: function(key){ return (activeNames[key] || []).slice(); },
+    add: function(key, name){
+      var ctx = SUGGEST_CTX[key];
+      if(!ctx || !name || activeNames[key].indexOf(name) !== -1) return null;
+      activeNames[key].push(name);
+      var sides = sidesForRegion(regionSelect.value || previewRegion);
+      var row = ctx.needsSides ? ctx.buildFn(name, sides) : ctx.buildFn(name);
+      row.setAttribute('data-lean-name', name);
+      row.querySelector('.remove-x').addEventListener('click', function(){
+        var idx = activeNames[key].indexOf(name);
+        if(idx > -1) activeNames[key].splice(idx, 1);
+        refreshSmartAdd(key);
+      });
+      ctx.containerEl.appendChild(row);
+      if(ctx.needsSides) updateAffectedSideHighlight();
+      refreshSmartAdd(key);
+      return row;
+    }
+  };
 
   function wireSmartAdd(key, containerEl, buildFn, configLookup, needsSides){
     var mount = document.getElementById('add-' + key + '-row');
     if(!mount) return;
     SMART_ADD_CONFIGS[key] = configLookup;
+    SUGGEST_CTX[key] = { containerEl: containerEl, buildFn: buildFn, needsSides: needsSides };
     // previewRegion (shared across all 6 smart-add fields, set via the one
     // picker above Palpation) stands in for "no Region chosen yet" — it
     // never overwrites the actual Region in Chief Complaint.
     var menu = buildAddMenu({
-      label: '+ Add',
+      label: '+ Other',
       allowCustom: true,
       emptyHint: function(){ return (regionSelect.value || previewRegion) ? null : 'No Region selected yet — see the picker above Palpation.'; },
       getData: function(){
@@ -4751,32 +4802,11 @@
     var romList = romConfig[region] || ['Flexion','Extension'];
     var mmtList = mmtConfig[region] || ['General strength'];
     
-    romList.forEach(function(m){
-      if (activeNames.rom.indexOf(m) === -1) {
-        activeNames.rom.push(m);
-        var row = makeRomRow(m, sides);
-        row.querySelector('.remove-x').addEventListener('click', function(){
-          var idx = activeNames.rom.indexOf(m); if(idx>-1) activeNames.rom.splice(idx,1);
-          row.remove();
-          refreshSmartAdd('rom', romConfig);
-        });
-        romRowsEl.appendChild(row);
-      }
-    });
-    
-    mmtList.forEach(function(m){
-      if (activeNames.mmt.indexOf(m) === -1) {
-        activeNames.mmt.push(m);
-        var row = makeMmtRow(m, sides);
-        row.querySelector('.remove-x').addEventListener('click', function(){
-          var idx = activeNames.mmt.indexOf(m); if(idx>-1) activeNames.mmt.splice(idx,1);
-          row.remove();
-          refreshSmartAdd('mmt', mmtConfig);
-        });
-        mmtRowsEl.appendChild(row);
-      }
-    });
-    
+    // Lean Objective: suggestions are chips (see leanSuggest); a row is created only when the
+    // clinician taps one, so untested movements never become empty rows. Rows already entered
+    // are untouched by a region change.
+    void romList; void mmtList;
+
     updateAffectedSideHighlight();
     refreshSmartAdd('rom', romConfig);
     refreshSmartAdd('mmt', mmtConfig);
@@ -4931,32 +4961,7 @@
     if(!activeNames.jointmob) activeNames.jointmob = [];
     if(!activeNames.musclelength) activeNames.musclelength = [];
     
-    if(region){
-      (specialTestConfig[region] || []).forEach(function(t){
-        if (activeNames.specialtest.indexOf(t) === -1) {
-          activeNames.specialtest.push(t);
-          var row = makeSpecialtestRow(t);
-          row.querySelector('.remove-x').addEventListener('click', function(){
-            var idx = activeNames.specialtest.indexOf(t); if(idx>-1) activeNames.specialtest.splice(idx,1);
-            row.remove();
-            refreshSmartAdd('specialtest', specialTestConfig);
-          });
-          specialtestRowsEl.appendChild(row);
-        }
-      });
-      (funcScreenConfig[region] || []).forEach(function(f){
-        if (activeNames.funcscreen.indexOf(f) === -1) {
-          activeNames.funcscreen.push(f);
-          var row = makeFuncscreenRow(f);
-          row.querySelector('.remove-x').addEventListener('click', function(){
-            var idx = activeNames.funcscreen.indexOf(f); if(idx>-1) activeNames.funcscreen.splice(idx,1);
-            row.remove();
-            refreshSmartAdd('funcscreen', funcScreenConfig);
-          });
-          funcscreenRowsEl.appendChild(row);
-        }
-      });
-    }
+    // Lean Objective: special tests / functional screens are suggestion chips, not auto-added rows.
     refreshSmartAdd('specialtest', specialTestConfig);
     refreshSmartAdd('funcscreen', funcScreenConfig);
     refreshSmartAdd('jointmob', jointMobilityConfig);
@@ -9404,6 +9409,7 @@ window.hideAdvancedModule = function(key) {
       const data = groupHasData(g);
       if(data && !g._open) setOpen(g, true);
       g._btn.classList.toggle('has-data', data);
+      g._btn.classList.toggle('suggested', !!(g.suggested && g.suggested()) && !g._open);
       const vis = g.visible ? !!g.visible() : true;
       if(g._btn.hidden === vis) g._btn.hidden = !vis;
     });
@@ -9414,7 +9420,8 @@ window.hideAdvancedModule = function(key) {
       const sec = document.getElementById(id), cfg = L.cfg[id];
       let t = '';
       try { t = cfg.summary() || ''; } catch(err) { console.warn('summary failed for', id, err); }
-      const el = $('.lean-sum', sec), text = t || cfg.emptyText || 'Not started';
+      const empty = typeof cfg.emptyText === 'function' ? cfg.emptyText() : cfg.emptyText;
+      const el = $('.lean-sum', sec), text = t || empty || 'Not started';
       if(el.textContent !== text) el.textContent = text;
       el.classList.toggle('empty', !t);
       sec.classList.toggle('lean-filled', !!t);
@@ -9597,6 +9604,166 @@ window.hideAdvancedModule = function(key) {
       if(flagBtn.textContent !== t) flagBtn.textContent = t;
     });
   })();
+
+
+  /* ===================== SECTION: Objective ===================== */
+  // Row summary: reads whatever the row builders rendered (degrees, MRC grade, selected scale, pain flag)
+  function rowSummary(row){
+    const labelEl = $('.obj-label', row);
+    const name = labelEl ? (labelEl.value || labelEl.textContent || '').trim() : '';
+    const blocks = $$('.side-block', row);
+    const read = el => {
+      const v = [];
+      const deg = $$('.deg-input', el).map(i => i.value);
+      if(deg[0]) v.push(deg[0] + '°');
+      if(deg[1]) v.push('passive ' + deg[1] + '°');
+      const mrc = $('.mrc-preview.has-value', el); if(mrc) v.push(mrc.textContent);
+      $$('.segmented button.selected', el).forEach(b => { if(!b.closest('.mrc-compact')) v.push((b.dataset.val || b.textContent).toLowerCase()); });
+      const ef = $('.endfeel-select', el); if(ef && ef.value) v.push(ef.value.toLowerCase() + ' end-feel');
+      if($('.pain-toggle.active', el)) v.push('painful');
+      return v.join(' ');
+    };
+    let txt = '';
+    if(blocks.length){
+      txt = blocks.map(b => { const r = read(b); const tag = $('.side-tag', b); return r ? (tag ? tag.textContent.trim() + ' ' : '') + r : ''; }).filter(Boolean).join(' / ');
+    } else txt = read(row);
+    return txt ? name + ' ' + txt : '';
+  }
+  const rowsOf = id => $$('#' + id + ' > *').map(rowSummary).filter(Boolean);
+  const cap = (a, n) => a.length > n ? a.slice(0, n).concat('+' + (a.length - n) + ' more') : a;
+  const lower = a => a.map(x => x.toLowerCase());
+  function findingsSummary(){
+    const f = [];
+    const eff = selected('#obs-joint-effusion')[0]; if(eff && eff !== 'None') f.push(eff.toLowerCase() + ' effusion');
+    const bulk = selected('#obs-muscle-bulk')[0]; if(bulk && bulk !== 'Normal') f.push(bulk.toLowerCase());
+    const oed = selected('#obs-pitting-edema')[0]; if(oed && oed !== 'None') f.push('oedema ' + oed);
+    f.push.apply(f, lower(selected('#obs-skin-chips').filter(x => x !== 'Normal')));
+    const sm = selected('#scar-mobility')[0]; if(sm) f.push('scar ' + sm.toLowerCase());
+    f.push.apply(f, lower(selected('#deformity-chips')));
+    const ten = selected('#lean-palp-tender .segmented')[0]; if(ten && ten !== 'None') f.push(ten.toLowerCase() + ' tenderness');
+    const tone = selected('#lean-palp-tone .segmented')[0]; if(tone && tone !== 'Normal') f.push(tone.toLowerCase());
+    f.push.apply(f, lower(selected('#lean-palp-texture .chip-row').filter(x => x !== 'Normal')));
+    $$('#lean-obs-specific input, #lean-palp-specific input').forEach(i => { if(i.value.trim()) f.push(i.value.trim()); });
+    return f;
+  }
+  L.section('sec-objective', {
+    emptyText: () => val('region') ? 'Nothing recorded yet' : 'Select a region to see suggested tests',
+    summary(){
+      const out = [];
+      const f = findingsSummary(); if(f.length) out.push(f.join(', '));
+      const rom = rowsOf('rom-rows'); if(rom.length) out.push('ROM: ' + cap(rom, 3).join('; '));
+      const mmt = rowsOf('mmt-rows'); if(mmt.length) out.push('Strength: ' + cap(mmt, 3).join('; '));
+      const st = rowsOf('specialtest-rows'); if(st.length) out.push(cap(st, 4).join(', '));
+      ['jointmob-rows', 'musclelength-rows', 'funcscreen-rows'].forEach(id => { const r = rowsOf(id); if(r.length) out.push(cap(r, 2).join('; ')); });
+      if(hasData($('#obj-neuro-screen-body'))) out.push('neuro screen recorded');
+      const screened = $('#lean-screened') && $('#lean-screened').classList.contains('on');
+      if(screened) out.push('screened — no other deficits');
+      return parts(out) + noteMark('objective-notes');
+    }
+  });
+
+  // Suggestion chips (movement / strength / special tests / functional screens)
+  const SUGGEST_LABEL = { rom: 'movements', mmt: 'muscles', specialtest: 'tests', funcscreen: 'screens' };
+  window.leanRenderChips = function(key){
+    const host = document.getElementById('lean-chips-' + key);
+    if(!host || !window.leanSuggest) return;
+    const items = window.leanSuggest.items(key), active = window.leanSuggest.active(key);
+    const sig = items.join('|') + '#' + active.join('|');
+    if(host.dataset.sig === sig) return;
+    host.dataset.sig = sig;
+    host.innerHTML = '';
+    if(!items.length){
+      const h = document.createElement('span'); h.className = 'lean-sug-hint';
+      h.textContent = 'Pick a region to see suggested ' + (SUGGEST_LABEL[key] || 'items') + ' — or use + Other.';
+      host.appendChild(h); return;
+    }
+    items.forEach(n => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'lean-sug' + (active.indexOf(n) !== -1 ? ' on' : ''); b.textContent = n; b.dataset.name = n;
+      b.addEventListener('click', () => {
+        const rowSel = '#' + key + '-rows [data-lean-name="' + n.replace(/"/g, '\\"') + '"]';
+        if(window.leanSuggest.active(key).indexOf(n) !== -1){
+          const row = $(rowSel);
+          if(!row) return;
+          if(!hasData(row)) { const x = $('.remove-x', row); if(x) x.click(); }       // untouched row: tapping again un-adds it
+          else row.scrollIntoView({ block: 'center', behavior: 'smooth' });              // row holds values: just go to it
+        } else {
+          const row = window.leanSuggest.add(key, n);
+          const first = row && row.querySelector('input'); if(first) first.focus();
+        }
+        schedule();
+      });
+      host.appendChild(b);
+    });
+  };
+  ['rom', 'mmt', 'specialtest', 'funcscreen'].forEach(k => window.leanRenderChips(k));
+  ['rom-rows', 'mmt-rows', 'specialtest-rows', 'funcscreen-rows'].forEach(id => { const c = $('#' + id); if(c && c.closest('.card')) c.closest('.card').classList.add('lean-compact'); });
+  const obsCard = $('#card-obs-palp'); if(obsCard) obsCard.classList.add('lean-compact');
+  // "Method & equipment" only matters once a row exists
+  L.hooks.push(() => ['rom', 'mmt'].forEach(k => {
+    const d = $('.method-details[data-method="' + k + '"]'), rows = $('#' + k + '-rows');
+    if(d && rows) d.classList.toggle('lean-hide', rows.children.length === 0);
+  }));
+
+  // Observation & palpation: finding chips reveal the existing grade controls
+  L.more('sec-objective', { id: 'obj-obs', anchor: '#lean-obs-anchor', where: 'afterend', groups: [
+    { id: 'o-eff',   label: 'Joint effusion', targets: ['#lean-obs-effusion'] },
+    { id: 'o-bulk',  label: 'Muscle bulk',    targets: ['#lean-obs-bulk'] },
+    { id: 'o-oed',   label: 'Oedema',         targets: ['#lean-obs-edema'] },
+    { id: 'o-skin',  label: 'Skin changes',   targets: ['#lean-obs-skin'] },
+    { id: 'o-def',   label: 'Deformity',      targets: ['#lean-obs-deform'] },
+    { id: 'o-tend',  label: 'Tenderness',     targets: ['#lean-palp-tender'] },
+    { id: 'o-tone',  label: 'Tone',           targets: ['#lean-palp-tone'] },
+    { id: 'o-tex',   label: 'Texture',        targets: ['#lean-palp-texture'] },
+    { id: 'o-spec',  label: 'Specific findings', targets: ['#lean-obs-specific', '#lean-palp-specific'] }
+  ]});
+
+  // The rest of the exam
+  const tuckedRegionWrap = $('#add-region-block-wrap'); if(tuckedRegionWrap) tuckedRegionWrap.classList.add('lean-tucked');
+  const neurodynSuggested = () => ['Cervical Spine', 'Lumbar Spine'].indexOf(val('region')) !== -1 || !!$('#primary-complaint .chip[data-chip="Numbness/tingling"].selected, #primary-complaint .chip[data-chip="Weakness"].selected');
+  L.more('sec-objective', { id: 'obj-more', anchor: '#lean-obj-gate-note', where: 'afterend', groups: [
+    { id: 'o-jm',     label: 'Joint mobility',       targets: ['#card-jointmob'],     onOpen: openCard('#card-jointmob') },
+    { id: 'o-ml',     label: 'Muscle length',        targets: ['#card-musclelength'], onOpen: openCard('#card-musclelength') },
+    { id: 'o-fs',     label: 'Functional screening', targets: ['#card-funcscreen'],   onOpen: openCard('#card-funcscreen') },
+    { id: 'o-nd',     label: 'Neurodynamics',        targets: ['#card-neurodyn'],     onOpen: openCard('#card-neurodyn'), suggested: neurodynSuggested },
+    { id: 'o-neuro',  label: 'Neuro screen',         targets: ['#card-obj-neuro-screen'],
+      onOpen: () => { const b = $('#obj-neuro-screen-body'), t = $('#obj-ns-toggle-row .subsection-toggle'); if(b && b.style.display === 'none' && t) t.click(); },
+      suggested: () => !!(window.activeSuggestions && window.activeSuggestions['neuro-screen']) },
+    { id: 'o-region', label: 'Another region',       targets: ['#add-region-block-wrap'], visible: () => !!val('region') },
+    { id: 'o-modules', label: 'Modules…',            targets: ['#lean-module-dock'] }
+  ]});
+
+  // "Screened — no other deficits": one explicit statement, never stored as fake normal values
+  (function(){
+    const b = $('#lean-screened');
+    b.addEventListener('click', () => {
+      b.classList.toggle('on');
+      b.textContent = (b.classList.contains('on') ? '☑' : '☐') + ' Screened — no other deficits';
+      refresh();
+    });
+  })();
+
+  // One module dock, built from the sidebar's own entries so both always open the same things
+  (function(){
+    const dock = $('#lean-module-dock');
+    const groups = { 'Clinical & functional tools': [], 'Condition modules': [], 'Manual & movement frameworks': [] };
+    $$('.outline-item[onclick]').forEach(el => {
+      const on = el.getAttribute('onclick') || '';
+      if(!/openTier2Module|openAdvancedModule|openConditionModule|openSportsProfile/.test(on)) return;
+      const label = el.textContent.replace(/[+✓]/g, '').replace(/\s+/g, ' ').trim();
+      const g = /openTier2Module|openSportsProfile/.test(on) ? 'Clinical & functional tools' : (/openConditionModule/.test(on) ? 'Condition modules' : 'Manual & movement frameworks');
+      groups[g].push({ label, on });
+    });
+    dock.innerHTML = '<div class="card-heading">Modules <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — each opens below</span></div>' +
+      Object.keys(groups).filter(k => groups[k].length).map(k => '<div class="lean-dock-group"><div class="field-note" style="margin:0 0 6px;">' + k + '</div><div class="chip-row">' +
+        groups[k].map(m => '<button type="button" class="chip" data-dock-on="' + m.on.replace(/"/g, '&quot;') + '">' + m.label + '</button>').join('') + '</div></div>').join('');
+    dock.addEventListener('click', e => {
+      const b = e.target.closest('[data-dock-on]'); if(!b) return;
+      e.stopPropagation();
+      try { (new Function(b.getAttribute('data-dock-on')))(); } catch(err) { console.warn('dock action failed', err); }
+    });
+  })();
+  L.notes($('#sec-objective'), 'objective-notes', 'Examination notes');
 
   schedule();
 })();

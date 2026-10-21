@@ -122,7 +122,7 @@
   <span class="stat">taps <b id="taps">0</b> · <b id="secs">0</b>s</span>
 </div>
 
-<div class="banner">Note completed — read-only (prototype)</div>
+<div class="banner">Note completed <button type="button" id="edit-note" style="margin-left:10px;background:#fff;color:var(--clinical);border:none;border-radius:999px;padding:5px 14px;font-weight:700;cursor:pointer;">Edit</button></div>
 
 <header class="head"><div class="wrap">
   <div class="who"><h1 id="pname">—</h1><span class="sess" id="sess"></span></div>
@@ -222,8 +222,8 @@
     precautions:{label:'Precautions followed',       kind:'chips', options:['Yes','Partly','No']}
   };
   var PACKS = {
-    tkr: {label:'Post-op TKR', measures:['knee_flex','knee_ext','ext_lag','swelling','wound','gait_aid','wb_status'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
-    thr: {label:'Post-op THR', measures:['hip_flex','abd_str','wound','gait_aid','wb_status','precautions'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
+    tkr: {label:'Post-op TKR', postOp:true, measures:['knee_flex','knee_ext','ext_lag','swelling','wound','gait_aid','wb_status'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
+    thr: {label:'Post-op THR', postOp:true, measures:['hip_flex','abd_str','wound','gait_aid','wb_status','precautions'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
     gen: {label:'General MSK', measures:[], extraSafety:[]}
   };
   var SAFETY_BASE = ['New or worsening pain / swelling','Fall or near-fall','Feeling unwell (fever, chest pain, breathlessness)'];
@@ -248,7 +248,7 @@
   var $ = function(id){ return document.getElementById(id); };
   var sc, S, taps, t0, timer;
   function fresh(){
-    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false};
+    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
     taps = 0; t0 = null; clearInterval(timer); $('taps').textContent = '0'; $('secs').textContent = '0';
   }
   function startTimer(){
@@ -434,7 +434,9 @@
 
   /* ================= PROGRESS + PAYLOAD ================= */
   function dispoComplete(){ return !S.flags.length || (S.dispoAction && $('dispo-note').value.trim()); }
-  function safetyAnswered(){ return S.safeOk || S.flags.length>0; }
+  // Owner decision: the safety check applies to post-op packs only.
+  function isPostOp(){ return !!PACKS[sc.pack].postOp; }
+  function safetyAnswered(){ return !isPostOp() || S.safeOk || S.flags.length>0; }
   function sectionDone(){
     return {
       sub: S.pain!==null && !!S.since,
@@ -446,6 +448,7 @@
   }
   function update(){
     var d = sectionDone(), map = {sub:'s-sub',safe:'s-safe',meas:'s-meas',int:'s-int',ap:'s-ap'};
+    if(!isPostOp()) delete map.safe;
     Object.keys(map).forEach(function(k){ $(map[k]).classList.toggle('ok', !!d[k]); });
     $('dots').innerHTML = Object.keys(map).map(function(k){ return '<i class="'+(d[k]?'on':'')+'"></i>'; }).join('');
     $('payload').textContent = JSON.stringify(payload(), null, 2);
@@ -458,7 +461,8 @@
       version:'1.1', kind:'session', enrollmentId:'(mock)',
       context:{pack:sc.pack, session:sc.session},
       subjective:{painNrs:S.pain, sinceLast:S.since||null, oneLiner:$('comment').value||''},
-      safety:{confirmedNoConcerns:S.safeOk, flags:S.flags, disposition: S.flags.length ? {action:S.dispoAction, note:$('dispo-note').value} : null},
+      safety: isPostOp() ? {confirmedNoConcerns:S.safeOk, flags:S.flags, disposition: S.flags.length ? {action:S.dispoAction, note:$('dispo-note').value} : null} : null,
+      completedAt:S.completedAt||null, editedAfterCompletion:S.edits.length ? S.edits : null,
       measures:meas,
       intervention:{treatments:S.tx, doses:S.doses, sameAsLast: !!sc.last && S.tx.length===sc.last.tx.length && S.tx.every(function(t){ return sc.last.tx.indexOf(t)>-1; })},
       assessment:S.assess||null, plan:S.plan||null, hepAdherence:S.hep||null, nextVisit:S.nextDate||null,
@@ -472,12 +476,23 @@
   /* ================= COMPLETE (hard = safety only; rest warns) ================= */
   function lock(){
     S.locked = true; document.body.classList.add('locked'); $('complete').style.display='none';
+    if(!S.completedAt) S.completedAt = new Date().toISOString();
+    update();
     clearInterval(timer);
     var secs = t0 ? Math.round((Date.now()-t0)/1000) : 0;
     var p = $('checkpanel'); p.style.display='block';
     p.innerHTML = '<b>Completed in '+secs+' s with '+taps+' taps.</b> (prototype timing, target ≈ 60 s / 12 taps)';
     window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
   }
+  // Therapists can edit a completed note; each reopen is recorded with a time
+  // (kept in the payload) so the record shows it was changed after completion.
+  $('edit-note').addEventListener('click', function(){
+    S.locked = false; document.body.classList.remove('locked'); $('complete').style.display='';
+    S.edits.push(new Date().toISOString());
+    var p = $('checkpanel'); p.style.display='block';
+    p.innerHTML = '<b>Editing a completed note.</b> The change is recorded with today’s time. Tap Complete when done.';
+    update();
+  });
   $('complete').addEventListener('click', function(){
     var p = $('checkpanel'); p.style.display='block';
     if(!safetyAnswered()){
@@ -508,6 +523,7 @@
     S.order = ids.slice();
     $('checkpanel').style.display='none'; $('comment').style.display='none'; $('comment').value=''; $('add-comment').style.display='';
     $('dispo-note').value=''; $('next-date').value=''; $('picker').style.display='none';
+    $('s-safe').style.display = isPostOp() ? '' : 'none';
     renderHeader(); renderSubjective(); renderSafety(); renderMeasures(); renderIntervention(); renderAP(); update();
   }
   $('scenario').addEventListener('change', function(){ load(this.value); });

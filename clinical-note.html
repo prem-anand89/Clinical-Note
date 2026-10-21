@@ -735,7 +735,6 @@
       <div class="outline-item stub" id="nav-fm" onclick="openAdvancedModule('fascial-manipulation')">Fascial Manipulation (FM)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-vm" onclick="openAdvancedModule('vm')">Visceral Manipulation (VM)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-cst" onclick="openAdvancedModule('cst')">Craniosacral Therapy (CST)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-mckenzie" onclick="openAdvancedModule('mckenzie')">McKenzie (MDT)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-nkt" onclick="openAdvancedModule('nkt')">NeuroKinetic Therapy (NKT)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-dns" onclick="openAdvancedModule('dns')">Dynamic Neuromuscular Stabilization (DNS)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
     </div>
@@ -1850,31 +1849,6 @@
         <details class="method-details" data-method="rom" style="margin:0 0 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm); padding:8px 12px;"><summary style="cursor:pointer; font-size:12px; font-weight:700; color:var(--clinical);">Method &amp; equipment <span style="font-weight:500; color:var(--ink-faint);">optional — for reproducibility</span></summary><div class="row-2" style="margin-top:10px;"><div><label style="font-size:11px;color:var(--ink-faint);">Test position / method</label><input type="text" class="text-input method-position" placeholder="e.g. Supine, arm at side, stabilising scapula"></div><div><label style="font-size:11px;color:var(--ink-faint);">Symptom response / quality</label><input type="text" class="text-input method-symptoms" placeholder="e.g. Pinch at end range, settles in 10 s"></div></div><div style="margin-top:8px;"><label style="font-size:11px;color:var(--ink-faint);">Equipment</label><div class="chip-row method-equipment" id="method-equipment-rom"><button type="button" class="chip" data-chip="Goniometer" onclick="this.classList.toggle('selected')">Goniometer</button><button type="button" class="chip" data-chip="Inclinometer" onclick="this.classList.toggle('selected')">Inclinometer</button><button type="button" class="chip" data-chip="Handheld dynamometer (HHD)" onclick="this.classList.toggle('selected')">Handheld dynamometer (HHD)</button><button type="button" class="chip" data-chip="Tape measure" onclick="this.classList.toggle('selected')">Tape measure</button><button type="button" class="chip" data-chip="Visual estimate" onclick="this.classList.toggle('selected')">Visual estimate</button></div></div></details>
         <div id="rom-rows"></div>
         <div id="add-rom-row"></div>
-      </div>
-
-      <!-- McKenzie (MDT) — Advanced Module: hidden until opened from the
-           sidebar (same pattern as VM/CST/FM), not part of the core assessment. -->
-      <div class="card" id="sec-mckenzie" style="display:none; margin-bottom:14px;">
-        <div class="card-heading" style="display:flex; align-items:center; justify-content:space-between;">
-          <span>McKenzie (MDT) — Repeated Movements</span>
-          <button type="button" class="add-link" onclick="hideAdvancedModule('mckenzie')" style="color:var(--ink-faint);">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            Hide Module
-          </button>
-        </div>
-        <div class="field">
-          <label>Baseline symptoms</label>
-          <input type="text" class="text-input" id="mckenzie-baseline" placeholder="e.g. constant ache L4-5, no leg symptoms">
-        </div>
-        <div id="mckenzie-rows"></div>
-        <button type="button" class="add-link" id="add-mckenzie-row">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add repeated movement set
-        </button>
-        <div class="derived-field" style="margin-top:14px;">
-          <span class="ico"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/></svg></span>
-          <div><div class="val" id="mckenzie-directional-pref">Not yet determined</div><div class="sub">Directional Preference</div></div>
-        </div>
       </div>
 
       <!-- Strength/MMT -->
@@ -3597,13 +3571,12 @@
     var numbnessSel = document.querySelector('#primary-complaint .chip[data-chip="Numbness/tingling"].selected');
     var cervicalRadMatch = activeSuggestions['ortho-template'] && activeSuggestions['ortho-template'].label.indexOf('Cervical Radiculopathy') !== -1;
     if(weaknessSel || numbnessSel || cervicalRadMatch){
-      setSuggestion('neuro-screen', 'Neurological screen', 'myotomes/dermatomes/reflexes · in Objective');
-      // Auto-apply, not just suggest — same "dismissible pill, no blocking confirm" pattern as
-      // condition templates (§0.3). Only fires while still collapsed; therapist can Remove it
-      // manually afterward without it snapping back on the same trigger check.
-      var body = document.getElementById('obj-neuro-screen-body');
-      var toggleBtn = document.querySelector('#obj-ns-toggle-row .subsection-toggle');
-      if(body && body.style.display === 'none' && toggleBtn) toggleBtn.click();
+      // Owner decision: suggested only. Accept opens it; nothing opens automatically.
+      setSuggestion('neuro-screen', 'Neurological screen', 'myotomes/dermatomes/reflexes · in Objective', function(){
+        var body = document.getElementById('obj-neuro-screen-body');
+        var toggleBtn = document.querySelector('#obj-ns-toggle-row .subsection-toggle');
+        if(body && body.style.display === 'none' && toggleBtn) toggleBtn.click();
+      });
     } else {
       clearSuggestion('neuro-screen');
     }
@@ -4979,38 +4952,8 @@
     document.getElementById('neurodynamic-rows').appendChild(addNeurodynamicRow());
   });
 
-  // ---- McKenzie (MDT) — Repeated Movements, own collapsible sub-card after ROM ----
-  var McKENZIE_DIRECTIONS = ['Flexion','Extension','Side-glide L','Side-glide R','Rotation'];
-  function updateMckenzieDirectionalPreference(){
-    var tally = {};
-    document.querySelectorAll('#mckenzie-rows .repeatable-card').forEach(function(card){
-      var dir = card.querySelector('.mck-direction').value;
-      var response = card.querySelector('.mck-response').value;
-      if(response === 'Centralized') tally[dir] = (tally[dir] || 0) + 1;
-    });
-    var best = null, bestCount = 0;
-    Object.keys(tally).forEach(function(dir){ if(tally[dir] > bestCount){ best = dir; bestCount = tally[dir]; } });
-    document.getElementById('mckenzie-directional-pref').textContent = best ? best : 'Not yet determined';
-  }
-  document.getElementById('add-mckenzie-row').addEventListener('click', function(){
-    var card = document.createElement('div');
-    card.className = 'repeatable-card';
-    card.innerHTML =
-      '<div class="rc-head"><span class="rc-title">Repeated movement set</span>' +
-      '<button type="button" class="icon-btn" aria-label="Remove" style="width:28px;height:28px;">' +
-      '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
-      '</button></div>' +
-      '<div class="rc-grid rc-grid-3">' +
-        '<div class="mini-field"><label>Direction</label><select class="select-input mck-direction">' + McKENZIE_DIRECTIONS.map(function(d){ return '<option>' + d + '</option>'; }).join('') + '</select></div>' +
-        '<div class="mini-field"><label>Repetitions</label><input type="text" class="text-input" placeholder="e.g. 10"></div>' +
-        '<div class="mini-field"><label>Symptom response</label><select class="select-input mck-response"><option>Centralized</option><option>Peripheralized</option><option>No change</option></select></div>' +
-      '</div>';
-    card.querySelector('.mck-direction').addEventListener('change', updateMckenzieDirectionalPreference);
-    card.querySelector('.mck-response').addEventListener('change', updateMckenzieDirectionalPreference);
-    card.querySelector('.icon-btn').addEventListener('click', function(){ card.remove(); updateMckenzieDirectionalPreference(); });
-    document.getElementById('mckenzie-rows').appendChild(card);
-    updateMckenzieDirectionalPreference();
-  });
+  // McKenzie (MDT) module removed for now (owner decision); revisit later.
+
 
   // ---- NKT — Relational Testing, own collapsible sub-card after MMT ----
   document.getElementById('add-nkt-row').addEventListener('click', function(){
@@ -7428,16 +7371,16 @@ setupSegmented('patient-progress');
   // Load-management, Rehab Timeline, Questionnaires and Drift key off.
   var TEMPLATE_VERSION = 'mvp-1';
   var MVP_TEMPLATES = [
-    {id:'postop-tkr',      kind:'postop', name:'Post-op Total Knee Replacement (TKR)'},
-    {id:'postop-acl',      kind:'postop', name:'Post-op ACL Reconstruction'},
-    {id:'postop-thr',      kind:'postop', name:'Post-op Total Hip Replacement (THR)'},
-    {id:'postop-rc',       kind:'postop', name:'Post-op Rotator Cuff Repair / Shoulder Stabilization'},
-    {id:'postop-lumbar',   kind:'postop', name:'Post-op Lumbar Discectomy / Microdiscectomy'},
-    {id:'postop-achilles', kind:'postop', name:'Post-op Achilles Tendon Repair'},
-    {id:'nonop-clbp',      kind:'nonop',  name:'Chronic Low Back Pain'},
-    {id:'nonop-sis',       kind:'nonop',  name:'Subacromial Impingement / Rotator Cuff Tendinopathy'},
-    {id:'nonop-ankle',     kind:'nonop',  name:'Ankle Sprain'},
-    {id:'nonop-cervrad',   kind:'nonop',  name:'Cervical Radiculopathy'}
+    {id:'postop-tkr',      kind:'postop', name:'Post-op Total Knee Replacement (TKR)', region:'Knee'},
+    {id:'postop-acl',      kind:'postop', name:'Post-op ACL Reconstruction', region:'Knee'},
+    {id:'postop-thr',      kind:'postop', name:'Post-op Total Hip Replacement (THR)', region:'Hip'},
+    {id:'postop-rc',       kind:'postop', name:'Post-op Rotator Cuff Repair / Shoulder Stabilization', region:'Shoulder'},
+    {id:'postop-lumbar',   kind:'postop', name:'Post-op Lumbar Discectomy / Microdiscectomy', region:'Lumbar Spine'},
+    {id:'postop-achilles', kind:'postop', name:'Post-op Achilles Tendon Repair', region:'Ankle / Foot'},
+    {id:'nonop-clbp',      kind:'nonop',  name:'Chronic Low Back Pain', region:'Lumbar Spine'},
+    {id:'nonop-sis',       kind:'nonop',  name:'Subacromial Impingement / Rotator Cuff Tendinopathy', region:'Shoulder'},
+    {id:'nonop-ankle',     kind:'nonop',  name:'Ankle Sprain', region:'Ankle / Foot'},
+    {id:'nonop-cervrad',   kind:'nonop',  name:'Cervical Radiculopathy', region:'Cervical Spine'}
   ];
   // Specific-procedure chip (Onset > Post-Surgical) -> template id. Procedures
   // absent here (meniscus, fusion, arthroscopy, ...) have no MVP template and
@@ -7474,6 +7417,13 @@ setupSegmented('patient-progress');
     activeSuggestions['ortho-template'].templateId = t.id;
     activeSuggestions['ortho-template'].version = TEMPLATE_VERSION;
     activeSuggestions['ortho-template'].source = source;
+    // Owner decision: a template sets the Chief Complaint region. Region changes
+    // are non-destructive (entered Objective rows are kept), so this is safe.
+    var regionInput = document.getElementById('region');
+    if(t.region && regionInput && regionInput.value !== t.region){
+      var chip = document.querySelector('#region-chips .chip[data-chip="' + t.region + '"]');
+      if(chip) chip.click();
+    }
     renderSuggestions();
     refreshTemplateDependents();
   }

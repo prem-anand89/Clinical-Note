@@ -349,3 +349,9 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - Picker made smaller and subtler on iPad/desktop (34 px colour-coded buttons, ~272×42 px, lighter border and shadow, sits 5 px from the box); phone strip unchanged (48 px).
 - Treated mark is now a small unfilled teal ✓ in the box's corner (no filled circle).
 - Phones now use the same small pop-up at the box (owner preference); the bottom-strip variant was removed. The pop-up stays within the screen edges and closes on scroll.
+
+### Owner decisions applied (2026-10-21)
+- **Session note:** safety check shown and enforced for post-op packs only (TKR, THR); General notes skip it (payload `safety: null`). Completed notes can be edited via "Edit" in the completed banner; `completedAt` and each reopen time (`editedAfterCompletion`) go in the payload.
+- **Template sets the region:** each MVP template carries a region (TKR/ACL → Knee, THR → Hip, RC & SIS → Shoulder, lumbar & CLBP → Lumbar Spine, Achilles & ankle sprain → Ankle / Foot, cervical radiculopathy → Cervical Spine); applying it selects that region chip. Entered Objective rows are kept.
+- **Neuro Screen is suggested only:** the trigger shows a suggestion pill; Accept opens the screen. Nothing opens automatically.
+- **McKenzie (MDT) removed for now** (sidebar entry, card and script).

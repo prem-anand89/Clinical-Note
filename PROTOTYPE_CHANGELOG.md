@@ -348,3 +348,4 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - Summary and Hypothesis Builder now show header codes (AM, An…) instead of internal plane ids (AN-ME).
 - Picker made smaller and subtler on iPad/desktop (34 px colour-coded buttons, ~272×42 px, lighter border and shadow, sits 5 px from the box); phone strip unchanged (48 px).
 - Treated mark is now a small unfilled teal ✓ in the box's corner (no filled circle).
+- Phones now use the same small pop-up at the box (owner preference); the bottom-strip variant was removed. The pop-up stays within the screen edges and closes on scroll.

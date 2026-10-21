@@ -590,7 +590,6 @@
   /* Grade picker — one element for the page, positioned at the tapped box */
   #pv-picker { position:fixed; z-index:60; display:none; background:#fff; border:1px solid var(--line); border-radius:9px; box-shadow:0 3px 10px rgba(0,0,0,.10); padding:3px; }
   #pv-picker.open { display:block; }
-  #pv-picker .pk-label { display:none; font-size:12.5px; font-weight:700; color:var(--clinical); margin:0 2px 8px; }
   #pv-picker .pk-row { display:flex; gap:3px; align-items:center; }
   #pv-picker .pk-sep { width:1px; height:18px; background:var(--line); margin:0 2px; }
   /* About one grid cell in size: subtle, still easy to hit (colour-coded, 34 px) */
@@ -603,17 +602,7 @@
   #pv-picker .pk-tr { color:var(--clinical); } #pv-picker .pk-tr.on { background:var(--clinical); border-color:var(--clinical); color:#fff; }
   #pv-picker .pk-tr:disabled { opacity:.35; cursor:default; }
   #pv-picker .pk-clr { color:#B3261E; }
-  #pv-picker .pk-wide { display:none; }
-  /* Phones: same buttons, as a strip along the bottom within thumb reach */
-  @media (max-width:743.98px) {
-    #pv-picker { left:0 !important; right:0; top:auto !important; bottom:0; border-radius:16px 16px 0 0; padding:10px 12px 18px; box-shadow:0 -6px 20px rgba(0,0,0,.12); }
-    #pv-picker .pk-label { display:flex; justify-content:space-between; }
-    #pv-picker .pk-row { flex-wrap:wrap; gap:6px; }
-    #pv-picker .pk-row button { flex:1 1 15%; height:48px; font-size:14px; border-radius:8px; }
-    #pv-picker .pk-sep, #pv-picker .pk-narrow { display:none; }
-    #pv-picker .pk-wide { display:block; }
-    body.pv-sheet-open { padding-bottom:180px; } /* room to scroll the graded box above the strip */
-  }
+  /* Phones use the same small pop-up at the box (owner preference) */
   
 
   .seq-builder { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
@@ -7567,14 +7556,10 @@ setupSegmented('patient-progress');
     picker.id = 'pv-picker';
     picker.setAttribute('role', 'dialog');
     picker.innerHTML =
-        '<div class="pk-label"><span class="pk-name"></span><span style="color:var(--ink-faint);font-weight:500;">tap outside to close</span></div>' +
         '<div class="pk-row">' + grades.slice(1).map(g => `<button type="button" class="${pickerBtnClass[g]}" data-grade="${g}">${g}</button>`).join('') +
         '<span class="pk-sep"></span>' +
         '<button type="button" class="pk-tr pk-narrow" data-act="treated" aria-label="Treated today">✓</button>' +
-        '<button type="button" class="pk-clr pk-narrow" data-act="clear" aria-label="Clear">⌫</button></div>' +
-        '<div class="pk-row pk-wide" style="margin-top:6px;"><div class="pk-row">' +
-        '<button type="button" class="pk-tr" data-act="treated" style="flex:2 1 60%;">✓ Treated</button>' +
-        '<button type="button" class="pk-clr" data-act="clear" style="flex:1 1 30%;">⌫ Clear</button></div></div>';
+        '<button type="button" class="pk-clr pk-narrow" data-act="clear" aria-label="Clear">⌫</button></div>';
     document.body.appendChild(picker);
     let pickedCell = null;
 
@@ -7582,7 +7567,6 @@ setupSegmented('patient-progress');
         if (pickedCell) pickedCell.classList.remove('pv-picked');
         pickedCell = null;
         picker.classList.remove('open');
-        document.body.classList.remove('pv-sheet-open');
     }
     function openPicker(cell) {
         if (pickedCell) pickedCell.classList.remove('pv-picked');
@@ -7590,17 +7574,10 @@ setupSegmented('patient-progress');
         cell.classList.add('pv-picked');
         const grade = cell.getAttribute('data-grade') || '';
         const treated = cell.getAttribute('data-treated') === 'true';
-        picker.querySelector('.pk-name').textContent = cellLabel(cell);
+        picker.setAttribute('aria-label', 'Grade ' + cellLabel(cell));
         picker.querySelectorAll('[data-grade]').forEach(b => b.classList.toggle('cur', b.getAttribute('data-grade') === grade));
         picker.querySelectorAll('[data-act="treated"]').forEach(b => { b.classList.toggle('on', treated); b.disabled = !grade; });
         picker.classList.add('open');
-        if (window.innerWidth < 744) {
-            // Bottom strip (CSS). Keep the box being graded visible above it.
-            document.body.classList.add('pv-sheet-open');
-            const r = cell.getBoundingClientRect(), sheetTop = picker.getBoundingClientRect().top;
-            if (r.bottom > sheetTop - 8) window.scrollBy({top: r.bottom - sheetTop + 24, behavior: 'smooth'});
-            return;
-        }
         // Above the box; below it when there is no room (top row). Clamp to the screen edges.
         const r = cell.getBoundingClientRect(), pw = picker.offsetWidth, ph = picker.offsetHeight;
         let top = r.top - ph - 5;
@@ -7629,7 +7606,7 @@ setupSegmented('patient-progress');
     });
     document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closePicker(); });
     // Position goes stale when anything scrolls; closing is simpler than tracking.
-    window.addEventListener('scroll', function() { if (pickedCell && window.innerWidth >= 744) closePicker(); }, true);
+    window.addEventListener('scroll', function() { if (pickedCell) closePicker(); }, true);
     window.addEventListener('resize', closePicker);
 
     // 3. Smart Density & Pattern Summary

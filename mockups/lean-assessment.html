@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lean Assessment — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#262626; --soft:#3f4549; --faint:#8A9CA0; --surface:#f5f5f4; --line:#e2e2e1; --line2:#ECEBE5;
+    --teal:#2c5f63; --tealdim:#e4edec; --amber:#9c6f1e; --amberdim:#f5eedf; --red:#B3261E; --good:#2E7D32;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:#d9d9d6;font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);font-size:14px;}
+  h1,h2{font-family:Fraunces,Georgia,serif;margin:0;font-weight:600}
+  button{font:inherit;color:inherit;cursor:pointer}
+
+  /* preview controls (not part of the app) */
+  .controls{display:flex;gap:16px;align-items:center;justify-content:center;flex-wrap:wrap;padding:14px 16px;background:#262626;color:#ddd;font-size:12.5px;position:sticky;top:0;z-index:50}
+  .controls .grp{display:flex;gap:4px;align-items:center}
+  .controls .grp span{margin-right:4px;color:#aaa}
+  .controls button{background:#3a3a3a;border:1px solid #555;color:#eee;border-radius:6px;padding:5px 11px;font-size:12px}
+  .controls button.on{background:#fff;color:#262626;border-color:#fff}
+  .controls .note{color:#999}
+
+  /* device */
+  .stage{display:flex;justify-content:center;padding:24px 16px 48px}
+  .device{background:#111;border-radius:36px;padding:14px;box-shadow:0 20px 50px rgba(0,0,0,.25);transition:width .2s}
+  .device.ipad{width:848px}.device.phone{width:418px}
+  .screen{background:var(--surface);border-radius:24px;overflow-y:auto;overflow-x:hidden;height:min(1180px, calc(100vh - 140px))}
+  .device.phone .screen{height:min(844px, calc(100vh - 140px))}
+
+  /* app */
+  .app{padding:14px 14px 90px}
+  .top{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;position:sticky;top:0;z-index:5}
+  .top h1{font-size:17px}.top .s{font-size:12px;color:var(--faint)}
+  .sec{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .sh{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+  .sh h2{font-size:15px;flex:0 0 auto;min-width:112px}
+  .sh .sum{flex:1;font-size:12.5px;color:var(--soft);line-height:1.35}
+  .sh .sum.empty{color:var(--faint)}
+  .sh .tick{font-size:12px;font-weight:700;color:var(--teal);visibility:hidden}
+  .sec.done .sh .tick{visibility:visible}
+  .sh .chev{color:var(--faint);transition:transform .15s}
+  .sec.open .sh .chev{transform:rotate(180deg)}
+  .sec.open .sh .sum{display:none}
+  .sb{display:none;padding:0 14px 14px;border-top:1px solid var(--line2)}
+  .sec.open .sb{display:block}
+  .lbl{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin:12px 0 6px}
+  .chips{display:flex;flex-wrap:wrap;gap:5px}
+  .c{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 11px;font-size:12.5px;font-weight:600;color:var(--soft)}
+  .c.on{background:var(--teal);border-color:var(--teal);color:#fff}
+  .c.dash{border-style:dashed}
+  .add{border:1px dashed #cfcfcc;background:transparent;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:600;color:var(--teal)}
+  .add.open{background:var(--tealdim);border-style:solid;border-color:var(--tealdim)}
+  input[type=text],input[type=date],textarea{width:100%;font:inherit;font-size:13px;border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:#fff;color:var(--ink)}
+  textarea{resize:vertical;min-height:44px}
+  input:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:1px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .device.phone .row{grid-template-columns:1fr}
+  .extra{display:none;margin-top:8px;padding:10px;background:var(--surface);border-radius:8px}
+  .extra.show{display:block}
+  .notes-bar{margin-top:12px;border:1px dashed #cfcfcc;border-radius:8px;padding:9px 11px;font-size:12.5px;color:var(--teal);font-weight:600;background:transparent;width:100%;text-align:left}
+  .gate{display:flex;gap:8px;flex-wrap:wrap}
+  .gbtn{border:1.5px dashed var(--teal);color:var(--teal);background:#fff;border-radius:10px;padding:9px 12px;font-weight:700;font-size:13px}
+  .gbtn.on{background:var(--teal);color:#fff;border-style:solid}
+  .gbtn.warn{border:1px solid #E9D3AC;color:var(--amber);background:var(--amberdim)}
+  .yn{display:flex;gap:14px;font-size:12.5px;color:var(--soft);margin-top:10px;flex-wrap:wrap;align-items:center}
+  .yn .seg{display:inline-flex;gap:3px;margin-left:5px}
+  .yn .seg button{border:1px solid var(--line);background:#fff;border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:600}
+  .yn .seg button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+  .flaglist{display:none;margin-top:10px;border:1px solid #E9D3AC;background:var(--amberdim);border-radius:10px;padding:10px}
+  .flaglist.show{display:block}
+  .flaglist .c.on{background:var(--red);border-color:var(--red)}
+  .mrow{display:none;margin-top:8px;background:var(--surface);border-radius:8px;padding:8px 10px;align-items:center;gap:10px;flex-wrap:wrap}
+  .mrow.show{display:flex}
+  .mrow b{font-size:12.5px;min-width:110px}
+  .mrow input{width:72px;padding:6px 8px}
+  .mrow .side{font-size:11px;color:var(--faint)}
+  .sign{position:sticky;bottom:0;display:flex;justify-content:flex-end;padding:10px 0 0;background:linear-gradient(transparent,var(--surface) 35%)}
+  .sign button{background:var(--teal);color:#fff;border:none;border-radius:999px;padding:11px 22px;font-weight:700;font-size:14px}
+  .callout{font-size:12px;color:var(--faint);margin:6px 2px 0}
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <div class="grp"><span>Device</span><button type="button" data-device="ipad" class="on">iPad</button><button type="button" data-device="phone">Phone</button></div>
+  <div class="grp"><span>State</span><button type="button" data-state="empty" class="on">On open (empty)</button><button type="button" data-state="filled">Filled — review</button></div>
+  <span class="note">Mockup · tap section titles, chips and “+” to try it · nothing is saved</span>
+</div>
+
+<div class="stage"><div class="device ipad" id="device"><div class="screen" id="screen"><div class="app" id="app"></div></div></div></div>
+
+<script>
+(function(){
+  /* ---------- tiny helpers ---------- */
+  const $ = (s, el=document) => el.querySelector(s);
+  const $$ = (s, el=document) => Array.from(el.querySelectorAll(s));
+  const chips = (group, items, opts={}) => `<div class="chips" data-group="${group}"${opts.single?' data-single="1"':''}>` +
+    items.map(t => `<button type="button" class="c${opts.dash?' dash':''}" data-v="${t}">${t}</button>`).join('') + (opts.more?'<button type="button" class="add">+ more</button>':'') + `</div>`;
+  const addChip = (id, label) => `<button type="button" class="add" data-extra="${id}">+ ${label}</button>`;
+  const extra = (id, html) => `<div class="extra" id="x-${id}">${html}</div>`;
+  const notes = (id, label) => `<button type="button" class="notes-bar" data-notes="${id}">+ ${label}</button><textarea id="${id}" placeholder="${label} — dictation works here" style="display:none;margin-top:12px"></textarea>`;
+
+  const REGION_TESTS = {
+    'Ankle / Foot': {mv:['Dorsiflexion','Plantarflexion','Inversion','Eversion','Calf raise','Single-leg stance'], st:['Anterior drawer','Talar tilt','Squeeze test','Thompson']},
+    'Knee': {mv:['Flexion','Extension','Squat','Step-down','Quads (MMT)','Hamstrings (MMT)'], st:['Lachman','McMurray','Valgus stress','Patellar apprehension']},
+    'Shoulder': {mv:['Flexion','Abduction','ER','IR','HBB','Rotator cuff (MMT)'], st:['Hawkins-Kennedy','Neer','Empty can','Apprehension']},
+    'Back': {mv:['Flexion','Extension','Side flexion','Rotation','SLR','Hip flexors (MMT)'], st:['Slump','SLR','Prone instability']},
+    'Neck': {mv:['Flexion','Extension','Rotation','Side flexion','Deep neck flexors'], st:['Spurling','Distraction','ULTT1']},
+    'Hip': {mv:['Flexion','IR','ER','Abduction','Glute med (MMT)'], st:['FADIR','FABER','Thomas']}
+  };
+
+  /* ---------- sections ---------- */
+  const SECTIONS = [
+    {id:'sub', title:'Subjective', body: `
+      <div class="lbl">Presenting problem</div><textarea id="pp" placeholder="In the patient’s words… (dictation works here)"></textarea>
+      <div class="row"><div><div class="lbl">Region</div>${chips('region', Object.keys(REGION_TESTS), {single:true, more:true})}</div>
+      <div><div class="lbl">Side · onset</div>${chips('side',['L','R','Both'],{single:true})}<div style="height:5px"></div>${chips('onset',['Sudden','Gradual','Post-op'],{single:true})}</div></div>
+      <div class="lbl">Main symptoms</div>${chips('symptoms',['Pain','Swelling','Stiffness','Weakness','Instability','Numbness'])}
+      <div id="painNow" style="display:none"><div class="lbl">Pain now (0–10)</div>${chips('pain',['0','1','2','3','4','5','6','7','8','9','10'],{single:true})}</div>
+      <div class="lbl">Most limited activity today</div><input type="text" id="limited" placeholder="e.g. walking more than 10 minutes">
+      <div class="lbl">More, if relevant</div>
+      <div class="chips">${addChip('pattern','24h pain pattern')}${addChip('irrit','Irritability detail')}${addChip('second','Secondary complaint')}${addChip('work','Work / sport')}${addChip('known','Known condition')}</div>
+      ${extra('pattern', `<div class="lbl" style="margin-top:0">Worst in the</div>${chips('p24',['Morning','Day','Evening','Night'])}`)}
+      ${extra('irrit', `<div class="row"><input type="text" placeholder="Provoked by…"><input type="text" placeholder="Settles in…"></div>`)}
+      ${extra('second', `<input type="text" placeholder="Region · what · since when">`)}
+      ${extra('work', `<div class="row"><input type="text" placeholder="Occupation"><input type="text" placeholder="Sport / activity level"></div>`)}
+      ${extra('known', `${chips('known',['Chronic LBP','Ankle sprain','Post-op TKR','Cervical radiculopathy','Other…'],{single:true})}`)}
+      ${notes('subNotes','Subjective notes')}`,
+      summary(){ const r=sel('region'), s=sel('side'), o=sel('onset'), sy=multi('symptoms'), p=sel('pain'), l=val('limited');
+        const parts=[[s,r].filter(Boolean).join(' '), o&&o.toLowerCase()+' onset', sy.length&&sy.join(', ').toLowerCase(), p&&('pain '+p+'/10'), l&&('most limited: '+l)].filter(Boolean);
+        return parts.join(' · ') + noteMark('subNotes'); }},
+    {id:'hist', title:'History', head: true, body: `
+      <div class="chips" style="margin-top:12px">${addChip('surg','Surgery')}${addChip('inj','Injury')}${addChip('cond','Conditions')}${addChip('meds','Meds / allergies')}${addChip('life','Lifestyle')}</div>
+      ${extra('surg', `<div class="row"><input type="text" placeholder="Procedure"><input type="date"></div>`)}
+      ${extra('inj', `<div class="row"><input type="text" placeholder="Injury · region"><input type="date"></div>`)}
+      ${extra('cond', chips('cond',['Diabetes','Hypertension','Osteoporosis','RA','Thyroid','Cardiac']))}
+      ${extra('meds', `<div class="row"><input type="text" placeholder="Medications"><input type="text" placeholder="Allergies (incl. latex / adhesive)"></div>`)}
+      ${extra('life', chips('life',['Smoker','Alcohol','Sedentary','Active','Poor sleep']))}`,
+      summary(){ const c=multi('cond'); return c.length ? 'Conditions: '+c.join(', ') : ''; }, emptyText:'Nothing recorded'},
+    {id:'safe', title:'Safety', body: `
+      <div class="gate" style="margin-top:12px"><button type="button" class="gbtn" id="noFlags">✓ No red flags — reviewed with patient</button><button type="button" class="gbtn warn" id="flagOne">⚠ Flag one…</button></div>
+      <div class="flaglist" id="flagList"><div class="lbl" style="margin-top:0;color:#8C5A1E">Tap any that apply — the action card then opens</div>
+      ${chips('flags',['Bowel / bladder change','Saddle numbness','Progressive neuro deficit','History of cancer','Unexplained weight loss','Fever / night sweats / infection','Significant trauma','Constant night pain','Calf pain / swelling (DVT)','Chest pain / breathlessness'])}</div>
+      <div class="yn"><span>Blood thinner<span class="seg" data-yn="bt"><button type="button">Y</button><button type="button">N</button></span></span>
+      <span>Implants<span class="seg" data-yn="imp"><button type="button">Y</button><button type="button">N</button></span></span>
+      <span>Pregnancy<span class="seg" data-yn="preg"><button type="button">Y</button><button type="button">N</button><button type="button">N/A</button></span></span></div>`,
+      summary(){ const f=multi('flags'); const ok=$('#noFlags').classList.contains('on'); return f.length ? '⚠ '+f.join(', ') : (ok ? 'No red flags (reviewed with patient)' : ''); }},
+    {id:'obj', title:'Objective', body: `
+      <div class="lbl">Observation & palpation</div>${chips('obs',['Swelling','Bruising','Deformity','Antalgic gait','Guarding','Tender','Warmth'])}
+      <div class="lbl">Movement — tap one to record it</div><div id="mvChips"></div><div id="mvRows"></div>
+      <div class="lbl">Special tests</div><div id="stChips"></div>
+      <div class="chips" style="margin-top:10px"><button type="button" class="c" id="screened">☐ Screened — no other deficits</button>${addChip('jm','Joint mobility')}${addChip('ml','Muscle length')}${addChip('neuro','Neuro screen')}${addChip('mod','Module…')}</div>
+      ${extra('jm', `<input type="text" placeholder="Joint · grade · end feel">`)}
+      ${extra('ml', `<input type="text" placeholder="Muscle · finding">`)}
+      ${extra('neuro', `<input type="text" placeholder="Dermatomes / myotomes / reflexes">`)}
+      ${extra('mod', chips('mods',['Body chart','PSFS','Gait & posture','Vitals','Questionnaires','Fascial Manipulation','Group A neuro']))}
+      ${notes('objNotes','Examination notes')}`,
+      summary(){ const o=multi('obs'); const m=$$('#mvRows .mrow.show').map(r=>{const v=r.querySelector('input').value;return r.dataset.mv+(v?' '+v+'°':'');});
+        const st=$$('#stChips .c.on').map(c=>c.dataset.v+' +'); const sc=$('#screened').classList.contains('on');
+        return [o.length&&o.join(', ').toLowerCase(), m.join(', '), st.join(', '), sc&&'screened — no other deficits'].filter(Boolean).join(' · ') + noteMark('objNotes'); }},
+    {id:'imp', title:'Impression', body: `
+      <div class="lbl">Primary hypothesis</div><textarea id="hyp" placeholder="Your clinical reasoning in a sentence or two"></textarea>
+      <div class="row"><div><div class="lbl">Working diagnosis</div><input type="text" id="dx" placeholder="e.g. Grade II lateral ankle sprain"></div>
+      <div><div class="lbl">Irritability</div>${chips('irr',['Low','Moderate','High'],{single:true})}</div></div>
+      <div class="chips" style="margin-top:10px">${addChip('prec','Precaution')}${addChip('diff','Differential & evidence')}${addChip('icf','Impairments / activity / participation')}${addChip('cf','Contributing factors')}</div>
+      ${extra('prec', `<input type="text" id="prec" placeholder="e.g. avoid inversion loading for 2 weeks">`)}
+      ${extra('diff', `<div class="row"><input type="text" placeholder="Evidence for"><input type="text" placeholder="Evidence against"></div>`)}
+      ${extra('icf', `<input type="text" placeholder="Impairments · activity limits · participation">`)}
+      ${extra('cf', chips('cf',['Posture','Weakness','Load error','Footwear','Fear avoidance']))}`,
+      summary(){ const i=sel('irr'); return [val('dx'), i&&('irritability '+i.toLowerCase()), val('prec')&&('precaution: '+val('prec'))].filter(Boolean).join(' · '); }},
+    {id:'plan', title:'Plan & treatment', body: `
+      <div class="lbl">Treatment today</div>${chips('tx',['Joint mob','Taping','Ice / heat','ROM ex','Strengthening','Balance'],{more:true})}
+      <div class="row"><div><div class="lbl">Home exercises</div><input type="text" id="hep" placeholder="Exercise · sets × reps · frequency"></div>
+      <div><div class="lbl">Goal</div><input type="text" id="goal" placeholder="e.g. walk 30 min pain-free in 3 weeks"></div></div>
+      <div class="row"><div><div class="lbl">Frequency</div>${chips('freq',['1×/wk','2×/wk','3×/wk'],{single:true})}</div>
+      <div><div class="lbl">Next review</div><input type="date" id="review"></div></div>
+      <div class="chips" style="margin-top:10px">${addChip('dose','Dosage detail')}${addChip('load','Load management')}${addChip('goals','More goals')}${addChip('dis','Discharge / referral')}${addChip('edu','Education')}</div>
+      ${extra('dose', `<input type="text" placeholder="e.g. Joint mob grade III, 3 × 1 min">`)}
+      ${extra('load', chips('wb',['NWB','PWB','WBAT','FWB'],{single:true}))}
+      ${extra('goals', `<input type="text" placeholder="Another goal">`)}
+      ${extra('dis', `<input type="text" placeholder="Discharge criteria / referral plan">`)}
+      ${extra('edu', chips('edu',['Load progression','Pain neuroscience','Activity modification','HEP']))}`,
+      summary(){ const t=multi('tx'); return [t.length&&t.join(', '), val('hep')&&('HEP: '+val('hep')), val('goal')&&('goal: '+val('goal')), sel('freq'), val('review')&&('review '+val('review'))].filter(Boolean).join(' · '); }}
+  ];
+
+  /* ---------- state readers ---------- */
+  function sel(g){ const c=$(`[data-group="${g}"] .c.on`); return c?c.dataset.v:''; }
+  function multi(g){ return $$(`[data-group="${g}"] .c.on`).map(c=>c.dataset.v); }
+  function val(id){ const e=document.getElementById(id); return e?e.value.trim():''; }
+  function noteMark(id){ return val(id) ? ' · 📝 notes' : ''; }
+
+  /* ---------- render ---------- */
+  function render(){
+    $('#app').innerHTML =
+      `<div class="top"><div><h1>Initial Assessment</h1><div class="s">Riya M. · 24 F · MRN 1043 · 21 Oct 2026</div></div><div class="s" id="saveState">Draft</div></div>` +
+      SECTIONS.map(s => `<div class="sec" id="s-${s.id}"><div class="sh" data-toggle="${s.id}"><h2>${s.title}</h2><span class="sum empty"></span><span class="tick">✓</span><span class="chev">▾</span></div><div class="sb">${s.body}</div></div>`).join('') +
+      `<div class="sign"><button type="button" id="signBtn">Sign &amp; complete</button></div><p class="callout" id="callout"></p>`;
+    renderRegion('');
+    refresh();
+  }
+  function renderRegion(region){
+    const t = REGION_TESTS[region];
+    $('#mvChips').innerHTML = t ? chips('mv', t.mv, {dash:true}) : '<div class="callout" style="margin:0">Pick a region in Subjective to see suggested movements.</div>';
+    $('#stChips').innerHTML = t ? chips('st', t.st, {dash:true}) : '<div class="callout" style="margin:0">—</div>';
+    $('#mvRows').innerHTML = t ? t.mv.map(m => `<div class="mrow" data-mv="${m}"><b>${m}</b><span class="side">Affected</span><input type="text" inputmode="numeric" placeholder="°"><span class="side">Other side</span><input type="text" inputmode="numeric" placeholder="°"></div>`).join('') : '';
+  }
+  function refresh(){
+    SECTIONS.forEach(s => {
+      const el = $('#s-'+s.id), sum = s.summary();
+      const span = el.querySelector('.sum');
+      span.textContent = sum || s.emptyText || 'Not started';
+      span.classList.toggle('empty', !sum);
+      el.classList.toggle('done', !!sum);
+    });
+    $('#painNow').style.display = multi('symptoms').includes('Pain') ? '' : 'none';
+  }
+
+  /* ---------- interactions ---------- */
+  document.addEventListener('click', e => {
+    const tg = e.target.closest('[data-toggle]'); if(tg){ $('#s-'+tg.dataset.toggle).classList.toggle('open'); return; }
+    const c = e.target.closest('.c');
+    if(c && c.id === 'screened'){ c.classList.toggle('on'); c.textContent = (c.classList.contains('on')?'☑':'☐')+' Screened — no other deficits'; refresh(); return; }
+    if(c && c.closest('[data-group]')){
+      const g = c.closest('[data-group]');
+      if(g.dataset.single){ const was=c.classList.contains('on'); $$('.c', g).forEach(x=>x.classList.remove('on')); if(!was) c.classList.add('on'); }
+      else c.classList.toggle('on');
+      if(g.dataset.group==='region'){ renderRegion(sel('region')); }
+      if(g.dataset.group==='mv'){ const row=$(`#mvRows .mrow[data-mv="${c.dataset.v}"]`); if(row){ row.classList.toggle('show', c.classList.contains('on')); if(c.classList.contains('on')) row.querySelector('input').focus(); } }
+      if(g.dataset.group==='flags'){ if(multi('flags').length) $('#noFlags').classList.remove('on'); }
+      refresh(); return;
+    }
+    const a = e.target.closest('[data-extra]');
+    if(a){ const x=$('#x-'+a.dataset.extra); const show=!x.classList.contains('show'); x.classList.toggle('show', show); a.classList.toggle('open', show); a.textContent=(show?'− ':'+ ')+a.textContent.slice(2); return; }
+    const nb = e.target.closest('[data-notes]');
+    if(nb){ nb.style.display='none'; const t=document.getElementById(nb.dataset.notes); t.style.display='block'; t.focus(); return; }
+    if(e.target.id==='noFlags'){ e.target.classList.toggle('on'); if(e.target.classList.contains('on')){ $$('[data-group="flags"] .c').forEach(x=>x.classList.remove('on')); $('#flagList').classList.remove('show'); } refresh(); return; }
+    if(e.target.id==='flagOne'){ $('#flagList').classList.toggle('show'); return; }
+    const yn = e.target.closest('.yn .seg button'); if(yn){ $$('button', yn.parentElement).forEach(b=>b.classList.remove('on')); yn.classList.add('on'); return; }
+    if(e.target.id==='signBtn'){
+      const ok = $('#noFlags').classList.contains('on') || multi('flags').length;
+      $('#callout').innerHTML = ok ? '✓ Signed (mockup). Every section above is now summarised on one screen.' : '<b style="color:#B3261E">Can’t sign yet:</b> confirm the red-flag screen in Safety.';
+      if(ok){ $$('.sec').forEach(s=>s.classList.remove('open')); $('#saveState').textContent='Signed'; }
+      return;
+    }
+  });
+  document.addEventListener('input', () => refresh());
+
+  /* ---------- states ---------- */
+  function setState(st){
+    render();
+    if(st === 'empty'){ ['sub','safe','obj','imp','plan'].forEach(id => $('#s-'+id).classList.add('open')); return; }
+    // Filled demo: an ankle sprain initial assessment, all sections collapsed to summaries
+    const click = s => { const el=$(s); if(el) el.click(); };
+    $('#pp').value = 'Rolled L ankle playing badminton 5 days ago, swollen next morning; walking hurts after 10 min.';
+    click('[data-group="region"] [data-v="Ankle / Foot"]'); click('[data-group="side"] [data-v="L"]'); click('[data-group="onset"] [data-v="Sudden"]');
+    click('[data-group="symptoms"] [data-v="Pain"]'); click('[data-group="symptoms"] [data-v="Swelling"]'); click('[data-group="pain"] [data-v="6"]');
+    $('#limited').value = 'walking >10 min';
+    const sn=$('[data-notes="subNotes"]'); sn.click(); $('#subNotes').value='Anxious about missing club tournament in 4 weeks.';
+    click('[data-extra="cond"]');
+    click('#noFlags'); click('[data-yn="bt"] button:nth-child(2)'); click('[data-yn="imp"] button:nth-child(2)');
+    click('[data-group="obs"] [data-v="Swelling"]'); click('[data-group="obs"] [data-v="Tender"]'); click('[data-group="obs"] [data-v="Antalgic gait"]');
+    click('[data-group="mv"] [data-v="Dorsiflexion"]'); $('#mvRows .mrow[data-mv="Dorsiflexion"] input').value='10';
+    click('[data-group="st"] [data-v="Anterior drawer"]'); click('#screened');
+    const on=$('[data-notes="objNotes"]'); on.click(); $('#objNotes').value='Bruising tracking to lateral heel; ATFL most tender.';
+    $('#dx').value='Grade II lateral ankle sprain (ATFL)'; click('[data-group="irr"] [data-v="Moderate"]'); click('[data-extra="prec"]'); $('#prec').value='avoid inversion loading 2 wks';
+    click('[data-group="tx"] [data-v="Joint mob"]'); click('[data-group="tx"] [data-v="Taping"]'); click('[data-group="tx"] [data-v="Ice / heat"]');
+    $('#hep').value='3 exercises'; $('#goal').value='walk 30 min pain-free by 11 Nov'; click('[data-group="freq"] [data-v="2×/wk"]'); $('#review').value='2026-10-28';
+    $$('.sec').forEach(s=>s.classList.remove('open'));
+    refresh(); $('#saveState').textContent='Ready to sign';
+  }
+
+  $$('[data-device]').forEach(b => b.addEventListener('click', () => { $$('[data-device]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); $('#device').className='device '+b.dataset.device; }));
+  $$('[data-state]').forEach(b => b.addEventListener('click', () => { $$('[data-state]').forEach(x=>x.classList.remove('on')); b.classList.add('on'); setState(b.dataset.state); $('#screen').scrollTop=0; }));
+  setState('empty');
+})();
+</script>
+</body>
+</html>

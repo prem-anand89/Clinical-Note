@@ -2520,15 +2520,11 @@
       </div>
     </section>
 
-    <section class="section collapsible-card open" id="sec-clinical-impression">
-      <div class="section-title collapsible-header" onclick="this.parentElement.classList.toggle('open')">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <h2>5. Clinical Impression</h2>
-        </div>
-        <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    <section class="section" id="sec-clinical-impression">
+      <div class="section-title">
+        <h2>5. Clinical Impression</h2>
       </div>
-      <div class="collapsible-body">
-      <div class="field-note" style="margin:-6px 2px 14px;">The missing "A" in SOAP — synthesizes Subjective (Chief Complaint/History) + Objective into a working clinical picture before Intervention/Plan.</div>
+      <div class="lean-body">
 
       <div class="card">
         <!-- Read-only cross-reference to whatever's already active — connects rather than re-asks -->
@@ -2600,77 +2596,7 @@
 
 
         
-        <div class="field">
-          <label>Differential considerations <span class="hint">optional</span></label>
-          <input type="text" class="text-input" placeholder="e.g. r/o rotator cuff tear, cervical referred">
-        </div>
-        
         <div class="row-2">
-          <div class="field">
-            <label>Evidence supporting <span class="hint">optional</span></label>
-            <input type="text" class="text-input" id="ci-evidence-for" placeholder="e.g. Painful arc 70–120°, positive Hawkins-Kennedy">
-          </div>
-          <div class="field">
-            <label>Evidence not supporting <span class="hint">optional</span></label>
-            <input type="text" class="text-input" id="ci-evidence-against" placeholder="e.g. Full passive ROM, no night pain">
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Impairments identified</label>
-          <div class="chip-row">
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Reduced ROM</button>
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Weakness</button>
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Pain</button>
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Neural tension</button>
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Joint stiffness</button>
-            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Motor control deficit</button>
-          </div>
-        </div>
-        
-        <div class="row-2">
-          <div class="field">
-            <label>Activity limitations</label>
-            <input type="text" class="text-input" placeholder="e.g. Cannot reach overhead, difficulty dressing">
-          </div>
-          <div class="field">
-            <label>Participation restrictions</label>
-            <input type="text" class="text-input" placeholder="e.g. Unable to work, unable to play sport">
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Contributing factors <span class="hint">grouped by category — not exhaustive</span></label>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Biomechanical / movement</div>
-            <div class="chip-row" id="cf-biomechanical">
-              <button type="button" class="chip" data-chip="Posture">Posture</button>
-              <button type="button" class="chip" data-chip="Mobility deficit">Mobility deficit</button>
-              <button type="button" class="chip" data-chip="Movement pattern deficit">Movement pattern deficit</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Neuromuscular</div>
-            <div class="chip-row" id="cf-neuromuscular">
-              <button type="button" class="chip" data-chip="Weakness">Weakness</button>
-              <button type="button" class="chip" data-chip="Motor control deficit">Motor control deficit</button>
-              <button type="button" class="chip" data-chip="Neural tension">Neural tension</button>
-            </div>
-          </div>
-          <div>
-            <div class="field-note" style="margin:0 0 6px;">Load / training</div>
-            <div class="chip-row" id="cf-load">
-              <button type="button" class="chip" data-chip="Training error / overuse">Training error / overuse</button>
-              <button type="button" class="chip" data-chip="Recent activity change">Recent activity change</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="field">
-          <label>Precautions / contraindications <span class="hint">carried into Intervention — e.g. no resisted ER for 6 wks</span></label>
-          <input type="text" class="text-input" id="ci-precautions" placeholder="e.g. Avoid end-range flexion loading; monitor for neuro signs">
-        </div>
-
         <div class="field">
           <label>Irritability — overall rating <span class="hint">SIN framework; your summary of the Pain Profile irritability fields (trigger, onset, easing, settle), and applies to non-pain presentations too</span></label>
           <div class="segmented" id="irritability">
@@ -2682,11 +2608,6 @@
 
 
         <div class="field">
-          <label>Episode of care <span class="hint">set in Plan &amp; Goals — shown here for reference</span></label>
-          <div class="derived-field"><div><div class="val" id="ci-plan-echo" style="font-family:'IBM Plex Sans', system-ui, sans-serif; font-size:13px;">Not set yet</div></div></div>
-        </div>
-
-        <div class="field" style="margin-bottom:0;">
           <label>Prognosis indicator</label>
           <div class="segmented" id="prognosis-indicator">
             <button type="button" data-val="Favorable">Favorable</button>
@@ -2694,6 +2615,78 @@
             <button type="button" data-val="Poor">Poor</button>
           </div>
         </div>
+        </div>
+        <div class="field">
+          <label>Precautions / contraindications <span class="hint">carried into Intervention — e.g. no resisted ER for 6 wks</span></label>
+          <input type="text" class="text-input" id="ci-precautions" placeholder="e.g. Avoid end-range flexion loading; monitor for neuro signs">
+        </div>
+
+        <div id="lean-i-more-anchor"></div>
+
+        <div class="field lean-tucked" id="lean-i-diff">
+          <label>Differential considerations <span class="hint">optional</span></label>
+          <input type="text" class="text-input" placeholder="e.g. r/o rotator cuff tear, cervical referred">
+        </div>
+        
+        <div class="row-2 lean-tucked" id="lean-i-evidence">
+          <div class="field">
+            <label>Evidence supporting <span class="hint">optional</span></label>
+            <input type="text" class="text-input" id="ci-evidence-for" placeholder="e.g. Painful arc 70–120°, positive Hawkins-Kennedy">
+          </div>
+          <div class="field">
+            <label>Evidence not supporting <span class="hint">optional</span></label>
+            <input type="text" class="text-input" id="ci-evidence-against" placeholder="e.g. Full passive ROM, no night pain">
+          </div>
+        </div>
+
+        <div class="field lean-tucked" id="lean-i-impair">
+          <label>Impairments identified</label>
+          <div class="chip-row">
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Reduced ROM</button>
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Weakness</button>
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Pain</button>
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Neural tension</button>
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Joint stiffness</button>
+            <button type="button" class="chip" onclick="this.classList.toggle('selected')">Motor control deficit</button>
+          </div>
+        </div>
+        
+        <div class="row-2 lean-tucked" id="lean-i-activity">
+          <div class="field">
+            <label>Activity limitations <span class="hint">pre-filled from "most limited activity" — edit freely</span></label>
+            <input type="text" class="text-input" id="ci-activity" placeholder="e.g. Cannot reach overhead, difficulty dressing">
+          </div>
+          <div class="field">
+            <label>Participation restrictions <span class="hint">pre-filled from "return to" — edit freely</span></label>
+            <input type="text" class="text-input" id="ci-participation" placeholder="e.g. Unable to work, unable to play sport">
+          </div>
+        </div>
+
+        <div class="field lean-tucked" id="lean-i-cf">
+          <label>Contributing factors <span class="hint">grouped by category — not exhaustive</span></label>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Biomechanical / movement</div>
+            <div class="chip-row" id="cf-biomechanical">
+              <button type="button" class="chip" data-chip="Posture">Posture</button>
+              <button type="button" class="chip" data-chip="Mobility deficit">Mobility deficit</button>
+              <button type="button" class="chip" data-chip="Movement pattern deficit">Movement pattern deficit</button>
+            </div>
+          </div>
+          <div>
+            <div class="field-note" style="margin:0 0 6px;">Load / training</div>
+            <div class="chip-row" id="cf-load">
+              <button type="button" class="chip" data-chip="Training error / overuse">Training error / overuse</button>
+              <button type="button" class="chip" data-chip="Recent activity change">Recent activity change</button>
+            </div>
+          </div>
+        </div>
+
+
+        <div class="field lean-tucked" id="lean-i-echo">
+          <label>Episode of care <span class="hint">set in Plan &amp; Goals — shown here for reference</span></label>
+          <div class="derived-field"><div><div class="val" id="ci-plan-echo" style="font-family:'IBM Plex Sans', system-ui, sans-serif; font-size:13px;">Not set yet</div></div></div>
+        </div>
+
       </div>
       </div>
     </section>
@@ -3924,7 +3917,6 @@
 
   // ---------- Clinical Impression ----------
   setupChips('cf-biomechanical');
-  setupChips('cf-neuromuscular');
   setupChips('cf-load');
   setupSegmented('irritability');
   setupSegmented('prognosis-indicator');
@@ -9326,7 +9318,7 @@ window.hideAdvancedModule = function(key) {
 
   function hasData(el){
     if(!el) return false;
-    if($$('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea', el).some(f => f.value && f.value.trim() !== '')) return true;
+    if($$('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea', el).some(f => f.value && f.value.trim() !== '' && f.dataset.auto !== '1')) return true;
     if($$('input[type=checkbox]:checked, input[type=radio]:checked', el).length) return true;
     if($$('select', el).some(s => s.selectedIndex > 0)) return true;
     if($$('.chip.selected, .segmented button.selected, .nrs-scale button.selected, .pv-cell[data-grade]:not([data-grade=""])', el).length) return true;
@@ -9764,6 +9756,39 @@ window.hideAdvancedModule = function(key) {
     });
   })();
   L.notes($('#sec-objective'), 'objective-notes', 'Examination notes');
+
+
+  /* ===================== SECTION: Impression ===================== */
+  L.section('sec-clinical-impression', {
+    emptyText: 'Not started',
+    summary(){
+      const dx = val('working-diagnosis'), hyp = val('primary-hypothesis');
+      const tpl = window.activeSuggestions && window.activeSuggestions['ortho-template'];
+      const irr = selected('#irritability')[0], prog = selected('#prognosis-indicator')[0], prec = val('ci-precautions');
+      return parts([dx || (hyp && (hyp.length > 70 ? hyp.slice(0, 70) + '…' : hyp)),
+        tpl && ('template: ' + tpl.label.replace('Template: ', '')),
+        irr && ('irritability ' + irr.toLowerCase()), prog && ('prognosis ' + prog.toLowerCase()),
+        prec && ('precaution: ' + prec)]);
+    }
+  });
+  L.more('sec-clinical-impression', { id: 'imp', anchor: '#lean-i-more-anchor', where: 'afterend', groups: [
+    { id: 'i-deep', label: 'Deep reasoning & ICF', targets: ['#lean-i-diff', '#lean-i-evidence', '#lean-i-impair', '#lean-i-activity', '#lean-i-cf', '#lean-i-echo'] }
+  ]});
+  // Activity limitations / participation start from Chief Complaint's answers (editable; never re-typed).
+  // Auto-filled values are flagged so they don't count as "entered data" and force the block open.
+  function prefill(id, srcId){
+    const el = document.getElementById(id), src = val(srcId);
+    if(!el || el.dataset.touched) return;
+    if(el.value.trim() !== src && (el.value.trim() === '' || el.dataset.auto === '1')){
+      el.value = src;
+      if(src) el.dataset.auto = '1'; else delete el.dataset.auto;
+    }
+  }
+  ['ci-activity', 'ci-participation'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('input', () => { el.dataset.touched = '1'; delete el.dataset.auto; });
+  });
+  L.hooks.push(() => { prefill('ci-activity', 'fp-limited'); prefill('ci-participation', 'fp-return'); });
 
   schedule();
 })();

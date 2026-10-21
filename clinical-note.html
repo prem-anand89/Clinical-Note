@@ -4081,24 +4081,46 @@
   // ==========================================================
   // SCREENING — Red/Yellow Flags, smart collapse
   // ==========================================================
-  var redFlagLabels = [
-    'Unexplained weight loss',
-    'Fever or night sweats',
-    'Bowel / bladder dysfunction',
-    'Saddle anesthesia',
-    'Progressive neurological deficit',
-    'History of cancer',
-    'Significant trauma (high-energy mechanism)',
-    'Night pain, unrelieved by rest or position change'
+  // Owner-approved list (2026-10-21): screening questions, not diagnoses.
+  // `regions` limits an item to those Chief Complaint regions; null = always shown.
+  var RED_FLAGS = [
+    {label:'Bowel or bladder change (new retention or incontinence)', regions:null},
+    {label:'Saddle numbness', regions:null},
+    {label:'Progressive or widespread neurological deficit (e.g. worsening weakness, both legs)', regions:null},
+    {label:'History of cancer', regions:null},
+    {label:'Unexplained weight loss', regions:null},
+    {label:'Fever, night sweats, recent infection or immunosuppression', regions:null},
+    {label:'Significant trauma, or minor trauma with osteoporosis / long-term steroids', regions:null},
+    {label:'Constant, progressive pain not eased by rest or position (incl. night pain)', regions:null},
+    {label:'Calf pain, swelling or warmth (DVT signs)', regions:null},
+    {label:'Chest pain or sudden breathlessness', regions:null},
+    {label:'Dizziness, double vision, speech / swallowing difficulty or drop attacks', regions:['Head / Face','Cervical Spine']},
+    {label:'Clumsy or numb hands on both sides, or unsteady gait', regions:['Cervical Spine']}
   ];
+  var redFlagLabels = RED_FLAGS.map(function(f){ return f.label; });
   var yellowFlagLabels = [
     'Fear-avoidance beliefs',
     'Catastrophizing',
-    'Low mood indicators',
-    'Work / compensation dissatisfaction',
+    'Low mood / high distress',
+    'Low expectation of recovery',
+    'Work / compensation issues',
     'Passive coping style'
   ];
   var redFlagState = redFlagLabels.map(function(){ return null; });
+  // A region-limited item counts (and shows) when its region is selected, or
+  // once it has an answer — an answered item never disappears on a region change.
+  function redFlagActive(i){
+    var regs = RED_FLAGS[i].regions;
+    var region = (document.getElementById('region') || {}).value || '';
+    return !regs || regs.indexOf(region) !== -1 || redFlagState[i] !== null;
+  }
+  function activeRedFlagIdx(){ return redFlagLabels.map(function(_, i){ return i; }).filter(redFlagActive); }
+  function refreshRedFlagVisibility(){
+    redFlagLabels.forEach(function(_, i){
+      var row = redFlagsList.querySelector('[data-row-index="' + i + '"]');
+      if(row) row.style.display = redFlagActive(i) ? '' : 'none';
+    });
+  }
   // True only when the clinician used "Mark all reviewed as negative" and
   // confirmed; cleared by any individual answer, so stored data can tell a
   // bulk attestation apart from item-by-item answers.
@@ -4110,7 +4132,7 @@
     row.className = 'flag-row';
     row.setAttribute('data-row-index', i);
     row.innerHTML =
-      '<span class="flag-label">' + label + '</span>' +
+      '<span class="flag-label">' + label + (RED_FLAGS[i].regions ? ' <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— ' + (RED_FLAGS[i].regions.length > 1 ? 'neck / head' : 'neck') + '</span>' : '') + '</span>' +
       '<div class="segmented small" data-redflag="' + i + '">' +
       '<button type="button" data-val="No">No</button>' +
       '<button type="button" data-val="Yes">Yes</button>' +
@@ -4139,8 +4161,7 @@
       '<span class="flag-label">' + label + '</span>' +
       '<div class="segmented small">' +
       '<button type="button" data-val="None">None</button>' +
-      '<button type="button" data-val="Mild">Mild</button>' +
-      '<button type="button" data-val="Moderate">Moderate</button>' +
+      '<button type="button" data-val="Some concern">Some concern</button>' +
       '<button type="button" data-val="Significant">Significant</button>' +
       '</div>';
     yellowFlagsList.appendChild(row);
@@ -4158,8 +4179,10 @@
   function updateScreeningSummary(){
     var summaryEl = document.getElementById('screening-summary');
     var calloutEl = document.getElementById('screening-flagged-callout');
-    var flaggedIndices = redFlagState.map(function(v,i){ return v === 'Yes' ? i : -1; }).filter(function(i){ return i >= 0; });
-    var allAnswered = redFlagState.every(function(v){ return v !== null; });
+    refreshRedFlagVisibility();
+    var active = activeRedFlagIdx();
+    var flaggedIndices = active.filter(function(i){ return redFlagState[i] === 'Yes'; });
+    var allAnswered = active.every(function(i){ return redFlagState[i] !== null; });
 
     // Highlight/unhighlight rows
     redFlagLabels.forEach(function(_, i){
@@ -4177,8 +4200,8 @@
         '<div><div class="fc-title">Flagged — review before proceeding</div>' +
         flaggedIndices.map(function(i){ return '<div class="fc-item">• ' + redFlagLabels[i] + '</div>'; }).join('') +
         '</div></div>';
-    } else if(allAnswered && redFlagState.indexOf('Unknown') !== -1){
-      var unknownCount = redFlagState.filter(function(v){ return v === 'Unknown'; }).length;
+    } else if(allAnswered && active.some(function(i){ return redFlagState[i] === 'Unknown'; })){
+      var unknownCount = active.filter(function(i){ return redFlagState[i] === 'Unknown'; }).length;
       summaryEl.textContent = 'No red flags noted · ' + unknownCount + ' unable to assess';
       summaryEl.style.color = '#8C5A1E';
       calloutEl.style.display = 'none';
@@ -4205,7 +4228,7 @@
     if(!ok) return;
     if(attestEl) attestEl.checked = true;
     redFlagBulkNegative = true;
-    redFlagLabels.forEach(function(_, i){
+    activeRedFlagIdx().forEach(function(i){
       redFlagState[i] = 'No';
       var group = redFlagsList.querySelector('[data-redflag="' + i + '"]');
       group.querySelectorAll('button').forEach(function(b){
@@ -4234,7 +4257,7 @@
   // Hard block (safety): screening must have been reviewed — every red-flag
   // question answered, or the attestation ticked (bulk shortcut ticks it).
   window.screeningReviewError = function(){
-    var allAnswered = redFlagState.every(function(v){ return v !== null; });
+    var allAnswered = activeRedFlagIdx().every(function(i){ return redFlagState[i] !== null; });
     return (allAnswered || document.getElementById('red-flag-attestation').checked) ? '' :
       'Red-flag screening has not been reviewed: answer each question, or confirm with the attestation.';
   };
@@ -4250,6 +4273,9 @@
   document.getElementById('red-flag-disposition').addEventListener('click', function(){
     document.getElementById('rf-disp-error').style.display = 'none';
   });
+
+  var regionInputForFlags = document.getElementById('region');
+  if(regionInputForFlags) regionInputForFlags.addEventListener('change', updateScreeningSummary);
 
   var screeningBody = document.getElementById('screening-body');
   var screeningChevron = document.getElementById('screening-chevron');

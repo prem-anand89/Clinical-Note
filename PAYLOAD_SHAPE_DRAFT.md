@@ -3,8 +3,7 @@
 Draft only. Derived from what `clinical-note.html` actually collects as of Phase 12. The live type is `CoreAssessmentPayload` in thera-net `src/domain/coreAssessment.ts` (`PAYLOAD_VERSION = '1.3'`). Target: `'1.4'` with a pure `upgrade()` so v1.3 notes load unchanged. Do not store derived values (scores, levels, grades) — recompute from inputs.
 
 ## Reconcile with v1.3 before adding anything
-- **Red flag list differs.** v1.3 `RED_FLAG_ITEMS` = Cauda equina, Fracture, Infection, Malignancy, DVT, Vascular, Cord compression, Unexplained weight loss. Prototype = Unexplained weight loss, Fever/night sweats, Bowel/bladder dysfunction, Saddle anesthesia, Progressive neurological deficit, History of cancer, Significant trauma, Night pain unrelieved by rest. Decide the canonical list (clinician call), then migrate stored answers.
-- **Yellow flags differ** (v1.3: High distress, Catastrophizing, Job dissatisfaction, Low self-efficacy, Fear avoidance; prototype: Fear-avoidance, Catastrophizing, Low mood, Work/compensation dissatisfaction, Passive coping; scale None/Mild/Moderate/Significant vs. v1.3 no-concern/some/significant).
+- **Red / yellow flag lists — DECIDED (2026-10-21):** the prototype lists replace v1.3's `RED_FLAG_ITEMS` / `YELLOW_FLAG_ITEMS` for new notes. Red flags are 12 screening questions (two shown only for neck / head regions — store `regions` with the item list); yellow flags are 6 items on a 3-step scale (None / Some concern / Significant). v1.3 notes keep their own labels and keep opening in the legacy editor, so no data migration is needed; reporting across both needs a label map.
 - **Regions:** prototype adds "Head / Face" to the 9 `ANATOMICAL_REGIONS`.
 - **Red flag answer states:** prototype `No | Yes | NA | Unknown` (v1.3: `yes | no | not-assessed`).
 

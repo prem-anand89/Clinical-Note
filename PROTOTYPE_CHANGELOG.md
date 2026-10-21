@@ -355,3 +355,8 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **Template sets the region:** each MVP template carries a region (TKR/ACL → Knee, THR → Hip, RC & SIS → Shoulder, lumbar & CLBP → Lumbar Spine, Achilles & ankle sprain → Ankle / Foot, cervical radiculopathy → Cervical Spine); applying it selects that region chip. Entered Objective rows are kept.
 - **Neuro Screen is suggested only:** the trigger shows a suggestion pill; Accept opens the screen. Nothing opens automatically.
 - **McKenzie (MDT) removed for now** (sidebar entry, card and script).
+
+### Red / yellow flag lists (owner-approved)
+- **Red flags (12 screening questions):** bowel/bladder change · saddle numbness · progressive or widespread neuro deficit · history of cancer · unexplained weight loss · fever / night sweats / recent infection / immunosuppression · significant trauma or minor trauma with osteoporosis / steroids · constant progressive pain incl. night pain · **new:** calf pain / swelling / warmth (DVT) · **new:** chest pain or sudden breathlessness · **new, neck/head only:** dizziness, double vision, speech/swallowing difficulty, drop attacks · **new, neck only:** clumsy or numb hands both sides, unsteady gait.
+- Region-limited items appear only for their regions (10 items by default, 12 for Cervical Spine) and stay visible once answered, so a positive answer can't vanish on a region change. Bulk "all negative", the review rule and the sign gate count only the items shown.
+- **Yellow flags (6):** fear-avoidance · catastrophizing · low mood / high distress · **new:** low expectation of recovery · work / compensation issues · passive coping. Scale is now 3-step: None / Some concern / Significant.

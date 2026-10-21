@@ -74,3 +74,36 @@ objectiveMethod?: Record<'rom'|'mmt', { position?: string; symptomResponse?: str
 - **Group A:** ISNCSCI inputs only — sensory `{level: {rLT, rPP, lLT, lPP}}` over C2…S4-5 (`0|1|2|NT`), key muscles `{C5…S1: {r,l}}` (`0–5|NT`), `vac`, `dap` (`Yes|No|NT`). Other tools: Fugl-Meyer subtotals, Hoehn & Yahr stage, MS dermatomal grid, etc. Needs its own table per delta spec §30.3 (not `neuro_spinal_assessments`).
 - **Specialty modules** (Facial Palsy, Vestibular, Cardiothoracic) are Patient-Profile modules, not note payload — separate tables (`facial_palsy_assessments` exists/dormant; vestibular and cardiothoracic to create).
 - Questionnaires: `responses` jsonb per instrument + accepted/skipped state; scores computed, not stored.
+
+
+## Additions from the lean assessment build (branch `lean-assessment`)
+Same rule: store inputs, never derived text. New / changed:
+
+```ts
+// Notes (free text, optional)
+notes: { subjective?: string; objective?: string };               // getAssessmentNotes()
+
+// Explicit statements (booleans — never stored as fake normal values)
+statements: {
+  noRelevantHistory: boolean;                                      // cancelled automatically once history is entered
+  screenedNoOtherDeficits: boolean;                                // Objective
+  noRedFlagsReviewed: boolean;                                     // the gate button; with redFlagBulkNegative (below) for how it was set
+};                                                                 // getAssessmentFlags()
+
+// Objective: rows exist ONLY for items the clinician tapped; untested suggestions are not stored.
+// (ROM/MMT/special-test rows keep their current shapes; region changes never remove an entered row.)
+
+// Psychosocial (yellow flags) now captured in Chief Complaint; unchanged shape, 3-step scale
+psychosocial: { label: string; level: 'None' | 'Some concern' | 'Significant' }[];
+
+// Treatment: every selected treatment is recorded; dose fields appear only if the clinician opened "+ dose"
+interventionDosage: /* as above; entries may be { category, type } only */
+
+// HEP rows (two-speed UI; same fields)                            // getHepRows()
+hep: { name; sets; reps; hold; load; frequency; cue; progression; teachBack; adherenceBarrier; category }[];
+
+// Plan
+plan: { nextVisitMemo?: string /* shown at the top of the next session note */ };
+goals: /* a one-line goal creates a normal goal row (description only until detail is added) */
+```
+Removed fields (do not port): the second `precautions` textarea in Load-management (Impression `ci-precautions` is the only home); the "Anticoagulants" medication chip (Safety's blood-thinner answer is the only source); duplicate "Neuromuscular" contributing-factor chips; the separate Palpation card (its fields now live under Observation & palpation, ids unchanged).

@@ -710,6 +710,7 @@
   .lean-sug-hint{ font-size:12px; color:var(--ink-faint); }
   .lean-chip.suggested{ border-style:solid; border-color:#E9D3AC; color:var(--amber); background:var(--amber-dim); }
   .lean-hide{ display:none !important; }
+  .segmented button.lean-ghost{ box-shadow:inset 0 0 0 2px var(--clinical-ring); }
   #risk-summary-card{ padding:10px 14px; margin-bottom:10px; background:var(--amber-dim); border-color:#E9D3AC; font-size:13px; line-height:1.5; }
   #risk-summary-card.risk-none{ background:#fff; border-color:var(--line); }
   #risk-summary-card .risk-lbl{ color:#8C5A1E; margin-right:4px; }
@@ -1673,14 +1674,14 @@
          next visit" isn't demonstrable — Hide here just collapses/
          expands within this visit.
     ========================================================== -->
-    <section class="section" id="sec-tier2">
+    <!-- Legacy "Additional Sections" add-menu: replaced by the Objective module dock (its landing zone moved there). Kept hidden because the add-menu code still builds into it. -->
+    <section class="section" id="sec-tier2" style="display:none;">
       <div class="section-title">
         <h2 style="font-size:15px;">Additional Sections</h2>
       </div>
 
       <div class="field-note" style="margin:-6px 2px 12px;">Added only when needed, via "+" below — sticks to this episode's future visits until removed.</div>
       <div id="add-tier2-section-mount" style="max-width:260px; margin-bottom:14px;"></div>
-      <div id="tier2-zone"></div>
     </section>
 
     <!-- =========================================================
@@ -2049,6 +2050,8 @@
         <span class="field-note" id="lean-obj-gate-note" style="margin:0 0 0 10px;">or add more to the exam:</span>
       </div>
       <div class="card lean-tucked" id="lean-module-dock" style="margin-bottom:14px;"></div>
+      <!-- Modules added from the dock (or the sidebar) open here, right below it -->
+      <div id="tier2-zone"></div>
     </section>
 
     <!-- =========================================================
@@ -2863,16 +2866,6 @@
         </div>
       </div>
 
-      <!-- HEP — free text rows with category tags, distinct from Therapeutic Exercise above -->
-      <div class="card">
-        <div class="card-heading">Home Exercise Program (HEP) <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— free-text exercise + instructions, tagged by category. No video/image/library search in MVP (delta spec §5).</span></div>
-        <div id="hep-rows"></div>
-        <button type="button" class="add-link" id="add-hep-row">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Add exercise
-        </button>
-      </div>
-
       <!-- Load-management block -->
       <div class="card lean-tucked" id="card-load">
         <div class="card-heading">Load-management <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— pre-populates from Protocol Library when a post-op condition + phase is matched (§11.5); therapist's edited value for this visit is authoritative</span></div>
@@ -2915,14 +2908,11 @@
         </div>
       </div>
     </section>
-    <section class="section collapsible-card open" id="sec-plan-goals">
-      <div class="section-title collapsible-header" onclick="this.parentElement.classList.toggle('open')">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <h2>7. Plan &amp; Goals</h2>
-        </div>
-        <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    <section class="section" id="sec-plan-goals">
+      <div class="section-title">
+        <h2>7. Plan &amp; Goals</h2>
       </div>
-      <div class="collapsible-body">
+      <div class="lean-body">
       <!-- Rehab Timeline / Recovery Outlook — read-only, auto-generated, sits above Phase/Goals. No render at all when no template matched. -->
       <div class="card" id="rehab-timeline-card" style="display:none; border-color:var(--clinical); background:linear-gradient(180deg, var(--clinical-dim), #fff 55%);">
         <div class="card-heading" id="rehab-timeline-heading" style="color:var(--clinical);">Phase Timeline</div>
@@ -2943,6 +2933,7 @@
             <button type="button" data-val="Discharge">Discharge</button>
           </div>
           <div class="field-note" id="phase-recommended-note" style="display:none; margin-top:8px;"></div>
+          <div class="field-note" id="lean-phase-note" style="display:none; margin-top:8px;"></div>
         </div>
 
         <!-- Drift banner — compares today's Phase selection against today's freshly-computed recommended_phase -->
@@ -2957,18 +2948,34 @@
 
       <!-- Goals -->
       <div class="card">
-        <div class="card-heading">Goals</div>
+        <div class="card-heading">Goal</div>
+        <div class="field" style="margin-bottom:0;">
+          <label for="lean-fast-goal">What should the patient be able to do? <span class="hint">one line — it becomes a goal; measure, target and date open under "Goal detail"</span></label>
+          <input type="text" class="text-input" id="lean-fast-goal" placeholder="e.g. walk 30 min pain-free in 3 weeks">
+        </div>
+        <div id="lean-goal-rows-wrap" class="lean-tucked" style="margin-top:12px;">
         <div id="goals-rows"></div>
         <button type="button" class="add-link" id="add-goal-row">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add goal
         </button>
+        </div>
       </div>
+      <!-- HEP — free text rows with category tags, distinct from Therapeutic Exercise above -->
+      <div class="card">
+        <div class="card-heading">Home Exercise Program (HEP) <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— free-text exercise + instructions, tagged by category. No video/image/library search in MVP (delta spec §5).</span></div>
+        <div id="hep-rows"></div>
+        <button type="button" class="add-link" id="add-hep-row">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add exercise
+        </button>
+      </div>
+
 
 
       <!-- Plan Details -->
       <div class="card">
-        <div class="card-heading">Plan Details</div>
+        <div class="card-heading">Plan</div>
         <div class="row-2">
           <div class="field">
             <label>Visit Frequency</label>
@@ -2989,10 +2996,13 @@
           </div>
         </div>
         <div class="field">
-          <label>Next Reassessment Date</label>
-          <input type="date" class="text-input" style="max-width: 200px;">
+          <label>Next reassessment</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <input type="date" class="text-input" id="plan-next-review" style="max-width: 200px;">
+            <span id="lean-review-anchor"></span>
+          </div>
         </div>
-        <div class="field">
+        <div class="field lean-tucked" id="lean-p-outcome">
           <label>Selected Outcome Measure</label>
           <div class="chip-row">
             <button type="button" class="chip" onclick="this.classList.toggle('selected')">NPRS</button>
@@ -3004,22 +3014,26 @@
             <button type="button" class="chip" onclick="this.classList.toggle('selected')">FAAM</button>
           </div>
         </div>
-        <div class="field">
+        <div class="field lean-tucked" id="lean-p-progression">
           <label>Progression criteria <span class="hint">what moves the patient to the next stage of care</span></label>
           <input type="text" class="text-input" id="plan-progression-criteria" placeholder="e.g. Advance to loaded exercise when pain ≤3/10 with 10 single-leg squats">
         </div>
-        <div class="field">
+        <div class="field lean-tucked" id="lean-p-discharge">
           <label>Discharge Criteria</label>
-          <input type="text" class="text-input" placeholder="e.g. Pain < 2/10, Full ROM, 5/5 strength">
+          <input type="text" class="text-input" id="plan-discharge" placeholder="e.g. Pain < 2/10, Full ROM, 5/5 strength">
         </div>
-        <div class="field" style="margin-bottom:0;">
+        <div class="field lean-tucked" id="lean-p-referral">
           <label>Referral / Escalation Plan <span class="hint">optional</span></label>
-          <input type="text" class="text-input" placeholder="e.g. Refer to orthopedics if no improvement in 4 weeks">
+          <input type="text" class="text-input" id="plan-referral" placeholder="e.g. Refer to orthopedics if no improvement in 4 weeks">
+        </div>
+        <div class="field lean-tucked" id="lean-p-memo" style="margin-bottom:0;">
+          <label for="next-visit-memo">Memo for next visit <span class="hint">shows at the top of the next session note</span></label>
+          <input type="text" class="text-input" id="next-visit-memo" placeholder="📌 e.g. re-check inversion ROM, progress to single-leg balance">
         </div>
       </div>
 
       <!-- Patient education topics -->
-      <div class="card" style="margin-bottom:0;">
+      <div class="card lean-tucked" id="card-education" style="margin-bottom:0;">
         <div class="card-heading">Patient education topics <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— per-condition suggestion wiring is a Claude Code build task, not auto-selected in this mockup</span></div>
         <div class="chip-row" id="education-topics">
           <button type="button" class="chip" data-chip="Posture">Posture</button>
@@ -5439,34 +5453,46 @@
     var chipsHtml = HEP_CATEGORY_TAGS.map(function(t){
       return '<button type="button" class="chip" data-chip="' + t + '" style="font-size:11.5px;padding:6px 11px;">' + t + '</button>';
     }).join('');
+    // Two-speed row: name, sets, reps, frequency and cue up front; hold, load, progression,
+    // teach-back, adherence barrier and category sit behind "+ More".
     card.innerHTML =
       '<div class="rc-head"><span class="rc-title">Exercise ' + hepCount + '</span>' +
       '<button type="button" class="icon-btn" aria-label="Remove" style="width:28px;height:28px;">' +
       '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
       '</button></div>' +
       '<div class="mini-field" style="margin-bottom:10px;"><label>Exercise name</label>' +
-      '<input type="text" class="text-input" placeholder="e.g. Quad sets"></div>' +
-      '<div class="rc-grid" style="grid-template-columns:repeat(4,1fr); margin-bottom:10px;">' +
+      '<input type="text" class="text-input hep-name" placeholder="e.g. Quad sets"></div>' +
+      '<div class="rc-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:10px;">' +
       '<div><label style="font-size:11px;color:var(--ink-faint);">Sets</label><input type="text" class="text-input hep-sets" placeholder="3"></div>' +
       '<div><label style="font-size:11px;color:var(--ink-faint);">Reps</label><input type="text" class="text-input hep-reps" placeholder="15"></div>' +
-      '<div><label style="font-size:11px;color:var(--ink-faint);">Hold</label><input type="text" class="text-input hep-hold" placeholder="5 s"></div>' +
-      '<div><label style="font-size:11px;color:var(--ink-faint);">Load</label><input type="text" class="text-input hep-load" placeholder="2 lb"></div>' +
       '</div>' +
       '<div class="row-2" style="margin-bottom:10px;">' +
       '<div><label style="font-size:11px;color:var(--ink-faint);">Frequency</label>' +
-      '<div class="segmented small" style="margin:0;"><button type="button">Daily</button><button type="button">2x/day</button><button type="button">EOD</button><button type="button">PRN</button></div></div>' +
+      '<div class="segmented small hep-frequency" style="margin:0;"><button type="button">Daily</button><button type="button">2x/day</button><button type="button">EOD</button><button type="button">PRN</button></div></div>' +
+      '<div><label style="font-size:11px;color:var(--ink-faint);">Key cue / safety</label>' +
+      '<input type="text" class="text-input hep-cue" placeholder="e.g. Keep knee straight, do not hold breath"></div>' +
       '</div>' +
-      '<div class="mini-field" style="margin-bottom:10px;"><label>Key cue / safety instruction</label>' +
-      '<input type="text" class="text-input" placeholder="e.g. Keep knee straight, do not hold breath"></div>' +
+      '<button type="button" class="dose-link hep-more-toggle">+ More (hold, load, progression, teach-back…)</button>' +
+      '<div class="hep-more lean-hide" style="margin-top:6px;">' +
+      '<div class="rc-grid" style="grid-template-columns:repeat(2,1fr); margin-bottom:10px;">' +
+      '<div><label style="font-size:11px;color:var(--ink-faint);">Hold</label><input type="text" class="text-input hep-hold" placeholder="5 s"></div>' +
+      '<div><label style="font-size:11px;color:var(--ink-faint);">Load</label><input type="text" class="text-input hep-load" placeholder="2 lb"></div>' +
+      '</div>' +
       '<div class="mini-field" style="margin-bottom:10px;"><label>Progression / regression rule (optional)</label>' +
-      '<input type="text" class="text-input" placeholder="e.g. Add 2lb ankle weight when 3x15 is easy; drop to 2 sets if pain >4/10"></div>' +
+      '<input type="text" class="text-input hep-progression" placeholder="e.g. Add 2lb ankle weight when 3x15 is easy; drop to 2 sets if pain >4/10"></div>' +
       '<div class="row-2" style="margin-bottom:10px;">' +
       '<div><label style="font-size:11px;color:var(--ink-faint);">Teach-back / comprehension</label>' +
       '<div class="segmented small hep-teachback" style="margin:0;"><button type="button">Correct</button><button type="button">Needed cues</button><button type="button">Unable</button></div></div>' +
       '<div><label style="font-size:11px;color:var(--ink-faint);">Adherence barrier (if reported)</label><input type="text" class="text-input hep-barrier" placeholder="e.g. No time in the morning"></div>' +
       '</div>' +
       '<div class="mini-field"><label>Category tag</label>' +
-      '<div class="chip-row hep-category-row">' + chipsHtml + '</div></div>';
+      '<div class="chip-row hep-category-row">' + chipsHtml + '</div></div>' +
+      '</div>';
+    var moreBtn = card.querySelector('.hep-more-toggle'), moreBox = card.querySelector('.hep-more');
+    moreBtn.addEventListener('click', function(){
+      var hidden = moreBox.classList.toggle('lean-hide');
+      moreBtn.textContent = hidden ? '+ More (hold, load, progression, teach-back…)' : '− Fewer';
+    });
     var chipRow = card.querySelector('.hep-category-row');
     chipRow.querySelectorAll('.chip').forEach(function(chip){
       chip.addEventListener('click', function(){
@@ -5478,6 +5504,17 @@
     hepRowsEl.appendChild(card);
   }
   document.getElementById('add-hep-row').addEventListener('click', addHepRow);
+  // Structured HEP export for the port (matches the draft payload's hep[])
+  window.getHepRows = function(){
+    return Array.prototype.map.call(document.querySelectorAll('#hep-rows .repeatable-card'), function(r){
+      function v(sel){ var e = r.querySelector(sel); return e ? e.value.trim() : ''; }
+      function seg(sel){ var b = r.querySelector(sel + ' button.selected'); return b ? b.textContent.trim() : ''; }
+      var cat = r.querySelector('.hep-category-row .chip.selected');
+      return { name: v('.hep-name'), sets: v('.hep-sets'), reps: v('.hep-reps'), hold: v('.hep-hold'), load: v('.hep-load'),
+               frequency: seg('.hep-frequency'), cue: v('.hep-cue'), progression: v('.hep-progression'),
+               teachBack: seg('.hep-teachback'), adherenceBarrier: v('.hep-barrier'), category: cat ? cat.getAttribute('data-chip') : '' };
+    });
+  };
 
   // ---- Session duration: quick-pick chips (single-select) + free-text custom, kept simple per §12.5 ----
   var sessionDurationRow = document.getElementById('session-duration');
@@ -5677,6 +5714,7 @@
     if(prefill.link){ refreshLinkedSelect(linkSel); Array.prototype.forEach.call(linkSel.options, function(o){ if(o.textContent === prefill.link) linkSel.value = o.textContent; }); }
     return card;
   }
+  window.addGoalRow = addGoalRow;
   document.getElementById('add-goal-row').addEventListener('click', function(){ addGoalRow(); });
 
   // Functional Priority -> PSFS item + goal, no retyping (P1.1)
@@ -9867,6 +9905,84 @@ window.hideAdvancedModule = function(key) {
       const resp = selected('#response-to-treatment')[0];
       const dur = selected('#session-duration')[0] || val('session-duration-custom');
       return parts([labelled.join(', '), resp && ('response: ' + resp.toLowerCase()), selected('#wb-status')[0], val('rom-limit'), dur && (dur + ' min')]);
+    }
+  });
+
+
+  /* ===================== SECTION: Plan & Goals ===================== */
+  // One-line goal: it becomes a real goal row (so the sign-off check is satisfied); the row's other
+  // fields open under "Goal detail". While the row only holds the mirrored text it doesn't count as
+  // "entered data", so it never forces the detail block open.
+  (function(){
+    const fast = $('#lean-fast-goal');
+    let row = null;
+    const descOf = r => $('input.text-input', r);
+    function ensureRow(){
+      if(row && row.isConnected) return row;
+      row = window.addGoalRow({ description: '' });
+      row.dataset.fastGoal = '1';
+      const d = descOf(row);
+      d.addEventListener('input', () => { delete d.dataset.auto; fast.value = d.value; schedule(); });   // edited in the detail row: mirror back
+      return row;
+    }
+    fast.addEventListener('input', () => {
+      const v = fast.value;
+      if(!v.trim()){
+        if(row && row.isConnected){ const d = descOf(row); d.value = ''; delete d.dataset.auto; if(!hasData(row)){ row.remove(); row = null; } }
+        schedule(); return;
+      }
+      const r = ensureRow(), d = descOf(r);
+      d.value = v; d.dataset.auto = '1';
+      schedule();
+    });
+  })();
+  // Phase: post-op already pre-selects from the surgery date; otherwise suggest from "Since" (tap to confirm)
+  const SINCE_TO_PHASE = { '<1 week': 'Acute', '1-4 weeks': 'Acute', '1-3 months': 'Subacute', '3-6 months': 'Chronic', '6+ months': 'Chronic', 'Years': 'Chronic' };
+  L.hooks.push(() => {
+    const phaseEl = $('#plan-phase'), note = $('#lean-phase-note');
+    if(!phaseEl || !note) return;
+    const chosen = $('button.selected', phaseEl), since = selected('#onset-timeline-chips')[0];
+    const sug = !chosen && since ? SINCE_TO_PHASE[since] : '';
+    $$('button', phaseEl).forEach(b => b.classList.toggle('lean-ghost', !!sug && b.dataset.val === sug));
+    const txt = sug ? 'Suggested from "since ' + since.toLowerCase() + '": ' + sug + ' — tap to confirm' : '';
+    if(note.textContent !== txt) note.textContent = txt;
+    const disp = txt ? 'block' : 'none';
+    if(note.style.display !== disp) note.style.display = disp;
+  });
+  // Quick review dates
+  (function(){
+    const anchor = $('#lean-review-anchor'), input = $('#plan-next-review');
+    [['+2 wks', 14], ['+4 wks', 28], ['+6 wks', 42]].forEach(([t, d]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = t;
+      b.addEventListener('click', () => {
+        const dt = new Date(); dt.setDate(dt.getDate() + d);
+        input.value = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+        input.dispatchEvent(new Event('input', { bubbles: true })); refresh();
+      });
+      anchor.appendChild(b);
+    });
+  })();
+  L.more('sec-plan-goals', { id: 'plan', anchor: '#lean-p-outcome', where: 'beforebegin', groups: [
+    { id: 'p-goals',    label: 'Goal detail & more goals',        targets: ['#lean-goal-rows-wrap'] },
+    { id: 'p-outcome',  label: 'Outcome measure',                 targets: ['#lean-p-outcome'] },
+    { id: 'p-criteria', label: 'Progression & discharge criteria', targets: ['#lean-p-progression', '#lean-p-discharge'] },
+    { id: 'p-referral', label: 'Referral / escalation',           targets: ['#lean-p-referral'] },
+    { id: 'p-memo',     label: 'Next-visit memo',                 targets: ['#lean-p-memo'] },
+    { id: 'p-edu',      label: 'Education',                       targets: ['#card-education'] }
+  ]});
+  L.section('sec-plan-goals', {
+    emptyText: 'Not started',
+    summary(){
+      const phase = selected('#plan-phase')[0];
+      const goalRow = $('#goals-rows .repeatable-card');
+      const goal = (goalRow && ($('input.text-input', goalRow) || {}).value) || val('lean-fast-goal');
+      const hep = $$('#hep-rows .repeatable-card').map(r => (($('.hep-name', r) || {}).value || '').trim()).filter(Boolean);
+      const freq = selected('#plan-visit-frequency').join('/'), dur = selected('#plan-expected-duration').join('/');
+      const review = val('plan-next-review');
+      const reviewTxt = review ? 'review ' + new Date(review + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+      const extra = [val('plan-progression-criteria') && 'progression criteria', val('plan-discharge') && 'discharge criteria', val('plan-referral') && 'referral plan', val('next-visit-memo') && '📌 memo'].filter(Boolean).join(', ');
+      return parts([phase, goal && ('goal: ' + goal), hep.length && ('HEP: ' + cap(hep, 3).join(', ')), freq && dur ? freq + ' for ' + dur : (freq || dur), reviewTxt, extra]);
     }
   });
 

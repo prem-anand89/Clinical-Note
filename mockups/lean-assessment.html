@@ -137,11 +137,11 @@
     {id:'hist', title:'History', head: true, body: `
       <div class="chips" style="margin-top:12px">${addChip('surg','Surgery')}${addChip('inj','Injury')}${addChip('cond','Conditions')}${addChip('meds','Meds / allergies')}${addChip('life','Lifestyle')}</div>
       ${extra('surg', `<div class="row"><input type="text" placeholder="Procedure"><input type="date"></div>`)}
-      ${extra('inj', `<div class="row"><input type="text" placeholder="Injury · region"><input type="date"></div>`)}
+      ${extra('inj', `<div class="row"><input type="text" id="injury" placeholder="Injury · region · year"><input type="text" id="injRecovery" placeholder="Recovery (full / partial)"></div>`)}
       ${extra('cond', chips('cond',['Diabetes','Hypertension','Osteoporosis','RA','Thyroid','Cardiac']))}
       ${extra('meds', `<div class="row"><input type="text" placeholder="Medications"><input type="text" placeholder="Allergies (incl. latex / adhesive)"></div>`)}
       ${extra('life', chips('life',['Smoker','Alcohol','Sedentary','Active','Poor sleep']))}`,
-      summary(){ const c=multi('cond'); return c.length ? 'Conditions: '+c.join(', ') : ''; }, emptyText:'Nothing recorded'},
+      summary(){ const c=multi('cond'), i=val('injury'), r=val('injRecovery'); return [i&&('Past: '+i+(r?' ('+r+')':'')), c.length&&('conditions: '+c.join(', '))].filter(Boolean).join(' · '); }, emptyText:'Nothing recorded'},
     {id:'safe', title:'Safety', body: `
       <div class="gate" style="margin-top:12px"><button type="button" class="gbtn" id="noFlags">✓ No red flags — reviewed with patient</button><button type="button" class="gbtn warn" id="flagOne">⚠ Flag one…</button></div>
       <div class="flaglist" id="flagList"><div class="lbl" style="margin-top:0;color:#8C5A1E">Tap any that apply — the action card then opens</div>
@@ -185,7 +185,7 @@
       ${extra('goals', `<input type="text" placeholder="Another goal">`)}
       ${extra('dis', `<input type="text" placeholder="Discharge criteria / referral plan">`)}
       ${extra('edu', chips('edu',['Load progression','Pain neuroscience','Activity modification','HEP']))}`,
-      summary(){ const t=multi('tx'); return [t.length&&t.join(', '), val('hep')&&('HEP: '+val('hep')), val('goal')&&('goal: '+val('goal')), sel('freq'), val('review')&&('review '+val('review'))].filter(Boolean).join(' · '); }}
+      summary(){ const t=multi('tx'); return [t.length&&t.join(', '), val('hep')&&('HEP: '+val('hep')), val('goal')&&('goal: '+val('goal')), sel('freq'), val('review')&&('review '+new Date(val('review')+'T00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}))].filter(Boolean).join(' · '); }}
   ];
 
   /* ---------- state readers ---------- */
@@ -261,7 +261,7 @@
     click('[data-group="symptoms"] [data-v="Pain"]'); click('[data-group="symptoms"] [data-v="Swelling"]'); click('[data-group="pain"] [data-v="6"]');
     $('#limited').value = 'walking >10 min';
     const sn=$('[data-notes="subNotes"]'); sn.click(); $('#subNotes').value='Anxious about missing club tournament in 4 weeks.';
-    click('[data-extra="cond"]');
+    click('[data-extra="inj"]'); $('#injury').value='L ankle sprain 2023'; $('#injRecovery').value='full recovery';
     click('#noFlags'); click('[data-yn="bt"] button:nth-child(2)'); click('[data-yn="imp"] button:nth-child(2)');
     click('[data-group="obs"] [data-v="Swelling"]'); click('[data-group="obs"] [data-v="Tender"]'); click('[data-group="obs"] [data-v="Antalgic gait"]');
     click('[data-group="mv"] [data-v="Dorsiflexion"]'); $('#mvRows .mrow[data-mv="Dorsiflexion"] input').value='10';

@@ -710,6 +710,14 @@
   .lean-sug-hint{ font-size:12px; color:var(--ink-faint); }
   .lean-chip.suggested{ border-style:solid; border-color:#E9D3AC; color:var(--amber); background:var(--amber-dim); }
   .lean-hide{ display:none !important; }
+  #risk-summary-card{ padding:10px 14px; margin-bottom:10px; background:var(--amber-dim); border-color:#E9D3AC; font-size:13px; line-height:1.5; }
+  #risk-summary-card.risk-none{ background:#fff; border-color:var(--line); }
+  #risk-summary-card .risk-lbl{ color:#8C5A1E; margin-right:4px; }
+  #risk-summary-card .risk-alert{ color:var(--bad, #B3261E); font-weight:700; }
+  #risk-summary-card .risk-warn{ color:#6b4515; font-weight:500; }
+  #risk-summary-card .risk-none{ color:var(--ink-faint); }
+  .dose-slot{ margin-top:6px; }
+  .dose-link{ appearance:none; background:none; border:none; color:var(--clinical); font:inherit; font-size:12.5px; font-weight:600; padding:4px 0; cursor:pointer; }
   /* the old "+ Add" menus duplicate the suggestion chips; keep only their "Custom…" chip */
   #add-rom-row .chip-add:not(.chip-add-custom), #add-mmt-row .chip-add:not(.chip-add-custom),
   #add-specialtest-row .chip-add:not(.chip-add-custom), #add-funcscreen-row .chip-add:not(.chip-add-custom),
@@ -2695,16 +2703,33 @@
       <div class="section-title">
         <h2>6. Intervention / Therapy</h2>
       </div>
-      <div class="field-note" style="margin:-6px 2px 14px;">Manual Therapy, Modalities, and Therapeutic Exercise are each "+"-addable subsections — a therapist who never uses Modalities never has to open it. HEP is separate from Therapeutic Exercise: the chips below document what was done in-session, HEP is what's prescribed for home.</div>
 
       <!-- Risk summary (P1.3) — at-a-glance safety aid, rebuilt live from History / Safety flags; not a decision engine -->
-      <div class="card" id="risk-summary-card" style="border-color:#E9D3AC; background:var(--amber-dim);">
-        <div class="card-heading" style="color:#8C5A1E;">Risk summary <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— from History &amp; Safety flags</span></div>
-        <div id="risk-summary-body" style="display:grid; gap:6px; font-size:13px;"></div>
+      <div class="card" id="risk-summary-card">
+        <div id="risk-summary-body"></div>
+      </div>
+
+      <!-- Treatment today: quick chips drive the real category chips; dosage is optional ("+ dose" links) -->
+      <div class="card" id="card-treatment-today">
+        <div class="card-heading">Treatment today <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap what you did — dosage is optional</span></div>
+        <div class="chip-row" id="lean-quick-tx"></div>
+          <div class="field-note" id="taping-caution" style="display:none; margin-top:12px; color:#8C5A1E; background:var(--amber-dim); border:1px solid #E9D3AC; border-radius:var(--radius-sm); padding:8px 11px;">⚠ Allergies on file — check adhesive/latex sensitivity before taping.</div>
+        <div id="lean-dose-area">
+          <div id="dose-manual"></div>          <div id="dose-modalities"></div>          <div id="dose-exercise"></div>        </div>
+        <div id="lean-tx-more-anchor"></div>
+        <div class="field" style="margin:14px 0 0;">
+          <label>Response to treatment</label>
+          <div class="segmented" id="response-to-treatment">
+            <button type="button" data-val="Improved">Improved</button>
+            <button type="button" data-val="Unchanged">Unchanged</button>
+            <button type="button" data-val="Worse">Worse</button>
+            <button type="button" data-val="Unclear">Unclear</button>
+          </div>
+        </div>
       </div>
 
       <!-- Manual Therapy -->
-      <div class="card" id="card-manual-therapy">
+      <div class="card lean-tucked" id="card-manual-therapy">
         <div class="card-heading" style="display:flex; align-items:center; justify-content:space-between;">
           <span>Manual Therapy</span>
           <button type="button" class="add-link subsection-toggle" data-target="body-manual-therapy">
@@ -2750,15 +2775,14 @@
               </div>
             </div>
           </div>
-          <div id="dose-manual"></div>
 
 
-          <div class="field-note" id="taping-caution" style="display:none; margin-top:12px; color:#8C5A1E; background:var(--amber-dim); border:1px solid #E9D3AC; border-radius:var(--radius-sm); padding:8px 11px;">⚠ Allergies on file — check adhesive/latex sensitivity before taping.</div>
+
         </div>
       </div>
 
       <!-- Modalities -->
-      <div class="card" id="card-modalities">
+      <div class="card lean-tucked" id="card-modalities">
         <div class="card-heading" style="display:flex; align-items:center; justify-content:space-between;">
           <span>Modalities</span>
           <button type="button" class="add-link subsection-toggle" data-target="body-modalities">
@@ -2779,12 +2803,12 @@
             <button type="button" class="chip" data-chip="NMES">NMES</button>
             <button type="button" class="chip" data-chip="Pneumatic Compression">Pneumatic Compression</button>
           </div>
-          <div id="dose-modalities"></div>
+
         </div>
       </div>
 
       <!-- Therapeutic Exercise -->
-      <div class="card" id="card-therapeutic-exercise">
+      <div class="card lean-tucked" id="card-therapeutic-exercise">
         <div class="card-heading" style="display:flex; align-items:center; justify-content:space-between;">
           <span>Therapeutic Exercise <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— what was done in-session</span></span>
           <button type="button" class="add-link subsection-toggle" data-target="body-therapeutic-exercise">
@@ -2835,7 +2859,7 @@
               <button type="button" class="chip" data-chip="Airway clearance techniques">Airway clearance techniques</button>
             </div>
           </div>
-          <div id="dose-exercise"></div>
+
         </div>
       </div>
 
@@ -2850,7 +2874,7 @@
       </div>
 
       <!-- Load-management block -->
-      <div class="card">
+      <div class="card lean-tucked" id="card-load">
         <div class="card-heading">Load-management <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— pre-populates from Protocol Library when a post-op condition + phase is matched (§11.5); therapist's edited value for this visit is authoritative</span></div>
         <div id="load-mgmt-source-note" style="display:none; margin-bottom:14px;">
           <div class="derived-field" style="border-style:solid; border-color:var(--clinical); background:var(--clinical-dim);">
@@ -2874,14 +2898,10 @@
             <input type="text" id="rom-limit" class="text-input" placeholder="e.g. brace locked 0–90°">
           </div>
         </div>
-        <div class="field" style="margin-bottom:0;">
-          <label for="precautions">Precautions <span class="hint">clinician-reviewed content pending — general orthopedic starter defaults, not yet verified against your referring surgeons' actual protocols</span></label>
-          <textarea id="precautions" class="text-input" rows="2" placeholder="e.g. No pivoting/twisting, no resisted hip flexion past 90°…" style="resize:vertical;font-family:inherit;"></textarea>
-        </div>
       </div>
 
-      <!-- Session duration + Response to treatment -->
-      <div class="card">
+      <!-- Session duration (Response to treatment moved up into Treatment today) -->
+      <div class="card lean-tucked" id="card-session">
         <div class="field">
           <label>Session duration</label>
           <div class="chip-row" id="session-duration" style="align-items:center;">
@@ -2891,15 +2911,6 @@
             <button type="button" class="chip" data-chip="60">60 min</button>
             <button type="button" class="chip" data-chip="90">90 min</button>
             <input type="number" id="session-duration-custom" class="text-input" placeholder="Custom (min)" style="max-width:130px;">
-          </div>
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>Response to treatment</label>
-          <div class="segmented" id="response-to-treatment">
-            <button type="button" data-val="Improved">Improved</button>
-            <button type="button" data-val="Unchanged">Unchanged</button>
-            <button type="button" data-val="Worse">Worse</button>
-            <button type="button" data-val="Unclear">Unclear</button>
           </div>
         </div>
       </div>
@@ -5317,12 +5328,28 @@
     host.appendChild(card);
     return card;
   }
+  // A selected treatment gets a slot holding a "+ dose / note" link; the dosage card opens only
+  // when the clinician asks for it. The slot is the record of the treatment either way
+  // (getInterventionDosage lists every selected treatment; dose fields appear only if filled).
+  function buildDoseSlot(category, name, host){
+    var slot = document.createElement('div');
+    slot.className = 'dose-slot';
+    slot.setAttribute('data-dose-chip', name);
+    var link = document.createElement('button');
+    link.type = 'button'; link.className = 'dose-link';
+    link.textContent = '+ dose / note — ' + name;
+    link.addEventListener('click', function(){ link.remove(); buildDoseCard(category, name, slot); });
+    slot.appendChild(link);
+    host.appendChild(slot);
+    if(doseModel[category][name] && Object.keys(doseModel[category][name]).length){ link.click(); }   // re-selected: restore what was entered
+    return slot;
+  }
   function wireDoseChips(category, chipSelector, host){
     document.querySelectorAll(chipSelector).forEach(function(chip){
       chip.addEventListener('click', function(){
         var name = chip.getAttribute('data-chip');
         var existing = Array.prototype.filter.call(host.children, function(c){ return c.getAttribute('data-dose-chip') === name; })[0];
-        if(chip.classList.contains('selected')){ if(!existing) buildDoseCard(category, name, host); }
+        if(chip.classList.contains('selected')){ if(!existing) buildDoseSlot(category, name, host); }
         else if(existing){ existing.remove(); }
       });
     });
@@ -5350,10 +5377,12 @@
   var tapingCaution = document.getElementById('taping-caution');
   function evaluateTapingCaution(){
     var tapingSelected = document.querySelector('#manual-therapy-chips .chip[data-chip="Taping/KT"].selected');
-    var hasAllergyText = allergiesInput && allergiesInput.value.trim().length > 0;
+    // typed allergies, or the Adhesive / Latex chips (previously only typed text counted)
+    var hasAllergyText = (allergiesInput && allergiesInput.value.trim().length > 0) || !!document.querySelector('#allergy-chips .chip.selected:not([data-chip="NKDA"])');
     tapingCaution.style.display = (tapingSelected && hasAllergyText) ? 'block' : 'none';
   }
   if(allergiesInput) allergiesInput.addEventListener('input', evaluateTapingCaution);
+  document.querySelectorAll('#allergy-chips .chip').forEach(function(c){ c.addEventListener('click', function(){ setTimeout(evaluateTapingCaution, 0); }); });
   document.querySelectorAll('#manual-therapy-chips .chip').forEach(function(c){ c.addEventListener('click', evaluateTapingCaution); });
 
   // ---- Neurodynamic mobilization (Sliders vs. Tensioners) — Shacklock's
@@ -9229,36 +9258,34 @@ window.hideAdvancedModule = function(key) {
     return b ? b.getAttribute('data-val').toLowerCase() : '';
   }
   function val(id){ var e = document.getElementById(id); return e ? (e.value || '').trim() : ''; }
-  function row(label, text, level){
-    var color = level === 'alert' ? '#B3261E' : (level === 'warn' ? '#8C5A1E' : 'var(--ink-faint)');
-    var weight = level ? '700' : '500';
-    var d = document.createElement('div');
-    d.style.cssText = 'display:flex; gap:8px;';
-    var l = document.createElement('span'); l.style.cssText = 'flex:0 0 130px; color:var(--ink-faint); font-weight:600;'; l.textContent = label;
-    var t = document.createElement('span'); t.style.cssText = 'flex:1; color:' + color + '; font-weight:' + weight + ';'; t.textContent = text;
-    d.appendChild(l); d.appendChild(t); body.appendChild(d);
-  }
+  var riskCard = document.getElementById('risk-summary-card');
+  var lastRisk = null;
   function render(){
-    body.innerHTML = '';
-    var allergies = val('allergies');
-    var adhesive = /latex|adhesive|tape|plaster|rubber/i.test(allergies);
-    row('Allergies', allergies ? allergies + (adhesive ? '  ⚠ adhesive/latex sensitivity — check before taping' : '') : 'None recorded', allergies ? (adhesive ? 'alert' : 'warn') : '');
-    var bt = ynValue('blood-thinner-yn');
-    var btDetail = (document.querySelector('#reveal-blood-thinner input') || {value:''}).value.trim();
-    row('Anticoagulants', bt === 'yes' ? 'On blood thinner' + (btDetail ? ': ' + btDetail : '') : (bt === 'no' ? 'No' : 'Not recorded'), bt === 'yes' ? 'alert' : '');
-    var im = ynValue('implants-yn');
-    var imDetail = (document.querySelector('#reveal-implants input') || {value:''}).value.trim();
-    row('Implants / pacemaker', im === 'yes' ? 'Yes' + (imDetail ? ': ' + imDetail : '') : (im === 'no' ? 'No' : 'Not recorded'), im === 'yes' ? 'alert' : '');
+    var risks = [];
+    var chipAllergies = Array.prototype.map.call(document.querySelectorAll('#allergy-chips .chip.selected'), function(c){ return c.getAttribute('data-chip'); }).filter(function(x){ return x && x !== 'NKDA'; });
+    var typed = val('allergies');
+    var allergies = chipAllergies.concat(typed ? [typed] : []).join(', ');
+    if(allergies) risks.push({ t: 'allergy: ' + allergies + (/latex|adhesive|tape|plaster|rubber/i.test(allergies) ? ' — check before taping' : ''), level: 'alert' });
+    var bt = ynValue('blood-thinner-yn'), btDetail = (document.querySelector('#reveal-blood-thinner input') || {value:''}).value.trim();
+    if(bt === 'yes') risks.push({ t: 'on blood thinner' + (btDetail ? ': ' + btDetail : ''), level: 'alert' });
+    var im = ynValue('implants-yn'), imDetail = (document.querySelector('#reveal-implants input') || {value:''}).value.trim();
+    if(im === 'yes') risks.push({ t: 'implants / pacemaker' + (imDetail ? ': ' + imDetail : ''), level: 'alert' });
     var meds = val('medications');
-    row('Medication', meds ? (meds.length > 90 ? meds.slice(0, 90) + '…' : meds) : 'None recorded', meds ? 'warn' : '');
-    var surgery = val('surgery-type');
-    var sDate = val('surgery-date');
-    var prec = val('ci-precautions');
+    if(meds) risks.push({ t: 'meds: ' + (meds.length > 60 ? meds.slice(0, 60) + '…' : meds), level: 'warn' });
     var tpl = window.activeSuggestions && window.activeSuggestions['ortho-template'];
-    var surgeryText = [surgery ? surgery + (sDate ? ' (' + sDate + ')' : '') : '', tpl ? tpl.label.replace('Template: ', '') : '', prec ? 'Precautions: ' + prec : ''].filter(Boolean).join(' · ');
-    row('Surgery / precautions', surgeryText || 'None recorded', surgeryText ? 'warn' : '');
+    var surgery = val('surgery-type'), sDate = val('surgery-date');
+    var post = [surgery ? surgery + (sDate ? ' (' + sDate + ')' : '') : '', tpl ? tpl.label.replace('Template: ', '') : ''].filter(Boolean);
+    if(post.length) risks.push({ t: post.join(' · '), level: 'warn' });
+    var prec = val('ci-precautions');
+    if(prec) risks.push({ t: 'precaution: ' + prec, level: 'warn' });
     var comorb = Array.prototype.map.call(document.querySelectorAll('#medical-conditions .chip.selected'), function(c){ return c.getAttribute('data-chip') || c.textContent.trim(); });
-    row('Comorbidities', comorb.length ? comorb.join(', ') : 'None selected', comorb.length ? 'warn' : '');
+    if(comorb.length) risks.push({ t: comorb.join(', '), level: 'warn' });
+    var html = !risks.length ? '<span class="risk-none">No risks recorded</span>' :
+      '<b class="risk-lbl">⚠ Risks</b> ' + risks.map(function(r){ return '<span class="risk-' + r.level + '">' + r.t.replace(/</g, '&lt;') + '</span>'; }).join(' · ');
+    if(html === lastRisk) return;
+    lastRisk = html;
+    body.innerHTML = html;
+    if(riskCard) riskCard.classList.toggle('risk-none', !risks.length);
   }
   var t;
   function schedule(){ clearTimeout(t); t = setTimeout(render, 80); }
@@ -9789,6 +9816,59 @@ window.hideAdvancedModule = function(key) {
     el.addEventListener('input', () => { el.dataset.touched = '1'; delete el.dataset.auto; });
   });
   L.hooks.push(() => { prefill('ci-activity', 'fp-limited'); prefill('ci-participation', 'fp-return'); });
+
+
+  /* ===================== SECTION: Intervention ===================== */
+  // Quick chips are a view over the real category chips: a tap clicks the real chip, so dosage links,
+  // the taping caution, the dosage record and the summary all keep working through their existing code.
+  const QUICK_TX = [
+    ['Joint mobilisation', '#manual-therapy-chips'], ['MFR', '#manual-therapy-chips'], ['Taping/KT', '#manual-therapy-chips'], ['Dry needling', '#manual-therapy-chips'],
+    ['TENS', '#modalities-chips'], ['Heat/ice', '#modalities-chips'], ['Ultrasound', '#modalities-chips'],
+    ['Strengthening (general)', '#body-therapeutic-exercise .te-chip-row'], ['ROM exercises', '#body-therapeutic-exercise .te-chip-row'], ['Proprioception/balance training', '#body-therapeutic-exercise .te-chip-row']
+  ];
+  const realChip = (name, root) => $$(root + ' .chip').filter(c => c.dataset.chip === name)[0];
+  (function(){
+    const host = $('#lean-quick-tx');
+    QUICK_TX.forEach(([name, root]) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.textContent = name; b.dataset.quickTx = name;
+      b.addEventListener('click', () => { const real = realChip(name, root); if(real) real.click(); refresh(); });
+      host.appendChild(b);
+    });
+    L.hooks.push(() => QUICK_TX.forEach(([name, root]) => {
+      const real = realChip(name, root), q = $('[data-quick-tx="' + name.replace(/"/g, '\\"') + '"]', host);
+      if(real && q) q.classList.toggle('selected', real.classList.contains('selected'));
+    }));
+  })();
+  const openBody = (card, bodyId) => () => { const b = document.getElementById(bodyId), t = $(card + ' .subsection-toggle'); if(b && b.style.display === 'none' && t) t.click(); };
+  L.more('sec-intervention', { id: 'tx', anchor: '#lean-tx-more-anchor', where: 'afterend', groups: [
+    { id: 'x-manual', label: 'All manual therapy', targets: ['#card-manual-therapy'],       onOpen: openBody('#card-manual-therapy', 'body-manual-therapy'),            dataFn: () => false },
+    { id: 'x-mod',    label: 'All modalities',     targets: ['#card-modalities'],           onOpen: openBody('#card-modalities', 'body-modalities'),                    dataFn: () => false },
+    { id: 'x-ex',     label: 'All exercises',      targets: ['#card-therapeutic-exercise'], onOpen: openBody('#card-therapeutic-exercise', 'body-therapeutic-exercise'), dataFn: () => false },
+    { id: 'x-load',   label: 'Load management',    targets: ['#card-load'] },
+    { id: 'x-dur',    label: 'Session duration',   targets: ['#card-session'] }
+  ]});
+  // Load management matters for post-op patients: reveal it once when a post-op template is applied
+  const autoLoad = {};
+  L.hooks.push(() => {
+    const t = window.activeSuggestions && window.activeSuggestions['ortho-template'];
+    if(t && /^Template: Post-op/.test(t.label) && !autoLoad[t.templateId || t.label]){ autoLoad[t.templateId || t.label] = true; L.reveal('x-load'); }
+  });
+  L.section('sec-intervention', {
+    emptyText: 'Nothing recorded',
+    summary(){
+      const tx = selected('#manual-therapy-chips').concat(selected('#modalities-chips'), $$('#body-therapeutic-exercise .te-chip-row .chip.selected').map(c => c.dataset.chip));
+      const doses = window.getInterventionDosage ? window.getInterventionDosage() : [];
+      const labelled = tx.map(t => {
+        const d = doses.filter(x => x.type === t)[0];
+        const bits = d ? [d.grade && 'grade ' + d.grade, d.sets && d.reps ? d.sets + '×' + d.reps : (d.sets || d.reps), d.duration, d.load].filter(Boolean) : [];
+        return bits.length ? t + ' (' + bits.join(', ') + ')' : t;
+      });
+      const resp = selected('#response-to-treatment')[0];
+      const dur = selected('#session-duration')[0] || val('session-duration-custom');
+      return parts([labelled.join(', '), resp && ('response: ' + resp.toLowerCase()), selected('#wb-status')[0], val('rom-limit'), dur && (dur + ' min')]);
+    }
+  });
 
   schedule();
 })();

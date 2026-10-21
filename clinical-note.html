@@ -696,6 +696,9 @@
   .lean-notes.open .lean-notes-bar{ display:none; }
   .lean-notes.open textarea{ display:block; }
 
+  /* one-tap explicit statements ("No relevant history", "Screened — no other deficits") */
+  .lean-gate-btn{ appearance:none; border:1.5px dashed var(--clinical); color:var(--clinical); background:#fff; font:inherit; font-weight:700; font-size:13px; padding:9px 14px; border-radius:10px; cursor:pointer; }
+  .lean-gate-btn.on{ background:var(--clinical); border-style:solid; color:#fff; }
   #pain-card.lean-nopain{ display:none; }
   .lean-course .segmented{ margin:0; }
 </style>
@@ -1077,6 +1080,29 @@
           <div id="systemic-symptoms-relevance" class="field-note" style="margin-top:6px;"></div>
           <input type="text" id="internal-dysf-detail" class="text-input" style="margin-top:8px;" placeholder="e.g. IBS for 5 years, recurrent UTIs">
           <div id="internal-dysf-referral-hint" class="field-note" style="margin-top:6px;"></div>
+          <div class="lean-subblock" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--line-soft);">
+            <div class="field-note" style="margin:0 0 8px;">Bowel &amp; sleep detail <span class="hint" style="text-transform:none;letter-spacing:0;">optional — moved here from Lifestyle</span></div>
+        <div class="field" style="margin-bottom:10px;">
+          <label>Bowel movements <span class="hint">Bristol Stool Scale — optional</span></label>
+          <div class="segmented" id="bristol-scale" style="flex-wrap:wrap;">
+            <button type="button" data-val="Type 1 (hard lumps)">1</button>
+            <button type="button" data-val="Type 2 (lumpy sausage)">2</button>
+            <button type="button" data-val="Type 3 (cracked sausage)">3</button>
+            <button type="button" data-val="Type 4 (smooth sausage)">4</button>
+            <button type="button" data-val="Type 5 (soft blobs)">5</button>
+            <button type="button" data-val="Type 6 (mushy/ragged)">6</button>
+            <button type="button" data-val="Type 7 (watery)">7</button>
+          </div>
+        </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Difficulty type <span class="hint">optional, if disturbed</span></label>
+            <div class="chip-row" id="sleep-difficulty">
+              <button type="button" class="chip" data-chip="Falling asleep">Falling asleep</button>
+              <button type="button" class="chip" data-chip="Staying asleep">Staying asleep</button>
+              <button type="button" class="chip" data-chip="Early waking">Early waking</button>
+            </div>
+          </div>
+          </div>
         </div>
       </div>
 
@@ -1206,6 +1232,15 @@
             <button type="button" data-val="Daily / Elite">Daily / Elite</button>
           </div>
         </div>
+        <div class="field" style="margin-top:12px; margin-bottom:0;">
+          <label>Physical activity level</label>
+          <div class="segmented" id="activity-level">
+            <button type="button" data-val="Sedentary">Sedentary</button>
+            <button type="button" data-val="Light">Light</button>
+            <button type="button" data-val="Moderate">Moderate</button>
+            <button type="button" data-val="Active">Active</button>
+          </div>
+        </div>
       </div>
 
     </section>
@@ -1298,8 +1333,13 @@
       <div class="section-title">
         <h2>2. History</h2>
       </div>
+      <!-- Lean gate: one explicit statement, plus + chips for each part of the history -->
+      <div class="card" id="lean-history-gate" style="margin-bottom:14px;">
+        <button type="button" class="lean-gate-btn" id="lean-no-history">✓ No relevant history</button>
+        <span class="field-note" id="lean-history-gate-note" style="margin:0 0 0 10px;">or add what's relevant:</span>
+      </div>
       <!-- Past surgeries -->
-      <div class="card">
+      <div class="card lean-tucked" id="card-past">
         <div class="card-heading">Past History (Surgeries, Injuries, Pain Episodes)</div>
         <div class="field-note" style="margin:-6px 0 16px;">Scoped to past/non-index history only — the current episode's surgery lives in Chief Complaint above, not repeated here.</div>
 
@@ -1315,7 +1355,7 @@
       </div>
 
       <!-- Medical conditions -->
-      <div class="card collapsible-card" id="medical-conditions-card">
+      <div class="card collapsible-card lean-tucked" id="medical-conditions-card">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div>Medical conditions <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— optional, only if relevant</span></div>
           <button type="button" class="bulk-clear" id="clear-medical-conditions" onclick="event.stopPropagation();" style="margin-right:8px;">
@@ -1364,7 +1404,7 @@
         </div>
       </div>
       <!-- Family history -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-family">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Family history <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— relevant conditions in immediate family</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1379,7 +1419,7 @@
       </div>
 
       <!-- Medications & allergies -->
-      <div class="card collapsible-card" id="med-allergies-card">
+      <div class="card collapsible-card lean-tucked" id="med-allergies-card">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Medications & Allergies</div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1391,7 +1431,6 @@
               <div class="chip-row" id="med-chips" style="margin-bottom:8px;">
                 <button type="button" class="chip" data-chip="NSAIDs">NSAIDs</button>
                 <button type="button" class="chip" data-chip="Steroids">Steroids</button>
-                <button type="button" class="chip" data-chip="Anticoagulants">Anticoagulants</button>
                 <button type="button" class="chip" data-chip="None">None</button>
               </div>
               <textarea id="medications" class="text-input" rows="2" placeholder="List medications…" style="resize:vertical;font-family:inherit;"></textarea>
@@ -1410,7 +1449,7 @@
       </div>
 
       <!-- Lifestyle fields -->
-      <div class="card collapsible-card">
+      <div class="card collapsible-card lean-tucked" id="card-lifestyle">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Lifestyle</div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1432,15 +1471,6 @@
             <button type="button" data-val="Regular">Regular</button>
           </div>
         </div>
-        <div class="field">
-          <label>Physical activity level</label>
-          <div class="segmented" id="activity-level">
-            <button type="button" data-val="Sedentary">Sedentary</button>
-            <button type="button" data-val="Light">Light</button>
-            <button type="button" data-val="Moderate">Moderate</button>
-            <button type="button" data-val="Active">Active</button>
-          </div>
-        </div>
         <div class="field" style="margin-bottom:14px;">
           <label>Sleep quality <span class="hint">general — distinct from Pain Profile's pain-driven sleep field</span></label>
           <div class="segmented" id="sleep-quality">
@@ -1459,26 +1489,6 @@
               <button type="button" data-val="6-8h">6–8h</button>
               <button type="button" data-val="8h+">8h+</button>
             </div>
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Difficulty type <span class="hint">optional, if disturbed</span></label>
-            <div class="chip-row" id="sleep-difficulty">
-              <button type="button" class="chip" data-chip="Falling asleep">Falling asleep</button>
-              <button type="button" class="chip" data-chip="Staying asleep">Staying asleep</button>
-              <button type="button" class="chip" data-chip="Early waking">Early waking</button>
-            </div>
-          </div>
-        </div>
-        <div class="field" style="margin-top:14px; margin-bottom:0;">
-          <label>Bowel movements <span class="hint">Bristol Stool Scale — optional</span></label>
-          <div class="segmented" id="bristol-scale" style="flex-wrap:wrap;">
-            <button type="button" data-val="Type 1 (hard lumps)">1</button>
-            <button type="button" data-val="Type 2 (lumpy sausage)">2</button>
-            <button type="button" data-val="Type 3 (cracked sausage)">3</button>
-            <button type="button" data-val="Type 4 (smooth sausage)">4</button>
-            <button type="button" data-val="Type 5 (soft blobs)">5</button>
-            <button type="button" data-val="Type 6 (mushy/ragged)">6</button>
-            <button type="button" data-val="Type 7 (watery)">7</button>
           </div>
         </div>
       </div>
@@ -9256,7 +9266,7 @@ window.hideAdvancedModule = function(key) {
      Saved data is untouched: tucked fields stay in the DOM with their ids. */
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const L = window.Lean = { cfg: {}, groups: [] };
+  const L = window.Lean = { cfg: {}, groups: [], hooks: [] };
 
   /* ---------- helpers ---------- */
   const val = id => { const e = document.getElementById(id); return e ? (e.value || '').trim() : ''; };
@@ -9354,6 +9364,7 @@ window.hideAdvancedModule = function(key) {
       el.classList.toggle('empty', !t);
       sec.classList.toggle('lean-filled', !!t);
     });
+    L.hooks.forEach(fn => { try { fn(); } catch(err) { console.warn('lean hook failed', err); } });
     refreshing = false;
     observer.takeRecords();
   }
@@ -9403,6 +9414,72 @@ window.hideAdvancedModule = function(key) {
     { id: 'cc-work', label: 'Work & sport', targets: ['#card-work'] }
   ]});
   L.notes($('#sec-chief-complaint'), 'subjective-notes', 'Subjective notes');
+
+
+  /* ===================== SECTION: History ===================== */
+  const year = v => /^\d{4}-\d{2}-\d{2}$/.test(v) ? v.slice(0, 4) : v;
+  function histRows(containerId, label){
+    return $$('#' + containerId + ' > div').map(row => {
+      const bits = []; let when = '';
+      $$('select, input:not([type=hidden]):not([type=checkbox])', row).forEach(f => {
+        if(f.tagName === 'SELECT'){ if(f.selectedIndex > 0 && f.value) bits.push(f.value); }
+        else if(f.type === 'date'){ if(f.value) when = f.value.slice(0, 4); }
+        else if(f.value.trim()) bits.push(f.value.trim());
+      });
+      return bits.length || when ? label + ': ' + bits.join(', ') + (when ? ' (' + when + ')' : '') : '';
+    }).filter(Boolean);
+  }
+  const openCard = id => () => { const c = $(id); if(c) c.classList.add('open'); };
+  const historyGroups = [
+    { id: 'h-past',   label: 'Past history',     targets: ['#card-past'] },
+    { id: 'h-cond',   label: 'Conditions',        targets: ['#medical-conditions-card'], onOpen: openCard('#medical-conditions-card') },
+    { id: 'h-meds',   label: 'Meds & allergies',  targets: ['#med-allergies-card'], onOpen: openCard('#med-allergies-card') },
+    { id: 'h-family', label: 'Family',            targets: ['#card-family'], onOpen: openCard('#card-family') },
+    { id: 'h-life',   label: 'Lifestyle',         targets: ['#card-lifestyle'], onOpen: openCard('#card-lifestyle') }
+  ];
+  const historyHasData = () => ['#card-past', '#medical-conditions-card', '#med-allergies-card', '#card-family', '#card-lifestyle'].some(sel => hasData($(sel)));
+  L.section('sec-history', {
+    collapsed: true,
+    emptyText: 'Nothing recorded',
+    summary(){
+      const gate = $('#lean-no-history');
+      const out = [];
+      out.push.apply(out, histRows('surgical-history-rows', 'Surgery'));
+      out.push.apply(out, histRows('trauma-history-rows', 'Injury'));
+      out.push.apply(out, histRows('pain-history-rows', 'Pain episode'));
+      const conds = selected('#medical-conditions');
+      const unremarkable = $('#medical-conditions-summary') && $('#medical-conditions-summary').style.display !== 'none';
+      if(conds.length) out.push('Conditions: ' + conds.join(', '));
+      else if(unremarkable) out.push('No relevant conditions');
+      const meds = parts([selected('#med-chips').join(', '), val('medications')]).replace(' · ', ', ');
+      if(meds) out.push('Meds: ' + meds);
+      const allergies = parts([selected('#allergy-chips').join(', '), val('allergies')]).replace(' · ', ', ');
+      if(allergies) out.push('Allergies: ' + allergies);
+      out.push.apply(out, histRows('family-history-rows', 'Family'));
+      const life = [selected('#smoking-status')[0] && ('smoking: ' + selected('#smoking-status')[0].toLowerCase()), selected('#alcohol-use')[0] && ('alcohol: ' + selected('#alcohol-use')[0].toLowerCase()), selected('#sleep-quality')[0] && ('sleep: ' + selected('#sleep-quality')[0].toLowerCase())].filter(Boolean);
+      if(life.length) out.push(life.join(', '));
+      if(!out.length && gate && gate.classList.contains('on')) return 'No relevant history';
+      return parts(out);
+    }
+  });
+  L.more('sec-history', { id: 'history', anchor: '#lean-history-gate-note', where: 'afterend', groups: historyGroups });
+  (function(){
+    const gate = $('#lean-no-history');
+    gate.addEventListener('click', () => {
+      if(historyHasData()) return;            // can't claim "nothing relevant" with history entered
+      gate.classList.toggle('on');
+      gate.textContent = gate.classList.contains('on') ? '✓ No relevant history — stated' : '✓ No relevant history';
+      schedule();
+    });
+    // history entered after the statement cancels it (checked on every refresh)
+    L.hooks.push(() => {
+      if(gate.classList.contains('on') && historyHasData()){ gate.classList.remove('on'); if(gate.textContent !== '✓ No relevant history') gate.textContent = '✓ No relevant history'; }
+    });
+  })();
+  window.getAssessmentFlags = () => ({
+    noRelevantHistory: $('#lean-no-history').classList.contains('on'),
+    screenedNoOtherDeficits: !!($('#lean-screened') && $('#lean-screened').classList.contains('on'))
+  });
 
   schedule();
 })();

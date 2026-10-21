@@ -699,6 +699,11 @@
   /* one-tap explicit statements ("No relevant history", "Screened — no other deficits") */
   .lean-gate-btn{ appearance:none; border:1.5px dashed var(--clinical); color:var(--clinical); background:#fff; font:inherit; font-weight:700; font-size:13px; padding:9px 14px; border-radius:10px; cursor:pointer; }
   .lean-gate-btn.on{ background:var(--clinical); border-style:solid; color:#fff; }
+  .lean-gate-btn.warn{ border-style:solid; border-color:#E9D3AC; color:var(--amber); background:var(--amber-dim); }
+  .lean-gate-btn.warn.on{ background:var(--amber); border-color:var(--amber); color:#fff; }
+  #screening-toggle{ display:none !important; }   /* the gate card replaces the collapsed header */
+  .lean-quick{ display:flex; flex-wrap:wrap; gap:12px 28px; }
+  .lean-quick .safety-item{ flex:1 1 220px; margin:0; padding:0; border-bottom:none; }
   #pain-card.lean-nopain{ display:none; }
   .lean-course .segmented{ margin:0; }
 </style>
@@ -1038,6 +1043,12 @@
           Create PSFS (Patient-Specific Functional Scale) item and a goal from this activity
         </label>
         <div id="create-psfs-note" class="field-note" style="display:none; margin-top:6px; color:#8C5A1E;"></div>
+      </div>
+
+      <!-- Psychosocial (yellow flags) — moved from Safety: it is asked in the interview, and it prognosticates rather than endangers -->
+      <div class="card lean-tucked" id="card-psychosocial" style="margin-bottom:14px;">
+        <div class="card-heading">Psychosocial <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">yellow flags — scored: None / Some concern / Significant</span></div>
+        <div id="yellow-flags-list"></div>
       </div>
 
       <!-- Systemic Symptoms Card — a screening interlude after the primary
@@ -1507,7 +1518,14 @@
       <div class="section-title">
         <h2>3. Safety Checkpoint</h2>
       </div>
-      <div class="field-note" style="margin:-4px 2px 14px;">Screening (Red/Yellow Flags) + Safety Flags — the final gate of the subjective exam, right before Objective. Collapsed-by-default, unchanged.</div>
+      <!-- Lean gate: one tap to confirm "no red flags" (the button text is the attestation), or flag one -->
+      <div class="card" id="lean-safety-gate" style="margin-bottom:14px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button type="button" class="lean-gate-btn" id="lean-no-redflags">✓ No red flags — reviewed with patient</button>
+          <button type="button" class="lean-gate-btn warn" id="lean-flag-one">⚠ Flag one…</button>
+        </div>
+        <div id="lean-redflag-callout" class="field-note" style="display:none; margin:10px 0 0; color:#8C5A1E;"></div>
+      </div>
 
       <!-- ==========================================================
            SCREENING — Red/Yellow Flags. Smart collapse this session:
@@ -1516,7 +1534,7 @@
            only the flagged item(s) surface prominently, unflagged
            items stay collapsed/summarized — not a wall of checkboxes.
       =========================================================== -->
-      <div class="card" id="screening-card" style="margin-bottom:14px; padding:0; overflow:hidden;">
+      <div class="card lean-tucked" id="screening-card" style="margin-bottom:14px; padding:0; overflow:hidden;">
         <button type="button" id="screening-toggle" style="width:100%; text-align:left; background:none; border:none; cursor:pointer; padding:18px 22px; display:flex; align-items:center; gap:12px; font:inherit;">
           <svg id="screening-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" stroke-width="2.4" style="flex:0 0 auto; transition:transform .15s ease;"><polyline points="9 18 15 12 9 6"/></svg>
           <span style="font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint);">Screening — Red / Yellow Flags</span>
@@ -1531,7 +1549,7 @@
             <span class="card-heading" style="margin:0;">Red flags</span>
             <button type="button" class="bulk-clear" id="clear-red-flags">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              Mark all reviewed as negative
+              Mark the rest as No
             </button>
           </div>
           <div id="red-flags-list"></div>
@@ -1575,14 +1593,12 @@
           </div>
 
 
-          <span class="card-heading" style="display:block; margin:22px 0 10px;">Yellow flags <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— psychosocial risk, separate from the safety banner</span></span>
-          <div id="yellow-flags-list"></div>
         </div>
       </div>
 
       <!-- Safety flags — relocated from History, fully functional -->
-      <div class="card">
-        <div class="card-heading">Safety flags <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— feeds the safety banner</span></div>
+      <div class="card" id="safety-flags-card">
+        <div class="lean-quick">
 
         <div class="safety-item">
           <div class="yn-row">
@@ -1619,6 +1635,7 @@
               <button type="button" data-val="N/A">N/A</button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </section>
@@ -3501,7 +3518,7 @@
     }
     var yellowHits = yellowFlagLabels.map(function(l,i){ return yellowFlagState[i] !== 'None' ? l + ' (' + yellowFlagState[i] + ')' : null; }).filter(Boolean);
     if(yellowHits.length > 0){
-      lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--context);font-weight:600;margin-top:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Yellow flags noted in Screening: ' + yellowHits.join(', ') + '</div>');
+      lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--context);font-weight:600;margin-top:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Psychosocial (yellow) flags noted: ' + yellowHits.join(', ') + '</div>');
     }
     if(lines.length === 0){ el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = 'block';
@@ -4255,21 +4272,45 @@
     }
   }
 
-  document.getElementById('clear-red-flags').addEventListener('click', function(){
+  // "Mark the rest as No": answers only the questions still unanswered (anything already
+  // answered, including a Yes, is kept) and ticks the attestation. The gate button's wording
+  // ("reviewed with patient") is the attestation, so there is no confirm dialog. Stored
+  // distinguishably from item-by-item answers via redFlagBulkNegative.
+  function markRestNo(){
     var attestEl = document.getElementById('red-flag-attestation');
-    var ok = window.confirm('Mark every red-flag question as negative?\n\nThis records that you reviewed all of these screening questions with the patient and none apply.');
-    if(!ok) return;
-    if(attestEl) attestEl.checked = true;
-    redFlagBulkNegative = true;
     activeRedFlagIdx().forEach(function(i){
+      if(redFlagState[i] !== null) return;
       redFlagState[i] = 'No';
       var group = redFlagsList.querySelector('[data-redflag="' + i + '"]');
       group.querySelectorAll('button').forEach(function(b){
         b.classList.toggle('selected', b.getAttribute('data-val') === 'No');
       });
     });
+    if(attestEl) attestEl.checked = true;
+    redFlagBulkNegative = true;
     updateScreeningSummary();
-  });
+  }
+  function resetRedFlags(){
+    redFlagLabels.forEach(function(_, i){
+      redFlagState[i] = null;
+      var group = redFlagsList.querySelector('[data-redflag="' + i + '"]');
+      if(group) group.querySelectorAll('button').forEach(function(b){ b.classList.remove('selected'); });
+    });
+    var attestEl = document.getElementById('red-flag-attestation');
+    if(attestEl) attestEl.checked = false;
+    redFlagBulkNegative = false;
+    updateScreeningSummary();
+  }
+  document.getElementById('clear-red-flags').addEventListener('click', markRestNo);
+  window.leanSafety = {
+    markRestNo: markRestNo,
+    reset: resetRedFlags,
+    hasYes: function(){ return redFlagState.indexOf('Yes') !== -1; },
+    gateOn: function(){
+      return redFlagBulkNegative && redFlagState.indexOf('Yes') === -1 &&
+        activeRedFlagIdx().every(function(i){ return redFlagState[i] !== null; });
+    }
+  };
 
   // Sign gate (P0.3): a positive red flag cannot be finalized without a
   // complete Safety Disposition. Returns an error string, or '' when fine.
@@ -4295,6 +4336,9 @@
       'Red-flag screening has not been reviewed: answer each question, or confirm with the attestation.';
   };
   window.showScreeningCard = function(){
+    var sec = document.getElementById('sec-safety-checkpoint');
+    if(sec) sec.classList.remove('sec-lean-collapsed');
+    if(window.Lean) window.Lean.reveal('s-list');
     var body = document.getElementById('screening-body');
     if(body.style.display === 'none') document.getElementById('screening-toggle').click();
     document.getElementById('red-flag-disposition').scrollIntoView({behavior:'smooth', block:'center'});
@@ -9287,13 +9331,15 @@ window.hideAdvancedModule = function(key) {
 
   /* ---------- "+" chip groups ---------- */
   const groupTargets = g => g.targets.reduce((all, sel) => all.concat($$(sel)), []);
-  const groupHasData = g => groupTargets(g).some(hasData);
+  const groupHasData = g => g.dataFn ? !!g.dataFn() : groupTargets(g).some(hasData);
   function setOpen(g, open){
     g._open = open;
     groupTargets(g).forEach(t => t.classList.toggle('lean-shown', open));
     g._btn.classList.toggle('open', open);
-    const txt = (open ? '− ' : '+ ') + g.label;
-    if(g._btn.textContent !== txt) g._btn.textContent = txt;
+    if(g.label){
+      const txt = (open ? '− ' : '+ ') + g.label;
+      if(g._btn.textContent !== txt) g._btn.textContent = txt;
+    }
     if(open && g.onOpen) g.onOpen();
   }
   L.more = function(sectionId, cfg){
@@ -9313,6 +9359,8 @@ window.hideAdvancedModule = function(key) {
     });
     return row;
   };
+  // a group that is opened by something other than a chip (e.g. a gate button)
+  L.group = g => { g._btn = document.createElement('button'); g._open = false; g.label = g.label || ''; L.groups.push(g); return g; };
   L.reveal = id => { const g = L.groups.filter(x => x.id === id)[0]; if(g && !g._open) setOpen(g, true); };
 
   /* ---------- sections with one-line summaries ---------- */
@@ -9341,8 +9389,15 @@ window.hideAdvancedModule = function(key) {
   window.getAssessmentNotes = () => ({ subjective: val('subjective-notes'), objective: val('objective-notes') });
 
   /* ---------- refresh (debounced; self-induced mutations are discarded) ---------- */
-  let timer = null, refreshing = false;
-  function schedule(){ clearTimeout(timer); timer = setTimeout(refresh, 90); }
+  let timer = null, refreshing = false, firstAt = 0;
+  // Debounced, but never later than 200 ms after the first request, so a burst of
+  // DOM changes (animations, scroll-spy) cannot starve the refresh.
+  function schedule(){
+    const now = Date.now();
+    if(!firstAt) firstAt = now;
+    clearTimeout(timer);
+    timer = setTimeout(() => { firstAt = 0; refresh(); }, Math.max(0, Math.min(90, firstAt + 200 - now)));
+  }
   function refresh(){
     refreshing = true;
     L.groups.forEach(g => {
@@ -9382,6 +9437,13 @@ window.hideAdvancedModule = function(key) {
   }, true);
 
   /* ===================== SECTION: Chief Complaint ===================== */
+  function yellowSummary(){
+    const hits = $$('#yellow-flags-list .flag-row').map(r => {
+      const b = $('button.selected', r), v = b && b.dataset.val;
+      return v && v !== 'None' ? $('.flag-label', r).textContent.trim().toLowerCase() + (v === 'Significant' ? ' (significant)' : '') : '';
+    }).filter(Boolean);
+    return hits.length ? 'psychosocial: ' + hits.join(', ') : '';
+  }
   const painSelected = () => !!$('#primary-complaint .chip[data-chip="Pain"].selected');
   L.section('sec-chief-complaint', {
     emptyText: 'Not started',
@@ -9400,7 +9462,8 @@ window.hideAdvancedModule = function(key) {
         pain !== undefined && ('pain ' + pain + '/10'),
         agg.length && ('worse: ' + agg.slice(0, 3).join(', ').toLowerCase()),
         ease.length && ('eases: ' + ease.slice(0, 3).join(', ').toLowerCase()),
-        limited && ('most limited: ' + limited)]) + noteMark('subjective-notes');
+        limited && ('most limited: ' + limited),
+        yellowSummary()]) + noteMark('subjective-notes');
     }
   });
   L.more('sec-chief-complaint', { id: 'cc-pain', anchor: '#pain-assessment-container', where: 'beforeend', groups: [
@@ -9409,6 +9472,7 @@ window.hideAdvancedModule = function(key) {
   ]});
   L.more('sec-chief-complaint', { id: 'cc-main', anchor: '#card-systemic', where: 'beforebegin', groups: [
     { id: 'cc-return', label: 'Return-to activity', targets: ['#lean-fp-return'] },
+    { id: 'cc-psy', label: 'Psychosocial', targets: ['#card-psychosocial'] },
     { id: 'cc-second', label: 'Secondary complaint', targets: ['#card-secondary'] },
     { id: 'cc-systemic', label: 'Systemic symptoms', targets: ['#card-systemic'], onOpen: () => { const c = $('#card-systemic'); if(c) c.classList.add('open'); } },
     { id: 'cc-work', label: 'Work & sport', targets: ['#card-work'] }
@@ -9469,7 +9533,7 @@ window.hideAdvancedModule = function(key) {
       if(historyHasData()) return;            // can't claim "nothing relevant" with history entered
       gate.classList.toggle('on');
       gate.textContent = gate.classList.contains('on') ? '✓ No relevant history — stated' : '✓ No relevant history';
-      schedule();
+      refresh();
     });
     // history entered after the statement cancels it (checked on every refresh)
     L.hooks.push(() => {
@@ -9480,6 +9544,59 @@ window.hideAdvancedModule = function(key) {
     noRelevantHistory: $('#lean-no-history').classList.contains('on'),
     screenedNoOtherDeficits: !!($('#lean-screened') && $('#lean-screened').classList.contains('on'))
   });
+
+
+  /* ===================== SECTION: Safety ===================== */
+  const flagRows = () => $$('#red-flags-list .flag-row').filter(r => r.style.display !== 'none');
+  const flagAnswers = () => flagRows().map(r => ({
+    label: $('.flag-label', r).textContent.replace(/\s*—\s*neck.*$/, '').trim(),
+    val: (($('button.selected', r) || { dataset: {} }).dataset.val) || ''
+  }));
+  const ynVal = id => (($('#' + id + ' button.selected') || { dataset: {} }).dataset.val) || '';
+  L.section('sec-safety-checkpoint', {
+    emptyText: 'Not screened',
+    summary(){
+      const a = flagAnswers(), yes = a.filter(x => x.val === 'Yes'), unk = a.filter(x => x.val === 'Unknown');
+      const action = (($('#rf-disp-action button.selected') || { dataset: {} }).dataset.val) || '';
+      let red = '';
+      if(yes.length) red = '⚠ ' + yes.map(x => x.label).join('; ') + (action ? ' — ' + action.toLowerCase() : '');
+      else if(a.length && a.every(x => x.val)) red = 'No red flags' + ($('#red-flag-attestation').checked ? ' (reviewed with patient)' : '') + (unk.length ? ' · ' + unk.length + ' unable to assess' : '');
+      const bt = ynVal('blood-thinner-yn'), imp = ynVal('implants-yn'), preg = ynVal('pregnancy-status');
+      const btNote = ($('#reveal-blood-thinner input') || {}).value, impNote = ($('#reveal-implants input') || {}).value;
+      return parts([red,
+        bt === 'yes' ? 'on blood thinner' + (btNote ? ': ' + btNote : '') : (bt === 'no' ? 'no blood thinners' : ''),
+        imp === 'yes' ? 'implants: ' + (impNote || 'yes') : (imp === 'no' ? 'no implants' : ''),
+        preg === 'Yes' ? 'pregnant' : '']);
+    }
+  });
+  const sList = L.group({
+    id: 's-list', targets: ['#screening-card'],
+    // a plain "No" never forces the list open; anything else (Yes / N/A / Unknown / disposition text) does
+    dataFn: () => $$('#red-flags-list [data-redflag] button.selected').some(b => b.dataset.val !== 'No') ||
+      ['rf-disp-rationale', 'rf-disp-contact', 'rf-disp-advice'].some(id => val(id)) ||
+      $$('#rf-disp-action button.selected, #rf-disp-status button.selected').length > 0,
+    onOpen: () => { const b = $('#screening-body'); if(b) b.style.display = 'block'; }
+  });
+  (function(){
+    const noBtn = $('#lean-no-redflags'), flagBtn = $('#lean-flag-one');
+    noBtn.addEventListener('click', () => {
+      const S = window.leanSafety;
+      if(S.hasYes()) return;                       // can't claim "no red flags" with a Yes recorded
+      if(S.gateOn()) S.reset(); else S.markRestNo();
+      refresh();                                   // primary button: feedback must be immediate
+    });
+    flagBtn.addEventListener('click', () => {
+      if(!sList._open) setOpen(sList, true);
+      else if(!groupHasData(sList)) setOpen(sList, false);
+      refresh();
+    });
+    L.hooks.push(() => {
+      noBtn.classList.toggle('on', window.leanSafety.gateOn());
+      flagBtn.classList.toggle('on', sList._open);
+      const t = sList._open ? '⚠ Hide the list' : '⚠ Flag one…';
+      if(flagBtn.textContent !== t) flagBtn.textContent = t;
+    });
+  })();
 
   schedule();
 })();

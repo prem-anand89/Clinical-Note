@@ -660,6 +660,45 @@
   .collapsible-card.open .collapsible-body { display: block; animation: revealIn 0.2s ease; }
 
 </style>
+<style id="lean-css">
+  /* ================= LEAN ASSESSMENT LAYER =================
+     Every field stays in the DOM (saved data is unchanged); this layer decides
+     what is shown by default. Tucked blocks reveal from "+" chips and
+     auto-open as soon as they hold data, so a value can never be hidden. */
+  .lean-tucked:not(.lean-shown){ display:none !important; }
+  .lean-more{ display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 4px; }
+  .lean-chip{
+    appearance:none; border:1px dashed #cfcfcc; background:transparent; color:var(--clinical);
+    font:inherit; font-size:12px; font-weight:600; padding:6px 12px; border-radius:var(--radius-pill); cursor:pointer;
+  }
+  .lean-chip:hover{ border-color:var(--clinical); }
+  .lean-chip.open{ background:var(--clinical-dim); border-style:solid; border-color:var(--clinical-dim); }
+  .lean-chip.has-data::after{ content:' •'; }
+  .lean-chip[hidden]{ display:none; }
+
+  /* collapsible sections with a one-line summary */
+  .section-title.lean-head{ cursor:pointer; user-select:none; padding:12px 14px; margin:0 0 10px 0; background:var(--card); border:1px solid var(--line); border-radius:var(--radius-md); }
+  .section-title.lean-head h2{ flex:0 0 auto; min-width:130px; }
+  .lean-sum{ flex:1; display:none; font-size:12.5px; font-weight:400; color:var(--ink-soft); line-height:1.35; font-family:'IBM Plex Sans', system-ui, sans-serif; }
+  .lean-sum.empty{ color:var(--ink-faint); }
+  .sec-lean-collapsed .lean-sum{ display:block; }
+  .lean-tick{ font-size:12px; font-weight:700; color:var(--clinical); visibility:hidden; }
+  .lean-filled .lean-tick{ visibility:visible; }
+  .lean-chev{ color:var(--ink-faint); transition:transform .15s; font-size:13px; }
+  .section:not(.sec-lean-collapsed) .lean-chev{ transform:rotate(180deg); }
+  .sec-lean-collapsed > *:not(.section-title){ display:none !important; }
+  .sec-lean-collapsed .section-title.lean-head{ margin-bottom:0; }
+
+  /* notes box ("anything the chips didn't capture") */
+  .lean-notes{ margin-top:12px; }
+  .lean-notes-bar{ width:100%; text-align:left; border:1px dashed #cfcfcc; background:transparent; border-radius:var(--radius-sm); padding:9px 12px; font:inherit; font-size:13px; font-weight:600; color:var(--clinical); cursor:pointer; }
+  .lean-notes textarea{ display:none; width:100%; min-height:64px; resize:vertical; font-family:inherit; }
+  .lean-notes.open .lean-notes-bar{ display:none; }
+  .lean-notes.open textarea{ display:block; }
+
+  #pain-card.lean-nopain{ display:none; }
+  .lean-course .segmented{ margin:0; }
+</style>
 </head>
 <body>
 
@@ -766,7 +805,7 @@
       <div class="card" style="margin-bottom:14px;">
         <div class="field">
           <label for="presenting-problem">Presenting problem</label>
-          <textarea id="presenting-problem" class="text-input" rows="2" placeholder="e.g. Right knee pain going up and down stairs..." style="resize:vertical;font-family:inherit;"></textarea>
+          <textarea id="presenting-problem" class="text-input" rows="3" placeholder="e.g. Right knee pain going up and down stairs..." style="resize:vertical;font-family:inherit;"></textarea>
         </div>
 
         <div class="field">
@@ -788,7 +827,7 @@
         </div>
 
         <div class="field">
-          <label>Laterality</label>
+          <label>Side</label>
           <div class="segmented small" id="laterality">
             <button type="button" data-val="Left">Left</button>
             <button type="button" data-val="Right">Right</button>
@@ -797,61 +836,9 @@
           </div>
         </div>
 
-        <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
-          <span>Known Condition <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
-          <button type="button" class="add-link subsection-toggle" data-target="known-condition-field">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Select a known condition
-          </button>
-          <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
-        </div>
-        <div class="field" id="known-condition-field" style="display:none;">
-          <label style="margin-bottom:6px;">Known Condition <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
-            <div class="chip-row kc-chip-row" id="kc-neuro">
-              <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
-              <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
-              <button type="button" class="chip" data-chip="Parkinson's">Parkinson's</button>
-              <button type="button" class="chip" data-chip="MS">MS</button>
-              <button type="button" class="chip" data-chip="Peripheral Neuropathy">Peripheral Neuropathy</button>
-              <button type="button" class="chip" data-chip="Concussion">Concussion</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Orthopedic / MSK (non-surgical) <span class="hint" style="text-transform:none;letter-spacing:0;">— choosing one applies its template</span></div>
-            <div class="chip-row kc-chip-row" id="kc-ortho">
-              <button type="button" class="chip" data-template-id="nonop-clbp" data-chip="Chronic Low Back Pain">Chronic Low Back Pain</button>
-              <button type="button" class="chip" data-template-id="nonop-sis" data-chip="Subacromial Impingement">Subacromial Impingement / RC Tendinopathy</button>
-              <button type="button" class="chip" data-template-id="nonop-ankle" data-chip="Ankle Sprain">Ankle Sprain</button>
-              <button type="button" class="chip" data-template-id="nonop-cervrad" data-chip="Cervical Radiculopathy">Cervical Radiculopathy</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Post-surgical <span class="hint" style="text-transform:none;letter-spacing:0;">— manual override; normally suggested from Onset &gt; Post-Surgical</span></div>
-            <div class="chip-row kc-chip-row" id="kc-postop">
-              <button type="button" class="chip" data-template-id="postop-tkr">Post-op TKR</button>
-              <button type="button" class="chip" data-template-id="postop-acl">Post-op ACL Reconstruction</button>
-              <button type="button" class="chip" data-template-id="postop-thr">Post-op THR</button>
-              <button type="button" class="chip" data-template-id="postop-rc">Post-op Rotator Cuff / Shoulder Stabilization</button>
-              <button type="button" class="chip" data-template-id="postop-lumbar">Post-op Lumbar Discectomy</button>
-              <button type="button" class="chip" data-template-id="postop-achilles">Post-op Achilles Repair</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Other <span class="hint" style="text-transform:none;letter-spacing:0;">— Patient Profile modules, not a note section</span></div>
-            <div class="chip-row kc-chip-row" id="kc-other">
-              <button type="button" class="chip" data-chip="Cardiothoracic">Cardiothoracic</button>
-              <button type="button" class="chip" data-chip="Facial Palsy">Facial Palsy</button>
-              <button type="button" class="chip" data-chip="Vestibular">Vestibular</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="context-divider" style="margin:24px 0 14px;"><span>Onset & Context</span><div class="line"></div></div>
 
         <div class="field">
-          <label>Onset Mechanism</label>
+          <label>Onset</label>
           <div class="segmented" id="onset-mechanism">
             <button type="button" data-val="Insidious">Insidious (Gradual)</button>
             <button type="button" data-val="Sudden">Sudden (Traumatic)</button>
@@ -896,7 +883,7 @@
         </div>
 
         <div class="field">
-          <label>Onset Timeline</label>
+          <label>Since</label>
           <div class="chip-row" id="onset-timeline-chips">
             <button type="button" class="chip" data-chip="<1 week">&lt;1 wk</button>
             <button type="button" class="chip" data-chip="1-4 weeks">1-4 wks</button>
@@ -907,17 +894,14 @@
           </div>
         </div>
 
-        <div class="row-2" style="margin-bottom:0;">
-          <div class="field" style="margin-bottom:0;">
-            <label>Episode Pattern</label>
+        <div class="field lean-course" style="margin-bottom:0;">
+          <label>Course</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
             <div class="segmented" id="episode-pattern" style="margin:0;">
               <button type="button" data-val="First episode">First</button>
               <button type="button" data-val="Recurrent">Recurrent</button>
               <button type="button" data-val="Chronic">Chronic</button>
             </div>
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Trend</label>
             <div class="segmented" id="trend" style="margin:0;">
               <button type="button" data-val="Improving">Improving</button>
               <button type="button" data-val="Stable">Stable</button>
@@ -925,25 +909,7 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Symptoms & Triggers Card — Primary Symptoms only. Systemic
-           Symptoms, Functional Priority and Pain Profile each used to live
-           inside this same card with no visual boundary between them (four
-           unrelated concerns — MSK checklist, visceral screening, goal-
-           setting, pain characterization — reading as one undifferentiated
-           block), which is why Functional Priority looked like it was
-           "inside" the symptom section. Split into their own cards, ordered
-           to match how the interview actually flows: the primary complaint
-           and its detailed pain characterization stay adjacent (don't break
-           "what's wrong" away from "tell me more about it"); Systemic
-           Symptoms is a screening interlude that comes after, once the
-           primary complaint is fully characterized; Functional Priority
-           closes out Chief Complaint as the goal-setting wrap-up right
-           before Secondary Complaints. -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">Symptoms & Triggers</div>
-        <div class="field" style="margin-bottom:0;">
+        <div class="field" style="margin-top:14px; margin-bottom:0;">
           <label>Primary Symptoms</label>
           <div class="chip-row" id="primary-complaint">
             <button type="button" class="chip" data-chip="Pain">Pain</button>
@@ -961,7 +927,7 @@
            after Symptoms & Triggers so the primary complaint and its
            detailed characterization aren't broken up by an unrelated
            screening topic. -->
-      <div class="card" style="margin-bottom:14px;">
+      <div class="card" id="pain-card" style="margin-bottom:14px;">
         <div class="card-heading">Pain Profile</div>
         <div id="pain-placeholder" style="margin: 6px 0 0; padding: 16px; background: var(--derived); border: 1px dashed var(--derived-border); border-radius: var(--radius-sm); color: var(--ink-soft); text-align: center;">Not applicable — Pain not reported as a primary symptom.</div>
         <div id="pain-assessment-container" style="display:none;">
@@ -975,7 +941,7 @@
               </div>
             </div>
           </div>
-          <div class="row-2" style="gap:10px; margin-top:12px;">
+          <div class="row-2 lean-tucked" id="lean-pain-bw" style="gap:10px; margin-top:12px;">
             <div>
               <label style="font-size:11px;color:var(--ink-faint);margin-bottom:5px;display:block;">Best (last 24h)</label>
               <div class="nrs-scale" id="nrs-best">
@@ -991,7 +957,7 @@
           </div>
         </div>
 
-        <div class="row-2">
+        <div class="row-2 lean-tucked" id="lean-pain-pattern">
           <div class="field" style="margin-bottom:0;">
             <label>Pattern</label>
             <div class="segmented" id="pain-pattern" style="margin:0;">
@@ -1017,7 +983,7 @@
           <input type="text" id="aggravating-other" class="text-input" placeholder="Other factors (e.g. prolonged sitting)">
         </div>
 
-        <div class="field">
+        <div class="field lean-tucked" id="lean-irritability">
           <label>Irritability Profile</label>
           <div class="row-2" style="margin-bottom:8px;">
             <div><label style="font-size:11px;color:var(--ink-faint);">Trigger / load to provoke</label><input type="text" class="text-input" placeholder="e.g. 5 min of walking"></div>
@@ -1040,7 +1006,7 @@
           </div>
         </div>
 
-        <div class="field" style="margin-bottom:0;">
+        <div class="field lean-tucked" id="lean-pain-sleep" style="margin-bottom:0;">
           <label>Sleep disturbed?</label>
           <div class="segmented" id="pain-sleep-disturbed">
             <button type="button" data-val="Yes">Yes</button>
@@ -1050,10 +1016,31 @@
         </div>
       </div>
 
+      <!-- Functional priority — closes the core complaint; the "return to" box is tucked behind a + chip -->
+      <!-- Functional Priority Card — goal-setting wrap-up, now sitting right
+           after Occupation & Activity (what they do all day, then what they
+           want back) as the closing note for Chief Complaint. -->
+      <div class="card" style="margin-bottom:14px; background:var(--clinical-dim); border-color:var(--clinical-ring);">
+        <div class="card-heading" style="color:var(--clinical);">Functional priority</div>
+        <div class="field" style="margin-top:8px; margin-bottom:8px;">
+          <label>Most limited activity today</label>
+          <input type="text" class="text-input" id="fp-limited" placeholder="e.g. Overhead lifting">
+        </div>
+        <div class="field lean-tucked" id="lean-fp-return" style="margin-bottom:8px;">
+          <label>What does the patient most need or want to return to?</label>
+          <input type="text" class="text-input" id="fp-return" placeholder="e.g. Golfing 18 holes without pain">
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; cursor:pointer;">
+          <input type="checkbox" id="create-psfs" style="width:16px; height:16px;">
+          Create PSFS (Patient-Specific Functional Scale) item and a goal from this activity
+        </label>
+        <div id="create-psfs-note" class="field-note" style="display:none; margin-top:6px; color:#8C5A1E;"></div>
+      </div>
+
       <!-- Systemic Symptoms Card — a screening interlude after the primary
            complaint's pain profile is fully characterized, collapsed by
            default since most visits won't have anything here. -->
-      <div class="card collapsible-card" style="margin-bottom:14px;">
+      <div class="card collapsible-card lean-tucked" id="card-systemic" style="margin-bottom:14px;">
         <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
           <div style="flex:1;">Systemic Symptoms <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— optional, only if reported</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
@@ -1104,7 +1091,7 @@
       </div>
 
       <!-- Secondary Complaints Card -->
-      <div class="card" style="margin-bottom:14px;">
+      <div class="card lean-tucked" id="card-secondary" style="margin-bottom:14px;">
         <div class="field" style="margin-bottom:0;">
           <label style="font-size:14px; color:var(--ink); margin-bottom:12px;">Secondary Complaints</label>
           <div id="secondary-rows"></div>
@@ -1122,8 +1109,8 @@
            ("Sport — from Chief Complaint, not re-asked") but the input never
            existed, so the whole module was dead — selecting a real sport
            here is what makes it appear. -->
-      <div class="card">
-        <div class="card-heading">Occupation & Activity</div>
+      <div class="card lean-tucked" id="card-work" style="margin-bottom:14px;">
+        <div class="card-heading">Work & sport</div>
         <div class="field">
           <label>Occupation <span class="hint">selecting Desk/Office, Manual Labor, or Farming reveals its ergonomic load factors</span></label>
           <div class="chip-row" id="occupation-chips">
@@ -1221,25 +1208,6 @@
         </div>
       </div>
 
-      <!-- Functional Priority Card — goal-setting wrap-up, now sitting right
-           after Occupation & Activity (what they do all day, then what they
-           want back) as the closing note for Chief Complaint. -->
-      <div class="card" style="margin-bottom:14px; background:var(--clinical-dim); border-color:var(--clinical-ring);">
-        <div class="card-heading" style="color:var(--clinical);">Functional Priority</div>
-        <div class="field" style="margin-top:8px;">
-          <label>What does the patient most need or want to return to?</label>
-          <input type="text" class="text-input" id="fp-return" placeholder="e.g. Golfing 18 holes without pain">
-        </div>
-        <div class="field" style="margin-bottom:8px;">
-          <label>Which meaningful activity is most limited today?</label>
-          <input type="text" class="text-input" id="fp-limited" placeholder="e.g. Overhead lifting">
-        </div>
-        <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="create-psfs" style="width:16px; height:16px;">
-          Create PSFS (Patient-Specific Functional Scale) item and a goal from this activity
-        </label>
-        <div id="create-psfs-note" class="field-note" style="display:none; margin-top:6px; color:#8C5A1E;"></div>
-      </div>
     </section>
     
 <section class="section" id="sec-suggestions">
@@ -2525,9 +2493,64 @@
 
 
         <div class="field">
-          <label>Working diagnosis / classification</label>
-          <input type="text" class="text-input" placeholder="e.g. Subacromial impingement, Stage II">
+          <label for="working-diagnosis">Working diagnosis / classification</label>
+          <input type="text" class="text-input" id="working-diagnosis" placeholder="e.g. Subacromial impingement, Stage II">
         </div>
+
+        <!-- Known condition / template — moved here from Chief Complaint: it is a diagnosis choice, so it sits beside the working diagnosis -->
+        <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
+          <span>Known Condition <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
+          <button type="button" class="add-link subsection-toggle" data-target="known-condition-field">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Select a known condition
+          </button>
+          <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
+        </div>
+        <div class="field" id="known-condition-field" style="display:none;">
+          <label style="margin-bottom:6px;">Known Condition <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
+            <div class="chip-row kc-chip-row" id="kc-neuro">
+              <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
+              <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
+              <button type="button" class="chip" data-chip="Parkinson's">Parkinson's</button>
+              <button type="button" class="chip" data-chip="MS">MS</button>
+              <button type="button" class="chip" data-chip="Peripheral Neuropathy">Peripheral Neuropathy</button>
+              <button type="button" class="chip" data-chip="Concussion">Concussion</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Orthopedic / MSK (non-surgical) <span class="hint" style="text-transform:none;letter-spacing:0;">— choosing one applies its template</span></div>
+            <div class="chip-row kc-chip-row" id="kc-ortho">
+              <button type="button" class="chip" data-template-id="nonop-clbp" data-chip="Chronic Low Back Pain">Chronic Low Back Pain</button>
+              <button type="button" class="chip" data-template-id="nonop-sis" data-chip="Subacromial Impingement">Subacromial Impingement / RC Tendinopathy</button>
+              <button type="button" class="chip" data-template-id="nonop-ankle" data-chip="Ankle Sprain">Ankle Sprain</button>
+              <button type="button" class="chip" data-template-id="nonop-cervrad" data-chip="Cervical Radiculopathy">Cervical Radiculopathy</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Post-surgical <span class="hint" style="text-transform:none;letter-spacing:0;">— manual override; normally suggested from Onset &gt; Post-Surgical</span></div>
+            <div class="chip-row kc-chip-row" id="kc-postop">
+              <button type="button" class="chip" data-template-id="postop-tkr">Post-op TKR</button>
+              <button type="button" class="chip" data-template-id="postop-acl">Post-op ACL Reconstruction</button>
+              <button type="button" class="chip" data-template-id="postop-thr">Post-op THR</button>
+              <button type="button" class="chip" data-template-id="postop-rc">Post-op Rotator Cuff / Shoulder Stabilization</button>
+              <button type="button" class="chip" data-template-id="postop-lumbar">Post-op Lumbar Discectomy</button>
+              <button type="button" class="chip" data-template-id="postop-achilles">Post-op Achilles Repair</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Other <span class="hint" style="text-transform:none;letter-spacing:0;">— Patient Profile modules, not a note section</span></div>
+            <div class="chip-row kc-chip-row" id="kc-other">
+              <button type="button" class="chip" data-chip="Cardiothoracic">Cardiothoracic</button>
+              <button type="button" class="chip" data-chip="Facial Palsy">Facial Palsy</button>
+              <button type="button" class="chip" data-chip="Vestibular">Vestibular</button>
+            </div>
+          </div>
+        </div>
+
+
+
         
         <div class="field">
           <label>Differential considerations <span class="hint">optional</span></label>
@@ -9220,6 +9243,168 @@ window.hideAdvancedModule = function(key) {
   }
   document.addEventListener('click', function(){ setTimeout(render, 0); }, {passive:true});
   render();
+})();
+</script>
+<script id="lean-js">
+(function(){
+  'use strict';
+  /* ===== Lean assessment layer — shared infrastructure =====
+     - L.section(id, {summary, emptyText, collapsed}): clickable header with a one-line summary
+     - L.more(sectionId, {anchor, where, groups}): "+" chips that reveal tucked blocks; a block auto-opens
+       the moment it holds data, so nothing entered can end up hidden
+     - L.notes(host, id, label): a "+ notes" bar that grows into a text box
+     Saved data is untouched: tucked fields stay in the DOM with their ids. */
+  const $ = (s, r) => (r || document).querySelector(s);
+  const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+  const L = window.Lean = { cfg: {}, groups: [] };
+
+  /* ---------- helpers ---------- */
+  const val = id => { const e = document.getElementById(id); return e ? (e.value || '').trim() : ''; };
+  const selected = sel => $$(sel + ' .chip.selected, ' + sel + ' button.selected').map(b => (b.dataset.chip || b.dataset.val || b.textContent).trim());
+  const parts = a => a.filter(Boolean).join(' · ');
+  const noteMark = id => val(id) ? ' · 📝 notes' : '';
+  L.val = val; L.selected = selected; L.parts = parts; L.noteMark = noteMark; L.$ = $; L.$$ = $$;
+
+  function hasData(el){
+    if(!el) return false;
+    if($$('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea', el).some(f => f.value && f.value.trim() !== '')) return true;
+    if($$('input[type=checkbox]:checked, input[type=radio]:checked', el).length) return true;
+    if($$('select', el).some(s => s.selectedIndex > 0)) return true;
+    if($$('.chip.selected, .segmented button.selected, .nrs-scale button.selected, .pv-cell[data-grade]:not([data-grade=""])', el).length) return true;
+    return false;
+  }
+  L.hasData = hasData;
+
+  /* ---------- "+" chip groups ---------- */
+  const groupTargets = g => g.targets.reduce((all, sel) => all.concat($$(sel)), []);
+  const groupHasData = g => groupTargets(g).some(hasData);
+  function setOpen(g, open){
+    g._open = open;
+    groupTargets(g).forEach(t => t.classList.toggle('lean-shown', open));
+    g._btn.classList.toggle('open', open);
+    const txt = (open ? '− ' : '+ ') + g.label;
+    if(g._btn.textContent !== txt) g._btn.textContent = txt;
+    if(open && g.onOpen) g.onOpen();
+  }
+  L.more = function(sectionId, cfg){
+    const anchor = $(cfg.anchor);
+    if(!anchor) return null;
+    const row = document.createElement('div');
+    row.className = 'lean-more';
+    row.id = 'lean-more-' + (cfg.id || sectionId);
+    anchor.insertAdjacentElement(cfg.where || 'afterend', row);
+    cfg.groups.forEach(g => {
+      g._btn = document.createElement('button');
+      g._btn.type = 'button'; g._btn.className = 'lean-chip'; g._btn.textContent = '+ ' + g.label; g._btn.dataset.leanGroup = g.id;
+      g._open = false;
+      g._btn.addEventListener('click', () => { if(g._open && groupHasData(g)) return; setOpen(g, !g._open); schedule(); });
+      row.appendChild(g._btn);
+      L.groups.push(g);
+    });
+    return row;
+  };
+  L.reveal = id => { const g = L.groups.filter(x => x.id === id)[0]; if(g && !g._open) setOpen(g, true); };
+
+  /* ---------- sections with one-line summaries ---------- */
+  L.section = function(id, cfg){
+    const sec = document.getElementById(id);
+    if(!sec) return;
+    L.cfg[id] = cfg;
+    const title = $('.section-title', sec);
+    title.classList.add('lean-head');
+    title.insertAdjacentHTML('beforeend', '<span class="lean-sum empty"></span><span class="lean-tick">✓</span><span class="lean-chev">▾</span>');
+    if(cfg.collapsed) sec.classList.add('sec-lean-collapsed');
+    title.addEventListener('click', e => { if(e.target.closest('button, a, input, select')) return; sec.classList.toggle('sec-lean-collapsed'); });
+  };
+
+  /* ---------- notes ---------- */
+  L.notes = function(host, id, label){
+    const hostEl = typeof host === 'string' ? $(host) : host;
+    if(!hostEl) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'lean-notes'; wrap.id = 'lean-notes-' + id;
+    wrap.innerHTML = '<button type="button" class="lean-notes-bar">+ ' + label + '</button>' +
+      '<textarea id="' + id + '" class="text-input" rows="3" placeholder="' + label + ' — anything the chips did not capture (dictation works here)"></textarea>';
+    hostEl.appendChild(wrap);
+    $('.lean-notes-bar', wrap).addEventListener('click', () => { wrap.classList.add('open'); $('textarea', wrap).focus(); });
+  };
+  window.getAssessmentNotes = () => ({ subjective: val('subjective-notes'), objective: val('objective-notes') });
+
+  /* ---------- refresh (debounced; self-induced mutations are discarded) ---------- */
+  let timer = null, refreshing = false;
+  function schedule(){ clearTimeout(timer); timer = setTimeout(refresh, 90); }
+  function refresh(){
+    refreshing = true;
+    L.groups.forEach(g => {
+      const data = groupHasData(g);
+      if(data && !g._open) setOpen(g, true);
+      g._btn.classList.toggle('has-data', data);
+      const vis = g.visible ? !!g.visible() : true;
+      if(g._btn.hidden === vis) g._btn.hidden = !vis;
+    });
+    $$('.lean-notes').forEach(w => { if(($('textarea', w).value || '').trim()) w.classList.add('open'); });
+    const painCard = $('#pain-card'), painBox = $('#pain-assessment-container');
+    if(painCard && painBox) painCard.classList.toggle('lean-nopain', painBox.style.display === 'none');
+    Object.keys(L.cfg).forEach(id => {
+      const sec = document.getElementById(id), cfg = L.cfg[id];
+      let t = '';
+      try { t = cfg.summary() || ''; } catch(err) { console.warn('summary failed for', id, err); }
+      const el = $('.lean-sum', sec), text = t || cfg.emptyText || 'Not started';
+      if(el.textContent !== text) el.textContent = text;
+      el.classList.toggle('empty', !t);
+      sec.classList.toggle('lean-filled', !!t);
+    });
+    refreshing = false;
+    observer.takeRecords();
+  }
+  L.refresh = refresh;
+  ['input', 'change', 'click'].forEach(ev => document.addEventListener(ev, schedule, { passive: true }));
+  const observer = new MutationObserver(() => { if(!refreshing) schedule(); });
+  observer.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['class', 'style'] });
+
+  // Sidebar navigation expands a collapsed section before scrolling to it
+  document.addEventListener('click', e => {
+    const item = e.target.closest('.outline-item[data-target]');
+    if(!item) return;
+    const sec = document.getElementById(item.getAttribute('data-target'));
+    if(sec && sec.classList.contains('sec-lean-collapsed')) sec.classList.remove('sec-lean-collapsed');
+  }, true);
+
+  /* ===================== SECTION: Chief Complaint ===================== */
+  const painSelected = () => !!$('#primary-complaint .chip[data-chip="Pain"].selected');
+  L.section('sec-chief-complaint', {
+    emptyText: 'Not started',
+    summary(){
+      const lat = { Left: 'L', Right: 'R', Bilateral: 'bilateral' }[selected('#laterality')[0]] || '';
+      const place = parts([lat, val('region').toLowerCase()]).replace(' · ', ' ');
+      const onset = { Insidious: 'gradual onset', Sudden: 'sudden onset', 'Post-Surgical': 'post-surgical', 'Flare-up': 'flare-up' }[selected('#onset-mechanism')[0]] || '';
+      const since = selected('#onset-timeline-chips')[0];
+      const course = [selected('#episode-pattern')[0], selected('#trend')[0]].filter(Boolean).map(x => x.toLowerCase()).join(', ');
+      const pain = selected('#nrs-current')[0];
+      // "pain 6/10" already says pain, so drop the bare chip when a score exists
+      const symptoms = selected('#primary-complaint').map(x => x.replace('/tingling', '').toLowerCase()).filter(x => !(x === 'pain' && pain !== undefined)).join(', ');
+      const agg = selected('#aggravating-chips'), ease = selected('#easing-chips');
+      const limited = val('fp-limited');
+      return parts([place, parts([onset, since && ('since ' + since.toLowerCase())]).replace(' · ', ', '), course, symptoms,
+        pain !== undefined && ('pain ' + pain + '/10'),
+        agg.length && ('worse: ' + agg.slice(0, 3).join(', ').toLowerCase()),
+        ease.length && ('eases: ' + ease.slice(0, 3).join(', ').toLowerCase()),
+        limited && ('most limited: ' + limited)]) + noteMark('subjective-notes');
+    }
+  });
+  L.more('sec-chief-complaint', { id: 'cc-pain', anchor: '#pain-assessment-container', where: 'beforeend', groups: [
+    { id: 'cc-24h', label: '24h pain & sleep', targets: ['#lean-pain-bw', '#lean-pain-pattern', '#lean-pain-sleep'] },
+    { id: 'cc-irrit', label: 'Irritability detail', targets: ['#lean-irritability'] }
+  ]});
+  L.more('sec-chief-complaint', { id: 'cc-main', anchor: '#card-systemic', where: 'beforebegin', groups: [
+    { id: 'cc-return', label: 'Return-to activity', targets: ['#lean-fp-return'] },
+    { id: 'cc-second', label: 'Secondary complaint', targets: ['#card-secondary'] },
+    { id: 'cc-systemic', label: 'Systemic symptoms', targets: ['#card-systemic'], onOpen: () => { const c = $('#card-systemic'); if(c) c.classList.add('open'); } },
+    { id: 'cc-work', label: 'Work & sport', targets: ['#card-work'] }
+  ]});
+  L.notes($('#sec-chief-complaint'), 'subjective-notes', 'Subjective notes');
+
+  schedule();
 })();
 </script>
 </body>

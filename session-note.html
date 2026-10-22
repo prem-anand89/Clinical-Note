@@ -105,6 +105,9 @@
   .locked main{pointer-events:none;opacity:.7;}
   .banner{display:none;background:var(--clinical);color:#fff;font-weight:600;padding:10px 16px;text-align:center;font-size:13px;}
   .locked .banner{display:block;}
+  .focus{margin-top:6px;font-size:13px;color:var(--ink);background:var(--clinical-dim,#E8F3EF);border-radius:var(--radius-sm);padding:7px 10px;}
+  .focus b{font-weight:700;}
+  .m .pin{color:#E0A100;margin-right:4px;}
   details.pl{margin-top:18px;font-size:12px;}
   details.pl pre{background:#262626;color:#cfe;padding:12px;border-radius:var(--radius-md);overflow:auto;max-height:300px;}
 </style>
@@ -117,6 +120,7 @@
     <option value="tkr">A · TKR, visit 6 (has last visit)</option>
     <option value="thr">B · THR, visit 1 (no history)</option>
     <option value="gen">C · General, no assessment, no history</option>
+    <option value="live">D · Pins from my Clinical Note (live bridge)</option>
   </select>
   <button type="button" id="reset">Reset</button>
   <span class="stat">taps <b id="taps">0</b> · <b id="secs">0</b>s</span>
@@ -128,6 +132,7 @@
   <div class="who"><h1 id="pname">—</h1><span class="sess" id="sess"></span></div>
   <div class="ctx" id="ctx"></div>
   <div class="prec" id="prec"></div>
+  <div class="focus" id="focus" style="display:none;"></div>
 </div></header>
 
 <main class="wrap">
@@ -226,6 +231,13 @@
     thr: {label:'Post-op THR', postOp:true, measures:['hip_flex','abd_str','wound','gait_aid','wb_status','precautions'], extraSafety:['Calf pain, swelling or warmth','Wound redness, heat or discharge']},
     gen: {label:'General MSK', measures:[], extraSafety:[]}
   };
+  // Assessment ⭐ pins (stable finding ids from clinical-note.html) -> session measures.
+  // A pin with no entry here becomes a measure of its own, so any pinned finding is trackable.
+  var PIN_MAP = {
+    'rom:knee:flexion':'knee_flex', 'rom:knee:extension':'knee_ext',
+    'rom:hip:flexion':'hip_flex', 'mmt:hip:hip-abductors':'abd_str'
+  };
+  var PIN_CAP = 6;
   var SAFETY_BASE = ['New or worsening pain / swelling','Fall or near-fall','Feeling unwell (fever, chest pain, breathlessness)'];
   var DISPO_ACTIONS = ['Monitor + safety-net','Contacted surgeon / GP','Urgent referral','Emergency'];
   var TX = ['Joint mobilisation','MFR','Taping/KT','Dry needling','TENS','IFC','Ultrasound','Heat/ice','NMES','Strengthening','Closed-chain','Open-chain','Stretching / ROM','Balance','Gait training'];
@@ -237,18 +249,23 @@
     tkr: { name:'Anita R. (mock)', pack:'tkr', session:'Session 6 of 12', tags:['Post-op TKR (R)','Week 5','Phase 2','WBAT'],
       precautions:'Mock precautions — per surgeon protocol. Real values come from the Core Assessment.',
       last:{pain:4, since:'', measures:{knee_flex:85, knee_ext:8, ext_lag:5, swelling:'Moderate', wound:'Healing well', gait_aid:'Frame/walker', wb_status:'WBAT'},
-            tx:['Joint mobilisation','Strengthening','Heat/ice'], plan:'Continue', assess:'Improving', lastAssessWasRegressed:false},
+            tx:['Joint mobilisation','Strengthening','Heat/ice'], plan:'Continue', assess:'Improving', lastAssessWasRegressed:false,
+            nextMemo:'Progress knee flexion; re-check pinned ROM after mobilisation.'},
+      pins:[{id:'rom:knee:flexion', kind:'rom', region:'Knee', name:'Flexion'}, {id:'rom:knee:extension', kind:'rom', region:'Knee', name:'Extension'}],
       baseline:{knee_flex:60, knee_ext:15} },
     thr: { name:'Rahul S. (mock)', pack:'thr', session:'Session 1 of 10', tags:['Post-op THR (L)','Week 2','Phase 1','PWB'],
-      precautions:'Mock precautions — per surgeon protocol.', last:null, baseline:{} },
-    gen: { name:'Meera K. (mock)', pack:'gen', session:'Session 3', tags:['No assessment on file'], precautions:'', last:null, baseline:{} }
+      precautions:'Mock precautions — per surgeon protocol.', last:null, baseline:{},
+      pins:[{id:'rom:hip:flexion', kind:'rom', region:'Hip', name:'Flexion', baseline:{L:{active:70,passive:78}}}, {id:'mmt:hip:hip-abductors', kind:'mmt', region:'Hip', name:'Hip abductors', baseline:{L:'3'}}] },
+    gen: { name:'Meera K. (mock)', pack:'gen', session:'Session 3', tags:['No assessment on file'], precautions:'', last:null, baseline:{}, pins:[] },
+    // Pins come from localStorage ('cn.pins'), written by clinical-note.html when you ⭐ a finding.
+    live: { name:'Live pins (mock patient)', pack:'gen', session:'Session 2', tags:['Assessment pins'], precautions:'', last:null, baseline:{}, pins:[], livePins:true }
   };
 
   /* ================= STATE ================= */
   var $ = function(id){ return document.getElementById(id); };
   var sc, S, taps, t0, timer;
   function fresh(){
-    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
+    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], pinOf:{}, tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
     taps = 0; t0 = null; clearInterval(timer); $('taps').textContent = '0'; $('secs').textContent = '0';
   }
   function startTimer(){
@@ -271,6 +288,13 @@
       host.appendChild(b);
     });
   }
+  function defOf(id){ return MEASURES[id] || S.custom.filter(function(c){ return c.id===id; })[0]; }
+  function pinBaseline(pin){
+    var b = pin.baseline; if(b === undefined || b === null) return undefined;
+    if(typeof b !== 'object') return b;
+    var k = Object.keys(b).filter(function(x){ return b[x] !== null && b[x] !== undefined; })[0];
+    if(!k) return undefined; var v = b[k]; return (v && typeof v === 'object') ? (v.active !== null ? v.active : undefined) : v;
+  }
   function lastOf(id){ return sc.last && sc.last.measures[id] !== undefined ? sc.last.measures[id] : null; }
 
   /* ================= SECTIONS ================= */
@@ -278,6 +302,9 @@
     $('pname').textContent = sc.name; $('sess').textContent = sc.session;
     $('ctx').innerHTML = sc.tags.map(function(t,i){ return '<span class="tag'+(sc.tags[0]==='No assessment on file'?' warn':'')+'">'+t+'</span>'; }).join('');
     $('prec').textContent = sc.precautions;
+    var f = $('focus'), memo = sc.last && sc.last.nextMemo;
+    f.style.display = memo ? 'block' : 'none';
+    if(memo) f.innerHTML = '<b>Last focus:</b> ' + memo.replace(/</g,'&lt;');
   }
   function renderSubjective(){
     var nrs = $('nrs'); nrs.innerHTML = '';
@@ -314,13 +341,13 @@
     var host = $('measures'); host.innerHTML = '';
     if(!S.order.length){ host.innerHTML = '<div class="hint">No pinned measures yet — add the ones you track. They carry forward to the next visit automatically.</div>'; }
     S.order.forEach(function(id){
-      var def = MEASURES[id] || S.custom.filter(function(c){ return c.id===id; })[0];
+      var def = defOf(id);
       var last = lastOf(id), base = sc.baseline[id];
       var row = document.createElement('div'); row.className = 'm'+(S.carried[id]?' carried':'');
       var trend = [];
       if(base !== undefined) trend.push('baseline '+base+(def.unit||''));
       if(last !== null) trend.push('last '+last+(def.unit&&typeof last==='number'?def.unit:''));
-      row.innerHTML = '<div class="top"><span class="name">'+def.label+'</span><span class="trend">'+trend.join(' · ')+(S.carried[id]?' <span class=\"badge\">carried — confirm</span>':'')+'</span><button type="button" class="x" aria-label="Remove for this visit">×</button></div><div class="ctl"></div>';
+      row.innerHTML = '<div class="top"><span class="name">'+(S.pinOf[id]?'<span class=\"pin\" title=\"Pinned in the assessment\">★</span>':'')+def.label+'</span><span class="trend">'+trend.join(' · ')+(S.carried[id]?' <span class=\"badge\">carried — confirm</span>':'')+'</span><button type="button" class="x" aria-label="Remove for this visit">×</button></div><div class="ctl"></div>';
       row.querySelector('.x').addEventListener('click', function(){ S.order.splice(S.order.indexOf(id),1); delete S.measures[id]; renderMeasures(); update(); });
       var ctl = row.querySelector('.ctl');
       if(def.kind === 'chips'){
@@ -455,8 +482,8 @@
   }
   function payload(){
     var meas = S.order.filter(function(id){ return S.measures[id]!==undefined; }).map(function(id){
-      var def = MEASURES[id] || S.custom.filter(function(c){ return c.id===id; })[0];
-      var o = {id:id, value:S.measures[id]}; if(S.carried[id]) o.carried = true; if(def.unit) o.unit = def.unit; if(id.indexOf('custom_')===0) o.label = def.label; return o; });
+      var def = defOf(id);
+      var o = {id:id, value:S.measures[id]}; if(S.pinOf[id]) o.findingId = S.pinOf[id]; if(S.carried[id]) o.carried = true; if(def.unit) o.unit = def.unit; if(!MEASURES[id]) o.label = def.label; return o; });
     return {
       version:'1.1', kind:'session', enrollmentId:'(mock)',
       context:{pack:sc.pack, session:sc.session},
@@ -514,6 +541,27 @@
     lock();
   });
 
+  // Pinned assessment findings join the starting measures (capped), keep their finding id,
+  // and use the assessment's baseline when the scenario has none for that measure.
+  function applyPins(){
+    var pins = sc.pins || [];
+    if(sc.livePins){ try { pins = JSON.parse(localStorage.getItem('cn.pins') || '[]'); } catch(e) { pins = []; } }
+    pins.slice(0, PIN_CAP).forEach(function(pin){
+      var id = PIN_MAP[pin.id];
+      if(!id){
+        id = pin.id;
+        if(!defOf(id)){
+          var rom = pin.kind === 'rom', func = pin.kind === 'func';
+          S.custom.push(rom ? {id:id, label:pin.region+' '+pin.name.toLowerCase()+' (AROM)', kind:'num', unit:'°', step:5, min:0, max:200, start:0, better:'up'}
+            : {id:id, label:pin.name+(func ? '' : ' (MMT)'), kind:'chips', options: func ? ['Good','Fair','Poor'] : ['2','3','3+','4','4+','5']});
+        }
+      }
+      S.pinOf[id] = pin.id;
+      if(S.order.indexOf(id) === -1) S.order.push(id);
+      var b = pinBaseline(pin); if(b !== undefined && sc.baseline[id] === undefined) sc.baseline[id] = b;
+    });
+  }
+
   /* ================= SCENARIO LOADING ================= */
   function load(key){
     document.body.classList.remove('locked'); $('complete').style.display='';
@@ -521,6 +569,7 @@
     // starting measures: last visit's pinned set > pack (from assessment template) > empty (manual)
     var ids = sc.last ? Object.keys(sc.last.measures) : PACKS[sc.pack].measures;
     S.order = ids.slice();
+    applyPins();
     $('checkpanel').style.display='none'; $('comment').style.display='none'; $('comment').value=''; $('add-comment').style.display='';
     $('dispo-note').value=''; $('next-date').value=''; $('picker').style.display='none';
     $('s-safe').style.display = isPostOp() ? '' : 'none';

@@ -392,3 +392,9 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - Old tests that click the removed controls (`#screening-toggle`, `#add-goal-row` on first view, category "Add" buttons) were rewritten for the new flow.
 - Yellow flags and the Impression echo now say "Psychosocial".
 - Sidebar remains for navigation and still opens modules; the dock is the in-page way to add them.
+
+## ⭐ Pin bridge (Gemini #9, step 1)
+- **Assessment:** ROM, MMT and functional-screen rows get a ☆/★ pin (not special tests: they are binary, not trended). Max 6 pins, with an inline "N pinned" line and a cap message. Ids are `kind:region:name` slugs computed live, so renaming a custom row or changing region never leaves a stale id. `window.getPinnedFindings()` returns id, region, name and a baseline snapshot (ROM active/passive per side, MMT grade, screen result). Pins are mirrored to `localStorage['cn.pins']` as a prototype-only bridge.
+- **Session note:** pinned findings join the starting measures (last visit's set > + pins; pack + pins on a first visit), shown with ★, capped at 6. Known pins map to existing measures; any other pin becomes its own measure (ROM → numeric stepper, MMT/screen → chips). Baseline comes from the assessment snapshot. Payload measure entries carry `findingId`. The header shows "Last focus:" from the previous visit's memo. New scenario D reads the live pins written by `clinical-note.html`.
+- **Tests:** `tests/pins.mjs`, `tests/session-pins.mjs` (run with node; need playwright-core and Chrome).
+- Not in this step: the "+ after treatment" value, response chips, this visit's memo box (Step 2).

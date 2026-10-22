@@ -105,5 +105,11 @@ hep: { name; sets; reps; hold; load; frequency; cue; progression; teachBack; adh
 // Plan
 plan: { nextVisitMemo?: string /* shown at the top of the next session note */ };
 goals: /* a one-line goal creates a normal goal row (description only until detail is added) */
+
+// ⭐ Pinned findings (test-retest markers)                         // getPinnedFindings()
+// Ids are stable and shared with the session note: `${kind}:${regionSlug}:${nameSlug}`, kind = 'rom' | 'mmt' | 'func'
+// (e.g. 'rom:knee:flexion'). Max 6. Only the ids are stored; baseline values already live in the objective rows.
+pinnedFindingIds: string[];
 ```
+Session note (v1.1, additive): a measure that came from a pin carries `findingId` (the assessment id above). Measures without an entry in the id map use the finding id as their own `id` plus a `label`. The map from finding ids to session measure ids (`rom:knee:flexion` → `knee_flex`, …) lives in the session-note config, not in the payload.
 Removed fields (do not port): the second `precautions` textarea in Load-management (Impression `ci-precautions` is the only home); the "Anticoagulants" medication chip (Safety's blood-thinner answer is the only source); duplicate "Neuromuscular" contributing-factor chips; the separate Palpation card (its fields now live under Observation & palpation, ids unchanged).

@@ -445,6 +445,15 @@
     background:none; color:var(--ink-faint); cursor:pointer; display:flex; align-items:center; justify-content:center;
   }
   .obj-row .remove-x:hover{ background:var(--line-soft); color:#D9534F; }
+  /* ⭐ pin: marks a finding to be re-measured every visit (becomes a tracked measure in the session note) */
+  .obj-row .pin-btn{
+    flex:0 0 auto; width:26px; height:26px; border-radius:50%; border:none; background:none; margin-left:auto;
+    color:var(--ink-faint); cursor:pointer; font-size:15px; line-height:1; display:flex; align-items:center; justify-content:center;
+  }
+  .obj-row .pin-btn:hover{ background:var(--line-soft); }
+  .obj-row .pin-btn.on{ color:#E0A100; }
+  #pin-summary{ margin:0 2px 12px; font-size:12px; color:var(--ink-faint); }
+  #pin-summary.warn{ color:#B26A00; font-weight:600; }
 
   .obj-row .side-tag{ font-size:10px; font-weight:700; color:var(--ink-faint); margin-right:3px; }
   .side-block{ display:flex; align-items:center; gap:6px; padding:6px; border-radius:7px; transition:all .15s ease; flex-wrap:wrap; }
@@ -4531,6 +4540,81 @@
     if(input) setTimeout(function(){ input.focus(); }, 0);
   }
 
+  // ---- ⭐ Pinned findings (test-retest markers) ----
+  // A pin is a reference to a live row; the stable id (kind:region:movement) is computed on read,
+  // so renaming a custom row or changing region never leaves a stale id. Max PIN_CAP so the
+  // daily note stays short. Persisted to localStorage only as a prototype bridge to session-note.html.
+  var PIN_CAP = 6;
+  var pinnedRows = [];
+  function pinSlug(s){ return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+  function pinRowName(row){
+    var l = row.querySelector('.obj-label');
+    return l ? ((l.value !== undefined && l.tagName === 'INPUT') ? l.value : l.textContent).trim() : '';
+  }
+  function pinSnapshot(row, kind){
+    var snap = {};
+    if(kind === 'func'){
+      var sel = row.querySelector('.segmented button.selected');
+      return sel ? sel.getAttribute('data-val') : null;
+    }
+    row.querySelectorAll('.side-block').forEach(function(sb){
+      var side = sb.getAttribute('data-side') || 'Value';
+      if(kind === 'rom'){
+        var ins = sb.querySelectorAll('.deg-input');
+        snap[side] = { active: ins[0] && ins[0].value !== '' ? Number(ins[0].value) : null, passive: ins[1] && ins[1].value !== '' ? Number(ins[1].value) : null };
+      } else {
+        var pv = sb.querySelector('.mrc-preview');
+        snap[side] = pv && pv.classList.contains('has-value') ? pv.textContent.replace('/5', '') : null;
+      }
+    });
+    return snap;
+  }
+  function livePins(){
+    pinnedRows = pinnedRows.filter(function(p){ return document.body.contains(p.row); });
+    return pinnedRows;
+  }
+  window.getPinnedFindings = function(){
+    return livePins().map(function(p){
+      var name = pinRowName(p.row), region = regionSelect.value || previewRegion || '';
+      return { id: p.kind + ':' + pinSlug(region) + ':' + pinSlug(name), kind: p.kind, region: region, name: name, baseline: pinSnapshot(p.row, p.kind) };
+    }).filter(function(f){ return f.name; });
+  };
+  function renderPinSummary(msg){
+    var el = document.getElementById('pin-summary');
+    if(!el){
+      el = document.createElement('div'); el.id = 'pin-summary';
+      var anchor = document.getElementById('objective-region-preview');
+      if(!anchor) return;
+      anchor.parentNode.insertBefore(el, anchor.nextSibling);
+    }
+    var n = livePins().length;
+    el.className = msg ? 'warn' : '';
+    el.style.display = (n || msg) ? 'block' : 'none';
+    el.textContent = msg || ('⭐ ' + n + ' pinned for follow-up (max ' + PIN_CAP + ') — re-measured at every visit in the daily note');
+  }
+  function persistPins(){
+    try { localStorage.setItem('cn.pins', JSON.stringify(window.getPinnedFindings())); } catch(e) {}
+  }
+  function attachPin(row, kind){
+    var rm = row.querySelector('.remove-x');
+    if(!rm) return;
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'pin-btn'; btn.textContent = '☆';
+    btn.title = 'Pin to re-measure at every visit'; btn.setAttribute('aria-label', 'Pin finding for follow-up'); btn.setAttribute('aria-pressed', 'false');
+    rm.parentNode.insertBefore(btn, rm);
+    function setOn(on){ btn.classList.toggle('on', on); btn.textContent = on ? '★' : '☆'; btn.setAttribute('aria-pressed', on ? 'true' : 'false'); }
+    btn.addEventListener('click', function(){
+      var idx = -1; livePins().forEach(function(p, i){ if(p.row === row) idx = i; });
+      if(idx > -1){ pinnedRows.splice(idx, 1); setOn(false); renderPinSummary(); persistPins(); return; }
+      if(!pinRowName(row)){ renderPinSummary('Name the finding before pinning it'); return; }
+      if(livePins().length >= PIN_CAP){ renderPinSummary('Max ' + PIN_CAP + ' pins — unpin one first'); return; }
+      pinnedRows.push({ row: row, kind: kind }); setOn(true); renderPinSummary(); persistPins();
+    });
+    rm.addEventListener('click', function(){ setTimeout(function(){ renderPinSummary(); persistPins(); }, 0); });
+    row.addEventListener('input', function(){ if(btn.classList.contains('on')) persistPins(); });
+    row.addEventListener('click', function(){ if(btn.classList.contains('on')) setTimeout(persistPins, 0); });
+  }
+
   function makeRomRow(name, sides, editable){
     var row = document.createElement('div');
     row.className = 'obj-row';
@@ -4577,6 +4661,7 @@
         if(!active) note.value = '';
       });
     });
+    attachPin(row, 'rom');
     row.querySelector('.remove-x').addEventListener('click', function(){ row.remove(); });
     return row;
   }
@@ -4670,6 +4755,7 @@
       row.appendChild(rm);
     }
     focusIfEditable(row);
+    attachPin(row, 'mmt');
     row.querySelector('.remove-x').addEventListener('click', function(){ row.remove(); });
     return row;
   }
@@ -4866,6 +4952,7 @@
       });
     });
     focusIfEditable(row);
+    if(options && options[0] === 'Good') attachPin(row, 'func');
     row.querySelector('.remove-x').addEventListener('click', function(){ row.remove(); });
     return row;
   }

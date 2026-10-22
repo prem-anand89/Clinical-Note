@@ -113,3 +113,9 @@ pinnedFindingIds: string[];
 ```
 Session note (v1.1, additive): a measure that came from a pin carries `findingId` (the assessment id above). Measures without an entry in the id map use the finding id as their own `id` plus a `label`. The map from finding ids to session measure ids (`rom:knee:flexion` → `knee_flex`, …) lives in the session-note config, not in the payload.
 Removed fields (do not port): the second `precautions` textarea in Load-management (Impression `ci-precautions` is the only home); the "Anticoagulants" medication chip (Safety's blood-thinner answer is the only source); duplicate "Neuromuscular" contributing-factor chips; the separate Palpation card (its fields now live under Observation & palpation, ids unchanged).
+
+## Session note v1.1 additions (Gemini #25, #26, #10, #18)
+- `sessionResponse: 'better' | 'same' | 'worse' | null` — immediate response to today's treatment (not the course of the episode; that stays in `assessment`).
+- `hepAdherence: 'doing' | 'partly' | 'not_doing' | null` (was Full/Partial/None).
+- `nextVisitMemo: string | null` — this visit's own memo, shown as "Last focus:" in the next visit's header; chips ("Progress HEP", "Advance load", "Re-check pinned items") only insert text.
+- `measures[].afterValue?` — optional post-treatment value, only on measures that came from a ⭐ pin; stored only when the therapist adds it. An after value with no before value is not saved.

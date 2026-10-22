@@ -108,6 +108,7 @@
   .focus{margin-top:6px;font-size:13px;color:var(--ink);background:var(--clinical-dim,#E8F3EF);border-radius:var(--radius-sm);padding:7px 10px;}
   .focus b{font-weight:700;}
   .m .pin{color:#E0A100;margin-right:4px;}
+  .m .after{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);}
   details.pl{margin-top:18px;font-size:12px;}
   details.pl pre{background:#262626;color:#cfe;padding:12px;border-radius:var(--radius-md);overflow:auto;max-height:300px;}
 </style>
@@ -179,6 +180,8 @@
     <button type="button" class="same-last" id="same-last">Same as last visit</button>
     <div class="chips" id="tx"></div>
     <div id="doses"></div>
+    <div class="lbl">Immediate response to today’s treatment</div>
+    <div class="seg" id="resp"></div>
   </section>
 
   <!-- 5. ASSESSMENT & PLAN -->
@@ -194,6 +197,9 @@
     <div class="lbl">Next visit</div>
     <div class="chips" id="next"></div>
     <input type="date" id="next-date" style="margin-top:8px;">
+    <div class="lbl">Next session focus <span style="text-transform:none;letter-spacing:0;font-weight:500;">· shown at the top of the next visit</span></div>
+    <div class="chips" id="focus-chips"></div>
+    <input type="text" id="memo" placeholder="e.g. progress flexion; re-check pinned ROM" style="margin-top:8px;">
   </section>
 
   <div class="warnbox" id="checkpanel" role="alert"></div>
@@ -243,6 +249,9 @@
   var TX = ['Joint mobilisation','MFR','Taping/KT','Dry needling','TENS','IFC','Ultrasound','Heat/ice','NMES','Strengthening','Closed-chain','Open-chain','Stretching / ROM','Balance','Gait training'];
   var ASSESS = ['Improving','Unchanged','Regressed','Flare'];
   var PLAN = ['Continue','Progress','Modify','Review','Discharge'];
+  var RESPONSE = [['better','Better'],['same','Same'],['worse','Worse (sore / flare)']];
+  var HEP = [['doing','Doing'],['partly','Partly'],['not_doing','Not doing']];
+  var FOCUS_CHIPS = ['Progress HEP','Advance load','Re-check pinned items'];
 
   /* ================= MOCK SCENARIOS ================= */
   var SCENARIOS = {
@@ -265,7 +274,7 @@
   var $ = function(id){ return document.getElementById(id); };
   var sc, S, taps, t0, timer;
   function fresh(){
-    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], pinOf:{}, tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
+    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], pinOf:{}, after:{}, afterOpen:{}, response:'', memo:'', tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
     taps = 0; t0 = null; clearInterval(timer); $('taps').textContent = '0'; $('secs').textContent = '0';
   }
   function startTimer(){
@@ -281,10 +290,11 @@
   function seg(host, opts, get, set, ghost){
     host.innerHTML = '';
     opts.forEach(function(o){
-      var b = document.createElement('button'); b.type = 'button'; b.textContent = o;
-      if(get() === o) b.classList.add('selected');
-      if(ghost && ghost === o && get() !== o) b.classList.add('ghost');
-      b.addEventListener('click', function(){ set(get() === o ? '' : o); seg(host, opts, get, set, ghost); update(); });
+      var val = Array.isArray(o) ? o[0] : o, lab = Array.isArray(o) ? o[1] : o;
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = lab;
+      if(get() === val) b.classList.add('selected');
+      if(ghost && ghost === val && get() !== val) b.classList.add('ghost');
+      b.addEventListener('click', function(){ set(get() === val ? '' : val); seg(host, opts, get, set, ghost); update(); });
       host.appendChild(b);
     });
   }
@@ -348,7 +358,7 @@
       if(base !== undefined) trend.push('baseline '+base+(def.unit||''));
       if(last !== null) trend.push('last '+last+(def.unit&&typeof last==='number'?def.unit:''));
       row.innerHTML = '<div class="top"><span class="name">'+(S.pinOf[id]?'<span class=\"pin\" title=\"Pinned in the assessment\">★</span>':'')+def.label+'</span><span class="trend">'+trend.join(' · ')+(S.carried[id]?' <span class=\"badge\">carried — confirm</span>':'')+'</span><button type="button" class="x" aria-label="Remove for this visit">×</button></div><div class="ctl"></div>';
-      row.querySelector('.x').addEventListener('click', function(){ S.order.splice(S.order.indexOf(id),1); delete S.measures[id]; renderMeasures(); update(); });
+      row.querySelector('.x').addEventListener('click', function(){ S.order.splice(S.order.indexOf(id),1); delete S.measures[id]; delete S.after[id]; delete S.afterOpen[id]; renderMeasures(); update(); });
       var ctl = row.querySelector('.ctl');
       if(def.kind === 'chips'){
         var wrap = document.createElement('div'); wrap.className = 'seg'; ctl.appendChild(wrap);
@@ -356,35 +366,59 @@
       } else {
         renderStepper(ctl, id, def, last);
       }
+      if(S.pinOf[id]){
+        var aft = document.createElement('div'); aft.className = 'after';
+        if(!S.afterOpen[id]){
+          var lk = document.createElement('button'); lk.type='button'; lk.className='link'; lk.textContent = '+ after treatment';
+          lk.addEventListener('click', function(){ S.afterOpen[id] = true; renderMeasures(); });
+          aft.appendChild(lk);
+        } else {
+          var cap = document.createElement('div'); cap.className='lbl'; cap.textContent = 'After treatment';
+          var actl = document.createElement('div'); aft.appendChild(cap); aft.appendChild(actl);
+          var before = S.measures[id] !== undefined ? S.measures[id] : null;
+          if(def.kind === 'chips'){
+            var w2 = document.createElement('div'); w2.className = 'seg'; actl.appendChild(w2);
+            seg(w2, def.options, function(){ return S.after[id] || ''; }, function(v){ if(v) S.after[id] = v; else delete S.after[id]; });
+          } else {
+            renderStepper(actl, id, def, function(){ return S.measures[id] !== undefined ? S.measures[id] : null; }, S.after, 'vs before');
+          }
+          var rmA = document.createElement('button'); rmA.type='button'; rmA.className='link'; rmA.textContent = 'Remove after-treatment value';
+          rmA.addEventListener('click', function(){ delete S.after[id]; delete S.afterOpen[id]; renderMeasures(); update(); });
+          aft.appendChild(rmA);
+        }
+        row.appendChild(aft);
+      }
       host.appendChild(row);
     });
   }
-  function renderStepper(ctl, id, def, last){
+  function renderStepper(ctl, id, def, last, store, vsLabel){
+    store = store || S.measures; vsLabel = vsLabel || 'vs last'; var isAfter = store !== S.measures;
+    var lastSrc = last; function lastv(){ return typeof lastSrc==='function' ? lastSrc() : lastSrc; }
     ctl.innerHTML = '';
     var box = document.createElement('div'); box.className = 'step';
     var minus = mk('b','−'), plus = mk('b','+'), val = document.createElement('div'); val.className = 'val';
     function mk(c,t){ var b = document.createElement('button'); b.type='button'; b.className=c; b.textContent=t; return b; }
     function draw(){
-      var v = S.measures[id];
+      var v = store[id];
       val.innerHTML = (v===undefined?'—':v+'<span style="font-size:13px;color:var(--ink-faint);font-weight:600;"> '+(def.unit||'')+'</span>');
       var old = box.querySelector('.delta'); if(old) old.remove();
-      if(v!==undefined && last!==null){
-        var d = Math.round((v-last)*10)/10, cls = d===0?'flat':((def.better==='up'?d>0:d<0)?'good':'bad');
-        var s = document.createElement('span'); s.className='delta '+cls; s.textContent = (d>0?'+':'')+d+' vs last'; val.appendChild(s);
+      if(v!==undefined && lastv()!==null){
+        var d = Math.round((v-lastv())*10)/10, cls = d===0?'flat':((def.better==='up'?d>0:d<0)?'good':'bad');
+        var s = document.createElement('span'); s.className='delta '+cls; s.textContent = (d>0?'+':'')+d+' '+vsLabel; val.appendChild(s);
       }
     }
-    function clearCarried(){ if(S.carried[id]){ delete S.carried[id]; ctl.closest('.m').classList.remove('carried'); var bd = ctl.closest('.m').querySelector('.badge'); if(bd) bd.remove(); } }
+    function clearCarried(){ if(!isAfter && S.carried[id]){ delete S.carried[id]; ctl.closest('.m').classList.remove('carried'); var bd = ctl.closest('.m').querySelector('.badge'); if(bd) bd.remove(); } }
     function nudge(dir){
-      var cur = S.measures[id]; if(cur===undefined) cur = (last!==null?last:def.start);
+      var cur = store[id]; if(cur===undefined) cur = (lastv()!==null?lastv():def.start);
       else cur = cur + dir*def.step;
       cur = Math.max(def.min, Math.min(def.max, Math.round(cur*10)/10));
-      S.measures[id] = cur; clearCarried(); draw(); update();
+      store[id] = cur; clearCarried(); draw(); update();
     }
-    minus.addEventListener('click', function(){ if(S.measures[id]===undefined && last!==null){ S.measures[id]=last; clearCarried(); draw(); update(); } else nudge(-1); });
-    plus.addEventListener('click',  function(){ if(S.measures[id]===undefined && last!==null){ S.measures[id]=last; clearCarried(); draw(); update(); } else nudge(1); });
+    minus.addEventListener('click', function(){ if(store[id]===undefined && lastv()!==null){ store[id]=lastv(); clearCarried(); draw(); update(); } else nudge(-1); });
+    plus.addEventListener('click',  function(){ if(store[id]===undefined && lastv()!==null){ store[id]=lastv(); clearCarried(); draw(); update(); } else nudge(1); });
     box.appendChild(minus); box.appendChild(val); box.appendChild(plus);
-    if(last!==null){
-      var same = mk('same','= '+last); same.addEventListener('click', function(){ S.measures[id]=last; clearCarried(); draw(); update(); });
+    if(lastv()!==null){
+      var same = mk('same','= '+lastv()); same.addEventListener('click', function(){ store[id]=lastv(); clearCarried(); draw(); update(); });
       box.appendChild(same);
     }
     ctl.appendChild(box); draw();
@@ -438,8 +472,18 @@
 
   function renderAP(){
     seg($('assess'), ASSESS, function(){ return S.assess; }, function(v){ S.assess = v; renderEscalation(); }, sc.last && sc.last.assess);
+    seg($('resp'), RESPONSE, function(){ return S.response; }, function(v){ S.response = v; });
     seg($('plan'), PLAN, function(){ return S.plan; }, function(v){ S.plan = v; }, sc.last && sc.last.plan);
-    seg($('hep'), ['Full','Partial','None'], function(){ return S.hep; }, function(v){ S.hep = v; });
+    seg($('hep'), HEP, function(){ return S.hep; }, function(v){ S.hep = v; });
+    var fc = $('focus-chips'); fc.innerHTML = '';
+    FOCUS_CHIPS.forEach(function(t){
+      var b = document.createElement('button'); b.type='button'; b.className='chip'; b.textContent = t;
+      b.addEventListener('click', function(){
+        var m = $('memo'); if(m.value.toLowerCase().indexOf(t.toLowerCase()) === -1) m.value = m.value ? m.value.replace(/[;\s]+$/,'') + '; ' + t : t;
+        S.memo = m.value; update();
+      });
+      fc.appendChild(b);
+    });
     var n = $('next'); n.innerHTML = '';
     [['+2 days',2],['+3 days',3],['+1 week',7]].forEach(function(p){
       var b = document.createElement('button'); b.type='button'; b.className='chip'; b.textContent = p[0];
@@ -448,6 +492,7 @@
     });
     renderEscalation();
   }
+  $('memo').addEventListener('input', function(){ S.memo = this.value; update(); });
   $('next-date').addEventListener('input', function(){ S.nextDate = this.value; update(); });
   function renderEscalation(){
     var h = $('escalate'); h.innerHTML = '';
@@ -483,7 +528,7 @@
   function payload(){
     var meas = S.order.filter(function(id){ return S.measures[id]!==undefined; }).map(function(id){
       var def = defOf(id);
-      var o = {id:id, value:S.measures[id]}; if(S.pinOf[id]) o.findingId = S.pinOf[id]; if(S.carried[id]) o.carried = true; if(def.unit) o.unit = def.unit; if(!MEASURES[id]) o.label = def.label; return o; });
+      var o = {id:id, value:S.measures[id]}; if(S.pinOf[id]) o.findingId = S.pinOf[id]; if(S.pinOf[id] && S.after[id]!==undefined) o.afterValue = S.after[id]; if(S.carried[id]) o.carried = true; if(def.unit) o.unit = def.unit; if(!MEASURES[id]) o.label = def.label; return o; });
     return {
       version:'1.1', kind:'session', enrollmentId:'(mock)',
       context:{pack:sc.pack, session:sc.session},
@@ -492,7 +537,8 @@
       completedAt:S.completedAt||null, editedAfterCompletion:S.edits.length ? S.edits : null,
       measures:meas,
       intervention:{treatments:S.tx, doses:S.doses, sameAsLast: !!sc.last && S.tx.length===sc.last.tx.length && S.tx.every(function(t){ return sc.last.tx.indexOf(t)>-1; })},
-      assessment:S.assess||null, plan:S.plan||null, hepAdherence:S.hep||null, nextVisit:S.nextDate||null,
+      sessionResponse:S.response||null,
+      assessment:S.assess||null, plan:S.plan||null, hepAdherence:S.hep||null, nextVisit:S.nextDate||null, nextVisitMemo:S.memo.trim()||null,
       escalationNote:S.escalation||null
     };
   }
@@ -571,7 +617,7 @@
     S.order = ids.slice();
     applyPins();
     $('checkpanel').style.display='none'; $('comment').style.display='none'; $('comment').value=''; $('add-comment').style.display='';
-    $('dispo-note').value=''; $('next-date').value=''; $('picker').style.display='none';
+    $('dispo-note').value=''; $('next-date').value=''; $('memo').value=''; $('picker').style.display='none';
     $('s-safe').style.display = isPostOp() ? '' : 'none';
     renderHeader(); renderSubjective(); renderSafety(); renderMeasures(); renderIntervention(); renderAP(); update();
   }

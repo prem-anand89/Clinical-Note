@@ -398,3 +398,11 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Session note:** pinned findings join the starting measures (last visit's set > + pins; pack + pins on a first visit), shown with ★, capped at 6. Known pins map to existing measures; any other pin becomes its own measure (ROM → numeric stepper, MMT/screen → chips). Baseline comes from the assessment snapshot. Payload measure entries carry `findingId`. The header shows "Last focus:" from the previous visit's memo. New scenario D reads the live pins written by `clinical-note.html`.
 - **Tests:** `tests/pins.mjs`, `tests/session-pins.mjs` (run with node; need playwright-core and Chrome).
 - Not in this step: the "+ after treatment" value, response chips, this visit's memo box (Step 2).
+
+## Session note step 2 (Gemini #25, #26, #10, #18)
+- **Immediate response** chips in Intervention: Better · Same · Worse (sore / flare). `sessionResponse`.
+- **HEP adherence** relabelled Doing / Partly / Not doing.
+- **Next session focus:** one memo box plus quick chips that drop text in (no duplicates); `nextVisitMemo`. Per-exercise pills dropped.
+- **"+ after treatment"** on ★ pinned measures only: optional second stepper/chips, delta "vs before", removable; `afterValue` stored only when added.
+- `seg()` accepts value/label pairs; `renderStepper()` takes a store, so before and after share one control.
+- Test: `tests/session-step2.mjs` (13 checks).

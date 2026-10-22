@@ -119,3 +119,6 @@ Removed fields (do not port): the second `precautions` textarea in Load-manageme
 - `hepAdherence: 'doing' | 'partly' | 'not_doing' | null` (was Full/Partial/None).
 - `nextVisitMemo: string | null` — this visit's own memo, shown as "Last focus:" in the next visit's header; chips ("Progress HEP", "Advance load", "Re-check pinned items") only insert text.
 - `measures[].afterValue?` — optional post-treatment value, only on measures that came from a ⭐ pin; stored only when the therapist adds it. An after value with no before value is not saved.
+
+## ROM Full / WNL (Gemini #20)
+Each ROM side has an optional `full: true` flag instead of degree values (the degree boxes are cleared and locked while it is on). It is a flag tapped for that movement and side, never a bulk "all normal" and never a number. Pin snapshots carry it as `baseline[side].full`.

@@ -465,6 +465,14 @@
   }
   .pain-toggle:hover{ border-color:#D9534F; color:#D9534F; }
   .pain-toggle.active{ background:#FDECEC; border-color:#F3B7B4; color:#B3261E; }
+  .wnl-toggle{
+    font-size:11px; font-weight:700; padding:5px 9px; border-radius:7px;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink-faint);
+    cursor:pointer; white-space:nowrap; transition:all .13s ease;
+  }
+  .wnl-toggle:hover{ border-color:var(--clinical); color:var(--clinical); }
+  .wnl-toggle.active{ background:var(--clinical-dim,#e4edec); border-color:var(--clinical); color:var(--clinical); }
+  .deg-input:disabled{ background:var(--line-soft); }
   .pain-note{ max-width:170px; font-size:12px; padding:6px 8px; }
   .side-block.affected{ background:rgba(181,118,43,0.06); box-shadow:inset 2px 0 0 rgba(181,118,43,0.4); }
   .side-block.affected .side-tag{ color:var(--amber); }
@@ -4562,6 +4570,7 @@
       if(kind === 'rom'){
         var ins = sb.querySelectorAll('.deg-input');
         snap[side] = { active: ins[0] && ins[0].value !== '' ? Number(ins[0].value) : null, passive: ins[1] && ins[1].value !== '' ? Number(ins[1].value) : null };
+        if(sb.querySelector('.wnl-toggle.active')) snap[side].full = true;
       } else {
         var pv = sb.querySelector('.mrc-preview');
         snap[side] = pv && pv.classList.contains('has-value') ? pv.textContent.replace('/5', '') : null;
@@ -4627,9 +4636,10 @@
     function sideBlockHtml(s){
       var tag = s === 'Value' ? '' : '<span class="side-tag">' + s + '</span>';
       return '<div class="side-block" data-side="' + s + '">' + tag +
-        '<span class="deg-pair"><input type="number" class="deg-input" placeholder="0"><span class="deg-unit">Active°</span></span>' +
-        '<span class="deg-pair"><input type="number" class="deg-input" placeholder="0"><span class="deg-unit">Passive°</span></span>' +
+        '<span class="deg-pair"><input type="number" inputmode="numeric" class="deg-input" placeholder="0"><span class="deg-unit">Active°</span></span>' +
+        '<span class="deg-pair"><input type="number" inputmode="numeric" class="deg-input" placeholder="0"><span class="deg-unit">Passive°</span></span>' +
         '<select class="select-input endfeel-select"><option value="">End-feel…</option><option>Capsular</option><option>Bony</option><option>Springy block</option><option>Empty (pain)</option><option>Muscular</option></select>' +
+        '<button type="button" class="wnl-toggle" aria-pressed="false" title="Full range, within normal limits (recorded as a flag, not a number)">Full / WNL</button>' +
         '<button type="button" class="pain-toggle">⚡ Pain</button>' +
         '<input type="text" class="text-input pain-note" placeholder="e.g. painful arc 60–120°" style="display:none;">' +
         '</div>';
@@ -4653,6 +4663,17 @@
         '<button type="button" class="remove-x" aria-label="Remove"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>';
     }
     focusIfEditable(row);
+    // Full / WNL: a per-side flag for this movement (not a number). Clears and locks the degree boxes.
+    row.querySelectorAll('.wnl-toggle').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var on = btn.classList.toggle('active');
+        btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btn.closest('.side-block').querySelectorAll('.deg-input').forEach(function(i){
+          if(on) i.value = '';
+          i.disabled = on; i.placeholder = on ? 'WNL' : '0';
+        });
+      });
+    });
     row.querySelectorAll('.pain-toggle').forEach(function(btn){
       btn.addEventListener('click', function(){
         var note = btn.nextElementSibling;
@@ -9759,6 +9780,7 @@ window.hideAdvancedModule = function(key) {
     const read = el => {
       const v = [];
       const deg = $$('.deg-input', el).map(i => i.value);
+      if($('.wnl-toggle.active', el)) v.push('full / WNL');
       if(deg[0]) v.push(deg[0] + '°');
       if(deg[1]) v.push('passive ' + deg[1] + '°');
       const mrc = $('.mrc-preview.has-value', el); if(mrc) v.push(mrc.textContent);
@@ -9887,24 +9909,45 @@ window.hideAdvancedModule = function(key) {
     });
   })();
 
-  // One module dock, built from the sidebar's own entries so both always open the same things
+  // One module dock, built from a config (window.MODULE_REGISTRY), not from the sidebar's DOM, so the
+  // sidebar can become navigation-only. Each entry calls the same global opener the sidebar uses.
+  window.MODULE_REGISTRY = [
+    { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals' },
+    { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart' },
+    { group: 'Clinical & functional tools', label: 'Functional Status (PSFS)', fn: 'openTier2Module', arg: 'psfs' },
+    { group: 'Clinical & functional tools', label: 'Gait & Posture', fn: 'openTier2Module', arg: 'gait' },
+    { group: 'Clinical & functional tools', label: 'Palpation', fn: 'openTier2Module', arg: 'palpation' },
+    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires' },
+    { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms' },
+    { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science' },
+    { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile' },
+    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi' },
+    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci' },
+    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons' },
+    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms' },
+    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy' },
+    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion' },
+    { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy' },
+    { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular' },
+    { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic' },
+    { group: 'Manual & movement frameworks', label: 'Fascial Manipulation (FM)', fn: 'openAdvancedModule', arg: 'fascial-manipulation' },
+    { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm' },
+    { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst' },
+    { group: 'Manual & movement frameworks', label: 'NeuroKinetic Therapy (NKT)', fn: 'openAdvancedModule', arg: 'nkt' },
+    { group: 'Manual & movement frameworks', label: 'Dynamic Neuromuscular Stabilization (DNS)', fn: 'openAdvancedModule', arg: 'dns' }
+  ];
   (function(){
     const dock = $('#lean-module-dock');
-    const groups = { 'Clinical & functional tools': [], 'Condition modules': [], 'Manual & movement frameworks': [] };
-    $$('.outline-item[onclick]').forEach(el => {
-      const on = el.getAttribute('onclick') || '';
-      if(!/openTier2Module|openAdvancedModule|openConditionModule|openSportsProfile/.test(on)) return;
-      const label = el.textContent.replace(/[+✓]/g, '').replace(/\s+/g, ' ').trim();
-      const g = /openTier2Module|openSportsProfile/.test(on) ? 'Clinical & functional tools' : (/openConditionModule/.test(on) ? 'Condition modules' : 'Manual & movement frameworks');
-      groups[g].push({ label, on });
-    });
+    const groups = {};
+    window.MODULE_REGISTRY.forEach((m, i) => { (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i }); });
     dock.innerHTML = '<div class="card-heading">Modules <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — each opens below</span></div>' +
       Object.keys(groups).filter(k => groups[k].length).map(k => '<div class="lean-dock-group"><div class="field-note" style="margin:0 0 6px;">' + k + '</div><div class="chip-row">' +
-        groups[k].map(m => '<button type="button" class="chip" data-dock-on="' + m.on.replace(/"/g, '&quot;') + '">' + m.label + '</button>').join('') + '</div></div>').join('');
+        groups[k].map(m => '<button type="button" class="chip" data-dock-idx="' + m.idx + '">' + m.label + '</button>').join('') + '</div></div>').join('');
     dock.addEventListener('click', e => {
-      const b = e.target.closest('[data-dock-on]'); if(!b) return;
+      const b = e.target.closest('[data-dock-idx]'); if(!b) return;
       e.stopPropagation();
-      try { (new Function(b.getAttribute('data-dock-on')))(); } catch(err) { console.warn('dock action failed', err); }
+      const m = window.MODULE_REGISTRY[Number(b.getAttribute('data-dock-idx'))];
+      try { window[m.fn](m.arg); } catch(err) { console.warn('dock action failed', err); }
     });
   })();
   L.notes($('#sec-objective'), 'objective-notes', 'Examination notes');

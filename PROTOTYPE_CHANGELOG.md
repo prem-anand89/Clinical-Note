@@ -406,3 +406,8 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **"+ after treatment"** on ★ pinned measures only: optional second stepper/chips, delta "vs before", removable; `afterValue` stored only when added.
 - `seg()` accepts value/label pairs; `renderStepper()` takes a store, so before and after share one control.
 - Test: `tests/session-step2.mjs` (13 checks).
+
+## Step 3: ROM Full / WNL + module registry (Gemini #20, #12 groundwork)
+- **ROM:** degree boxes now use the numeric keypad (`inputmode="numeric"`); a per-side **Full / WNL** toggle records a flag and locks the boxes. It shows in the row summary and in pin snapshots. The 5° stepper stays in the session note only; 0°/90° preset chips were not added (not meaningful for every joint).
+- **Module registry:** `window.MODULE_REGISTRY` (23 entries: group, label, opener, argument) now drives the Objective module dock instead of scraping the sidebar's DOM. A test checks it matches the sidebar entries. Next (at port): make the sidebar scroll-spy navigation only.
+- Test: `tests/step3.mjs`.

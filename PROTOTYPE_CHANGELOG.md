@@ -360,3 +360,54 @@ Separate file, mock data only, nothing saved. Upgrade path for the live app's ex
 - **Red flags (12 screening questions):** bowel/bladder change · saddle numbness · progressive or widespread neuro deficit · history of cancer · unexplained weight loss · fever / night sweats / recent infection / immunosuppression · significant trauma or minor trauma with osteoporosis / steroids · constant progressive pain incl. night pain · **new:** calf pain / swelling / warmth (DVT) · **new:** chest pain or sudden breathlessness · **new, neck/head only:** dizziness, double vision, speech/swallowing difficulty, drop attacks · **new, neck only:** clumsy or numb hands both sides, unsteady gait.
 - Region-limited items appear only for their regions (10 items by default, 12 for Cervical Spine) and stay visible once answered, so a positive answer can't vanish on a region change. Bulk "all negative", the review rule and the sign gate count only the items shown.
 - **Yellow flags (6):** fear-avoidance · catastrophizing · low mood / high distress · **new:** low expectation of recovery · work / compensation issues · passive coping. Scale is now 3-step: None / Some concern / Significant.
+
+## Lean assessment (branch `lean-assessment`)
+
+The core assessment re-organised so a therapist sees a short form that expands on demand. **Every existing field and id is kept** (saved data is unchanged apart from the additions below); a shared "lean layer" decides what is shown.
+
+### Shared layer
+- **Collapsible sections with a one-line summary** (✓ once filled; summary reads from the real fields). Sidebar navigation expands a collapsed section.
+- **"+" chips reveal tucked blocks** and **auto-open the moment a block holds data** (auto-filled values excluded), so nothing entered can end up hidden; a block holding data can't be collapsed.
+- **Notes boxes:** `Subjective notes`, `Examination notes` (ids `subjective-notes`, `objective-notes`; `getAssessmentNotes()`).
+- **One-tap explicit statements** instead of fake normal values: "✓ No relevant history", "✓ No red flags — reviewed with patient", "☐ Screened — no other deficits" (`getAssessmentFlags()`).
+- Refresh is debounced with a 200 ms cap; primary buttons refresh immediately.
+
+### Per section
+- **Chief Complaint:** symptoms merged into the first card; "Course" row (episode pattern + trend); Pain Profile appears only when Pain is chosen and shows now / aggravating / easing (24h pain & sleep, irritability detail behind chips); most-limited activity + PSFS/goal stays, "return to" behind a chip; secondary complaint, systemic symptoms, psychosocial (yellow flags), work & sport behind chips. Known condition moved to Impression.
+- **History:** collapsed by default; one gate card + chips (Past history, Conditions, Meds & allergies, Family, Lifestyle). Anticoagulants chip removed (Safety owns it); activity level → Work & sport; Bristol scale and sleep-difficulty → Systemic.
+- **Safety:** gate buttons; "Flag one…" opens the full list (auto-opens on any Yes/N/A/Unknown); "Mark the rest as No" answers only unanswered items; no confirm dialog (button wording is the attestation). Yellow flags → Chief Complaint (Psychosocial).
+- **Objective:** Observation + Palpation merged into one finding-chip card; ROM / strength / special tests / functional screens are region-suggested chips and a row exists only once tapped (untested items are never stored; entered rows survive region changes); joint mobility, muscle length, functional screening, neurodynamics, neuro screen (highlighted when suggested) and another region behind chips; one module dock built from the sidebar's entries; the static "last visit" mock is hidden.
+- **Impression:** hypothesis, working diagnosis + Known condition, irritability, prognosis, precautions visible; differential, evidence, impairments, activity/participation (pre-filled from Chief Complaint), contributing factors behind "Deep reasoning & ICF"; duplicate neuromuscular factors removed.
+- **Intervention:** one-line risk strip (only real risks; now reads allergy chips) replaces the risk card; "Treatment today" quick chips drive the real category chips; "+ dose / note" link per treatment opens the dosage card only on request (every selected treatment is still recorded); Response to treatment moved up; Manual / Modalities / Exercise lists, Load management (auto-revealed for post-op templates) and Session duration behind chips; the duplicate precautions field removed. Taping caution now also fires from allergy chips.
+- **Plan & Goals:** one-line goal creates a real goal row (detail behind "Goal detail & more goals"); Phase suggested from "Since" with tap-to-confirm (post-op still pre-selects from the surgery date); HEP moved here and made two-speed (`getHepRows()`); quick review dates; outcome measure, criteria, referral, next-visit memo (`next-visit-memo`) and education behind chips.
+
+### Measured (iPad width, 7 core sections, headless Chrome; baseline = commit before this branch)
+| | Before | After |
+|---|---|---|
+| Empty note | 7,813 px · 202 controls · 5.7 screens | 3,935 px · 138 controls · 2.9 screens |
+| Region = Knee | 8,780 px · 267 controls · 6.4 screens | 3,881 px · 139 controls · 2.8 screens |
+The target of ~2 screens was not reached; the biggest remaining blocks are Chief Complaint (906 px), Objective (988 px) and Plan (802 px).
+
+### Behaviour changes to be aware of
+- Old tests that click the removed controls (`#screening-toggle`, `#add-goal-row` on first view, category "Add" buttons) were rewritten for the new flow.
+- Yellow flags and the Impression echo now say "Psychosocial".
+- Sidebar remains for navigation and still opens modules; the dock is the in-page way to add them.
+
+## ⭐ Pin bridge (Gemini #9, step 1)
+- **Assessment:** ROM, MMT and functional-screen rows get a ☆/★ pin (not special tests: they are binary, not trended). Max 6 pins, with an inline "N pinned" line and a cap message. Ids are `kind:region:name` slugs computed live, so renaming a custom row or changing region never leaves a stale id. `window.getPinnedFindings()` returns id, region, name and a baseline snapshot (ROM active/passive per side, MMT grade, screen result). Pins are mirrored to `localStorage['cn.pins']` as a prototype-only bridge.
+- **Session note:** pinned findings join the starting measures (last visit's set > + pins; pack + pins on a first visit), shown with ★, capped at 6. Known pins map to existing measures; any other pin becomes its own measure (ROM → numeric stepper, MMT/screen → chips). Baseline comes from the assessment snapshot. Payload measure entries carry `findingId`. The header shows "Last focus:" from the previous visit's memo. New scenario D reads the live pins written by `clinical-note.html`.
+- **Tests:** `tests/pins.mjs`, `tests/session-pins.mjs` (run with node; need playwright-core and Chrome).
+- Not in this step: the "+ after treatment" value, response chips, this visit's memo box (Step 2).
+
+## Session note step 2 (Gemini #25, #26, #10, #18)
+- **Immediate response** chips in Intervention: Better · Same · Worse (sore / flare). `sessionResponse`.
+- **HEP adherence** relabelled Doing / Partly / Not doing.
+- **Next session focus:** one memo box plus quick chips that drop text in (no duplicates); `nextVisitMemo`. Per-exercise pills dropped.
+- **"+ after treatment"** on ★ pinned measures only: optional second stepper/chips, delta "vs before", removable; `afterValue` stored only when added.
+- `seg()` accepts value/label pairs; `renderStepper()` takes a store, so before and after share one control.
+- Test: `tests/session-step2.mjs` (13 checks).
+
+## Step 3: ROM Full / WNL + module registry (Gemini #20, #12 groundwork)
+- **ROM:** degree boxes now use the numeric keypad (`inputmode="numeric"`); a per-side **Full / WNL** toggle records a flag and locks the boxes. It shows in the row summary and in pin snapshots. The 5° stepper stays in the session note only; 0°/90° preset chips were not added (not meaningful for every joint).
+- **Module registry:** `window.MODULE_REGISTRY` (23 entries: group, label, opener, argument) now drives the Objective module dock instead of scraping the sidebar's DOM. A test checks it matches the sidebar entries. Next (at port): make the sidebar scroll-spy navigation only.
+- Test: `tests/step3.mjs`.

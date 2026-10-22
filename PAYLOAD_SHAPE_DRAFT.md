@@ -74,3 +74,51 @@ objectiveMethod?: Record<'rom'|'mmt', { position?: string; symptomResponse?: str
 - **Group A:** ISNCSCI inputs only — sensory `{level: {rLT, rPP, lLT, lPP}}` over C2…S4-5 (`0|1|2|NT`), key muscles `{C5…S1: {r,l}}` (`0–5|NT`), `vac`, `dap` (`Yes|No|NT`). Other tools: Fugl-Meyer subtotals, Hoehn & Yahr stage, MS dermatomal grid, etc. Needs its own table per delta spec §30.3 (not `neuro_spinal_assessments`).
 - **Specialty modules** (Facial Palsy, Vestibular, Cardiothoracic) are Patient-Profile modules, not note payload — separate tables (`facial_palsy_assessments` exists/dormant; vestibular and cardiothoracic to create).
 - Questionnaires: `responses` jsonb per instrument + accepted/skipped state; scores computed, not stored.
+
+
+## Additions from the lean assessment build (branch `lean-assessment`)
+Same rule: store inputs, never derived text. New / changed:
+
+```ts
+// Notes (free text, optional)
+notes: { subjective?: string; objective?: string };               // getAssessmentNotes()
+
+// Explicit statements (booleans — never stored as fake normal values)
+statements: {
+  noRelevantHistory: boolean;                                      // cancelled automatically once history is entered
+  screenedNoOtherDeficits: boolean;                                // Objective
+  noRedFlagsReviewed: boolean;                                     // the gate button; with redFlagBulkNegative (below) for how it was set
+};                                                                 // getAssessmentFlags()
+
+// Objective: rows exist ONLY for items the clinician tapped; untested suggestions are not stored.
+// (ROM/MMT/special-test rows keep their current shapes; region changes never remove an entered row.)
+
+// Psychosocial (yellow flags) now captured in Chief Complaint; unchanged shape, 3-step scale
+psychosocial: { label: string; level: 'None' | 'Some concern' | 'Significant' }[];
+
+// Treatment: every selected treatment is recorded; dose fields appear only if the clinician opened "+ dose"
+interventionDosage: /* as above; entries may be { category, type } only */
+
+// HEP rows (two-speed UI; same fields)                            // getHepRows()
+hep: { name; sets; reps; hold; load; frequency; cue; progression; teachBack; adherenceBarrier; category }[];
+
+// Plan
+plan: { nextVisitMemo?: string /* shown at the top of the next session note */ };
+goals: /* a one-line goal creates a normal goal row (description only until detail is added) */
+
+// ⭐ Pinned findings (test-retest markers)                         // getPinnedFindings()
+// Ids are stable and shared with the session note: `${kind}:${regionSlug}:${nameSlug}`, kind = 'rom' | 'mmt' | 'func'
+// (e.g. 'rom:knee:flexion'). Max 6. Only the ids are stored; baseline values already live in the objective rows.
+pinnedFindingIds: string[];
+```
+Session note (v1.1, additive): a measure that came from a pin carries `findingId` (the assessment id above). Measures without an entry in the id map use the finding id as their own `id` plus a `label`. The map from finding ids to session measure ids (`rom:knee:flexion` → `knee_flex`, …) lives in the session-note config, not in the payload.
+Removed fields (do not port): the second `precautions` textarea in Load-management (Impression `ci-precautions` is the only home); the "Anticoagulants" medication chip (Safety's blood-thinner answer is the only source); duplicate "Neuromuscular" contributing-factor chips; the separate Palpation card (its fields now live under Observation & palpation, ids unchanged).
+
+## Session note v1.1 additions (Gemini #25, #26, #10, #18)
+- `sessionResponse: 'better' | 'same' | 'worse' | null` — immediate response to today's treatment (not the course of the episode; that stays in `assessment`).
+- `hepAdherence: 'doing' | 'partly' | 'not_doing' | null` (was Full/Partial/None).
+- `nextVisitMemo: string | null` — this visit's own memo, shown as "Last focus:" in the next visit's header; chips ("Progress HEP", "Advance load", "Re-check pinned items") only insert text.
+- `measures[].afterValue?` — optional post-treatment value, only on measures that came from a ⭐ pin; stored only when the therapist adds it. An after value with no before value is not saved.
+
+## ROM Full / WNL (Gemini #20)
+Each ROM side has an optional `full: true` flag instead of degree values (the degree boxes are cleared and locked while it is on). It is a flag tapped for that movement and side, never a bulk "all normal" and never a number. Pin snapshots carry it as `baseline[side].full`.

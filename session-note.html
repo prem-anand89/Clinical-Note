@@ -121,7 +121,8 @@
     <option value="tkr">A · TKR, visit 6 (has last visit)</option>
     <option value="thr">B · THR, visit 1 (no history)</option>
     <option value="gen">C · General, no assessment, no history</option>
-    <option value="live">D · Pins from my Clinical Note (live bridge)</option>
+    <option value="live">D · Pins + FM points from my Clinical Note (live bridge)</option>
+    <option value="fm">E · FM patient (mock fascial points)</option>
   </select>
   <button type="button" id="reset">Reset</button>
   <span class="stat">taps <b id="taps">0</b> · <b id="secs">0</b>s</span>
@@ -180,6 +181,10 @@
     <button type="button" class="same-last" id="same-last">Same as last visit</button>
     <div class="chips" id="tx"></div>
     <div id="doses"></div>
+    <div id="fm-wrap" style="display:none;">
+      <div class="lbl">Fascial points treated today <span style="text-transform:none;letter-spacing:0;font-weight:500;">· from the initial assessment</span></div>
+      <div class="chips" id="fm-chips"></div>
+    </div>
     <div class="lbl">Immediate response to today’s treatment</div>
     <div class="seg" id="resp"></div>
   </section>
@@ -266,15 +271,17 @@
       precautions:'Mock precautions — per surgeon protocol.', last:null, baseline:{},
       pins:[{id:'rom:hip:flexion', kind:'rom', region:'Hip', name:'Flexion', baseline:{L:{active:70,passive:78}}}, {id:'mmt:hip:hip-abductors', kind:'mmt', region:'Hip', name:'Hip abductors', baseline:{L:'3'}}] },
     gen: { name:'Meera K. (mock)', pack:'gen', session:'Session 3', tags:['No assessment on file'], precautions:'', last:null, baseline:{}, pins:[] },
+    fm: { name:'Sunil P. (mock)', pack:'gen', session:'Session 4', tags:['Fascial Manipulation'], precautions:'', last:null, baseline:{}, pins:[],
+      fmPoints:[{segment:'GE',side:'R',plane:'An'},{segment:'TA',side:'R',plane:'La'},{segment:'CX',side:'R',plane:'Re'}] },
     // Pins come from localStorage ('cn.pins'), written by clinical-note.html when you ⭐ a finding.
-    live: { name:'Live pins (mock patient)', pack:'gen', session:'Session 2', tags:['Assessment pins'], precautions:'', last:null, baseline:{}, pins:[], livePins:true }
+    live: { name:'Live pins (mock patient)', pack:'gen', session:'Session 2', tags:['Assessment pins'], precautions:'', last:null, baseline:{}, pins:[], livePins:true, liveFm:true }
   };
 
   /* ================= STATE ================= */
   var $ = function(id){ return document.getElementById(id); };
   var sc, S, taps, t0, timer;
   function fresh(){
-    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], pinOf:{}, after:{}, afterOpen:{}, response:'', memo:'', tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
+    S = {pain:null, since:'', safeOk:false, flags:[], dispoAction:'', measures:{}, carried:{}, order:[], custom:[], pinOf:{}, fmTreated:[], after:{}, afterOpen:{}, response:'', memo:'', tx:[], doses:{}, assess:'', plan:'', hep:'', nextDate:'', escalation:'', locked:false, completedAt:null, edits:[]};
     taps = 0; t0 = null; clearInterval(timer); $('taps').textContent = '0'; $('secs').textContent = '0';
   }
   function startTimer(){
@@ -443,6 +450,23 @@
     S.order.push(id); $('cm-name').value=''; $('cm-unit').value=''; $('picker').style.display='none'; renderMeasures(); update();
   });
 
+  // Fascial points: the assessment's graded points as chips; tap = treated today. Compact on purpose.
+  function fmPoints(){
+    var pts = sc.fmPoints || [];
+    if(sc.liveFm){ try { pts = JSON.parse(localStorage.getItem('cn.fm') || '[]'); } catch(e) { pts = []; } }
+    return pts.filter(function(p){ return p.segment && p.plane; }).slice(0, 12);
+  }
+  function fmKey(p){ return p.segment+'|'+p.side+'|'+p.plane; }
+  function renderFm(){
+    var pts = fmPoints(); $('fm-wrap').style.display = pts.length ? '' : 'none';
+    var host = $('fm-chips'); host.innerHTML = '';
+    pts.forEach(function(p){
+      var on = S.fmTreated.indexOf(fmKey(p)) > -1;
+      var b = document.createElement('button'); b.type='button'; b.className='chip'+(on?' selected':''); b.textContent = String(p.segment).toUpperCase()+'-'+p.plane+(p.side?' ('+p.side+')':'')+(on?' ✓':'');
+      b.addEventListener('click', function(){ var i=S.fmTreated.indexOf(fmKey(p)); if(i>-1) S.fmTreated.splice(i,1); else S.fmTreated.push(fmKey(p)); renderFm(); update(); });
+      host.appendChild(b);
+    });
+  }
   function renderIntervention(){
     $('same-last').style.display = sc.last ? 'block' : 'none';
     var host = $('tx'); host.innerHTML = '';
@@ -538,6 +562,7 @@
       measures:meas,
       intervention:{treatments:S.tx, doses:S.doses, sameAsLast: !!sc.last && S.tx.length===sc.last.tx.length && S.tx.every(function(t){ return sc.last.tx.indexOf(t)>-1; })},
       sessionResponse:S.response||null,
+      fmTreated: fmPoints().filter(function(p){ return S.fmTreated.indexOf(fmKey(p))>-1; }).map(function(p){ return {segment:p.segment, side:p.side||null, plane:p.plane}; }),
       assessment:S.assess||null, plan:S.plan||null, hepAdherence:S.hep||null, nextVisit:S.nextDate||null, nextVisitMemo:S.memo.trim()||null,
       escalationNote:S.escalation||null
     };
@@ -619,7 +644,7 @@
     $('checkpanel').style.display='none'; $('comment').style.display='none'; $('comment').value=''; $('add-comment').style.display='';
     $('dispo-note').value=''; $('next-date').value=''; $('memo').value=''; $('picker').style.display='none';
     $('s-safe').style.display = isPostOp() ? '' : 'none';
-    renderHeader(); renderSubjective(); renderSafety(); renderMeasures(); renderIntervention(); renderAP(); update();
+    renderHeader(); renderSubjective(); renderSafety(); renderMeasures(); renderIntervention(); renderFm(); renderAP(); update();
   }
   $('scenario').addEventListener('change', function(){ load(this.value); });
   $('reset').addEventListener('click', function(){ load($('scenario').value); });

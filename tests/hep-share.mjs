@@ -1,0 +1,33 @@
+// Share HEP via WhatsApp. Run: node tests/hep-share.mjs
+import { createRequire } from 'module';
+const require = createRequire('/home/theranet/TN Project/thera-net-1/package.json');
+const { chromium } = require('playwright-core');
+import path from 'path';
+import { fileURLToPath } from 'url';
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const results = []; const ok = (n, c, x) => { results.push([n, !!c]); console.log((c ? 'PASS ' : 'FAIL ') + n + (c ? '' : '  ' + JSON.stringify(x))); };
+const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true });
+const ctx = await browser.newContext({ viewport: { width: 900, height: 900 } });
+const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
+await page.goto('file://' + path.join(dir, '..', 'clinical-note.html'));
+await page.evaluate(() => { document.getElementById('share-hep-wa').scrollIntoView(); });
+await page.click('#add-hep-row');
+const card = page.locator('#hep-rows .repeatable-card').first();
+await card.locator('.hep-name').fill('Heel slides');
+await card.locator('.hep-sets').fill('3'); await card.locator('.hep-reps').fill('10');
+await card.locator('.hep-cue').fill('Slow, pain-free range');
+await page.evaluate(() => { window.__opened = []; window.open = (u) => { window.__opened.push(u); return null; }; });
+await page.evaluate(() => document.getElementById('share-hep-wa').click());
+const url = (await page.evaluate(() => window.__opened))[0] || '';
+ok('opens a wa.me link', /^https:\/\/wa\.me\/\?text=/.test(url), url);
+const txt = await page.inputValue('#hep-share-text');
+ok('message lists exercise, dose and cue', /1\. Heel slides — 3 × 10/.test(txt) && /Tip: Slow, pain-free range/.test(txt), txt);
+ok('url carries the same text', decodeURIComponent(url.split('text=')[1] || '') === txt);
+// empty case
+await card.locator('.hep-name').fill('');
+await page.evaluate(() => document.getElementById('share-hep-wa').click());
+ok('empty HEP: no message, hint shown', (await page.inputValue('#hep-share-text')) === '');
+ok('no page errors', errors.length === 0, errors);
+await browser.close();
+const failed = results.filter(r => !r[1]).length;
+console.log(failed ? failed + ' FAILED' : 'ALL PASS'); process.exit(failed ? 1 : 0);

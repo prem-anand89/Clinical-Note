@@ -8,13 +8,14 @@ Checked by searching the prototype and probing the page for each item in the del
 - P0.3 red-flag disposition (action, rationale, clinician contacted, date/time, treatment status, advice), attestation on "all negative", Unknown kept distinct, sign gate
 - P0.4 neuro: minimal screen suggested only; Group A with region-filtered dermatomes, ISNCSCI/AIS scoring, Fugl-Meyer, Hoehn & Yahr, MSK Objective collapse
 - P1.1 functional priority + "create PSFS item and goal"; P1.2 conditional pain + irritability; P1.3 risk summary; P1.4 method & equipment; P1.5 structured impression; P1.6 dosage; P1.7 structured HEP (incl. teach-back, barrier); P1.8 goals (measure & baseline, target date, term), plan fields, criteria
+- P1.8 goal status (active / progressing / met / revised / discontinued) with a reason field when revised or discontinued (the first draft of this check wrongly listed it as missing)
+- Whole-note preview and print (added after this check; see changelog)
 - Questionnaires (suggested by condition, accept/skip); Tinetti; sports profile; Visceral Manipulation; Rehab Timeline / Recovery Outlook (read-only, only when a template matched); sign & lock
 
 ## Not present or only partly present
 | Item | State | Where it belongs |
 |---|---|---|
-| Live preview / print of the whole note as prose (delta §8) | Not built; the only "preview" is the payload view | Port phase (print page) or a prototype step if you want to review it earlier |
-| Goal status (active / progressing / met / revised / discontinued) and reason (P1.8) | Missing; goals have term, target date, measure only | Add in prototype (small) |
+| Live preview / print of the whole note (delta §8) | Built as a generic clinical-document view with Print; chip-to-prose polish and PDF export still to do at port | Port phase |
 | Tier 2 "Remove from episode" vs "Hide" (delta §9) | Only "Hide Module" on advanced modules; no episode-level remove | Port phase (needs persistence) |
 | "Last visit" prior-value hints (delta §7, P2.2) | Static mock text ("Last Visit: 12 Oct") in a few modules; real values need stored notes | Port phase |
 | Auto-apply templates clinic setting (delta §2) | Not in prototype (it is a Settings toggle) | Port phase |

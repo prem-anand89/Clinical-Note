@@ -676,6 +676,20 @@
   .collapsible-body { display: none; padding-top: 14px; margin-top: 14px; border-top: 1px solid var(--line-soft); }
   .collapsible-card.open .collapsible-body { display: block; animation: revealIn 0.2s ease; }
 
+
+  /* ---- whole-note preview (clinical document view) ---- */
+  .preview-open{ margin-top:8px; background:#fff; color:var(--clinical); border:1.5px solid var(--clinical); border-radius:var(--radius-sm); padding:8px 14px; font-weight:600; font-size:13px; cursor:pointer; }
+  #note-preview{ position:fixed; inset:0; z-index:9999; background:rgba(30,30,30,.45); display:none; overflow:auto; padding:24px 12px; }
+  #note-preview.open{ display:block; }
+  #note-preview .np-sheet{ max-width:760px; margin:0 auto; background:#fff; border-radius:10px; padding:28px 30px; box-shadow:0 10px 40px rgba(0,0,0,.25); font-size:14px; line-height:1.55; color:#222; }
+  #note-preview .np-bar{ display:flex; justify-content:space-between; gap:8px; margin-bottom:14px; position:sticky; top:0; background:#fff; padding-bottom:8px; }
+  #note-preview .np-bar button{ border:1.5px solid var(--clinical); background:#fff; color:var(--clinical); border-radius:8px; padding:7px 14px; font-weight:600; cursor:pointer; }
+  #note-preview h2{ font-size:20px; margin:0 0 2px; } #note-preview .np-meta{ color:#777; font-size:12.5px; margin-bottom:16px; }
+  #note-preview h3{ font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--clinical); border-bottom:1px solid #ddd; padding-bottom:3px; margin:20px 0 8px; }
+  #note-preview h4{ font-size:13.5px; margin:12px 0 4px; }
+  #note-preview .np-line{ margin:2px 0; } #note-preview .np-line b{ font-weight:600; }
+  #note-preview .np-empty{ color:#999; font-style:italic; }
+  @media print{ body > *:not(#note-preview){ display:none !important; } #note-preview{ position:static; background:none; padding:0; } #note-preview .np-sheet{ box-shadow:none; max-width:none; } #note-preview .np-bar{ display:none; } }
 </style>
 <style id="lean-css">
   /* ================= LEAN ASSESSMENT LAYER =================
@@ -834,6 +848,7 @@
       <div class="eyebrow">Core Assessment · Prototype</div>
       <h1>New Visit</h1>
       <p>Priya Reddy · MRN 00214 · First visit for this episode</p>
+      <button type="button" class="preview-open" id="preview-open">👁 Preview note</button>
     </div>
 
     <div class="build-note">
@@ -2986,6 +3001,14 @@
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           Add exercise
         </button>
+        <div id="hep-share" style="margin-top:10px;">
+          <button type="button" class="add-link" id="share-hep-wa">📲 Share HEP via WhatsApp</button>
+          <div id="hep-share-box" style="display:none; margin-top:8px;">
+            <textarea id="hep-share-text" class="text-input" rows="7" style="font-size:13px;"></textarea>
+            <div class="field-note" style="margin-top:4px;">Opens WhatsApp with this text ready to send; nothing is sent automatically. At port: addressed to the patient's number, blocked when the patient is marked do-not-message.</div>
+            <button type="button" class="add-link" id="hep-share-copy">Copy text</button>
+          </div>
+        </div>
       </div>
 
 
@@ -3065,7 +3088,8 @@
 
       <!-- Sign & Complete Note — stays outside the collapsible body; signing off should never require expanding the section first. -->
       <div id="sign-check" role="alert" style="display:none; margin-top:24px; padding:14px 16px; border:1px solid #E9D3AC; background:var(--amber-dim); border-radius:var(--radius-md);"></div>
-      <div style="margin-top:24px; display:flex; justify-content:flex-end;">
+      <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:10px;">
+        <button type="button" class="preview-open" id="preview-open-2">👁 Preview note</button>
         <button type="button" id="sign-note-btn" style="background:var(--clinical); color:#fff; border:none; padding:10px 16px; border-radius:var(--radius-sm); font-weight:600; font-size:14px; cursor:pointer; font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; box-shadow:var(--shadow-card);">Sign &amp; Complete Note</button>
       </div>
     </section>
@@ -5623,6 +5647,35 @@
                teachBack: seg('.hep-teachback'), adherenceBarrier: v('.hep-barrier'), category: cat ? cat.getAttribute('data-chip') : '' };
     });
   };
+
+
+  // ---- Share HEP via WhatsApp: plain text built from the HEP rows, opened with a wa.me link (no API, no cost) ----
+  window.buildHepMessage = function(name){
+    var rows = window.getHepRows().filter(function(r){ return r.name; });
+    if(!rows.length) return '';
+    var out = ['Hi ' + (name || '') + ', here is your home exercise plan:', ''];
+    rows.forEach(function(r, i){
+      var dose = [r.sets && r.reps ? r.sets + ' × ' + r.reps : (r.sets ? r.sets + ' sets' : (r.reps ? r.reps + ' reps' : '')), r.hold && 'hold ' + r.hold + ' s', r.load, r.frequency].filter(Boolean).join(', ');
+      out.push((i + 1) + '. ' + r.name + (dose ? ' — ' + dose : ''));
+      if(r.cue) out.push('   Tip: ' + r.cue);
+      if(r.progression) out.push('   Next step: ' + r.progression);
+    });
+    out.push('', 'If anything increases your pain a lot, stop and let me know.');
+    return out.join('\n');
+  };
+  (function(){
+    var btn = document.getElementById('share-hep-wa'), box = document.getElementById('hep-share-box'), ta = document.getElementById('hep-share-text');
+    btn.addEventListener('click', function(){
+      var msg = window.buildHepMessage('Priya');
+      box.style.display = 'block';
+      if(!msg){ ta.value = ''; ta.placeholder = 'Add at least one named exercise first.'; return; }
+      ta.value = msg;
+      window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    });
+    document.getElementById('hep-share-copy').addEventListener('click', function(){
+      try { navigator.clipboard.writeText(ta.value); } catch(e) { ta.select(); document.execCommand('copy'); }
+    });
+  })();
 
   // ---- Session duration: quick-pick chips (single-select) + free-text custom, kept simple per §12.5 ----
   var sessionDurationRow = document.getElementById('session-duration');
@@ -8378,6 +8431,15 @@ setupSegmented('patient-progress');
             treatmentNotes: moveCard ? val(moveCard.querySelector('textarea')) : ''
         };
     };
+    // Prototype bridge to session-note.html: the graded points (compact list), mirrored to localStorage.
+    function persistFmPoints(){
+      try {
+        var pts = window.getFmData().pv.map(function(c){ return { segment: c.segment, side: c.side, plane: c.plane, kind: c.kind, grade: c.grade }; });
+        localStorage.setItem('cn.fm', JSON.stringify(pts));
+      } catch(e) {}
+    }
+    var fmPersistTimer = null;
+    document.addEventListener('click', function(){ clearTimeout(fmPersistTimer); fmPersistTimer = setTimeout(persistFmPoints, 150); });
 
     window.addFmSegment = addFmSegment;
 
@@ -10117,6 +10179,108 @@ window.hideAdvancedModule = function(key) {
   });
 
   schedule();
+})();
+</script>
+<script id="preview-js">
+/* Whole-note preview: reads what is actually entered (never empty or hidden fields) and lays it out as a clinical document.
+   Generic by design: it walks each section's live controls, so new fields show up without editing this code. */
+(function(){
+  const SECTIONS = ['sec-chief-complaint','sec-history','sec-safety-checkpoint','sec-objective','sec-clinical-impression','sec-intervention','sec-plan-goals'];
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const clean = t => String(t || '').replace(/[✓☑☐★☆⚡]/g, '').replace(/\s+/g, ' ').trim();
+  const short = t => clean(t).split(/ — | · | drives | \(/)[0].replace(/standard 5\/5.*$/i, '').trim();
+  function live(el, root){
+    for(let n = el; n && n !== root.parentNode; n = n.parentNode){
+      if(n.nodeType !== 1) continue;
+      if(n.hidden || n.style.display === 'none') return false;
+      if(n.classList.contains('lean-tucked') && !n.classList.contains('lean-shown')) return false;
+      if(n.id === 'objective-region-preview' || n.id === 'pin-summary' || /(^|\s)lean-(sum|more|chips|gate)/.test(n.className || '')) return false;
+    }
+    return true;
+  }
+  function labelFor(el, root){
+    for(let n = el, d = 0; n && n !== root && d < 5; n = n.parentNode, d++){
+      let l = n.querySelector && n.querySelector(':scope > label, :scope > .field-label, :scope > .lbl');
+      if(l && !l.contains(el)) return short(l.textContent);
+      for(let p = n.previousElementSibling, k = 0; p && k < 2; p = p.previousElementSibling, k++){
+        if(p.matches && p.matches('label, .field-label, .lbl, .field-note, .card-heading')) return short(p.textContent);
+      }
+    }
+    return clean(el.getAttribute('placeholder') || el.getAttribute('aria-label') || '');
+  }
+  function rowText(row){
+    const name = clean((row.querySelector('.obj-label') || {}).value || (row.querySelector('.obj-label') || {}).textContent);
+    const blocks = Array.from(row.querySelectorAll('.side-block'));
+    const read = el => {
+      const v = [];
+      if(el.querySelector('.wnl-toggle.active')) v.push('full / WNL');
+      const deg = Array.from(el.querySelectorAll('.deg-input')).map(i => i.value);
+      if(deg[0]) v.push(deg[0] + '° active'); if(deg[1]) v.push(deg[1] + '° passive');
+      const mrc = el.querySelector('.mrc-preview.has-value'); if(mrc) v.push('MMT ' + mrc.textContent);
+      el.querySelectorAll('.segmented button.selected').forEach(b => { if(!b.closest('.mrc-compact')) v.push(clean(b.dataset.val || b.textContent).toLowerCase()); });
+      const ef = el.querySelector('.endfeel-select'); if(ef && ef.value) v.push(ef.value.toLowerCase() + ' end-feel');
+      if(el.querySelector('.pain-toggle.active')){ const pn = el.querySelector('.pain-note'); v.push('painful' + (pn && pn.value ? ' (' + pn.value + ')' : '')); }
+      return v.join(', ');
+    };
+    let txt = blocks.length ? blocks.map(b => { const r = read(b), t = b.querySelector('.side-tag'); return r ? (t ? clean(t.textContent) + ': ' : '') + r : ''; }).filter(Boolean).join('; ') : read(row);
+    return txt ? { label: name, text: txt } : null;
+  }
+  function collect(sec){
+    const lines = [], done = new Set(); let group = '';
+    const heading = el => { const c = el.closest('.card, .repeatable-card'); const h = c && c.querySelector(':scope > .card-heading, :scope > .section-title, :scope > h3, :scope > .rc-head'); return h ? short(h.textContent) : ''; };
+    const push = (el, label, text) => { if(!text) return; const g = heading(el); if(g !== group){ group = g; if(g) lines.push({ h: g }); } lines.push({ label, text }); };
+    sec.querySelectorAll('.obj-row, input, textarea, select, .chip-row, .segmented, .chips').forEach(el => {
+      if(done.has(el) || !live(el, sec)) return;
+      if(el.matches('.obj-row')){
+        el.querySelectorAll('*').forEach(x => done.add(x));
+        const r = rowText(el); if(r) push(el, r.label, r.text); return;
+      }
+      if(el.matches('input, textarea, select')){
+        if(el.closest('.obj-row') || el.type === 'hidden' || el.type === 'button' || el.disabled) return;
+        if(el.type === 'checkbox' || el.type === 'radio'){ if(el.checked) push(el, clean(el.closest('label') ? el.closest('label').textContent : labelFor(el, sec)), 'yes'); return; }
+        const v = clean(el.tagName === 'SELECT' ? (el.selectedIndex > 0 || (el.value && el.options[0] && el.options[0].value) ? el.value : '') : el.value);
+        if(v && !/^(none|select…?|choose…?)$/i.test(v)) push(el, labelFor(el, sec), v);
+        return;
+      }
+      if(el.closest('.obj-row') || /lean-/.test(el.className)) return;
+      const sel = Array.from(el.querySelectorAll(':scope > button.selected, :scope > .chip.selected, :scope > label.selected')).filter(b => !/^\+/.test(clean(b.textContent)));
+      if(sel.length) push(el, labelFor(el, sec), sel.map(b => clean(b.textContent)).join(', '));
+    });
+    return lines;
+  }
+  function render(){
+    const F = window.getAssessmentFlags ? window.getAssessmentFlags() : {};
+    const get = id => (document.getElementById(id) || {}).value || '';
+    let h = '<h2>Core Assessment</h2><div class="np-meta">Priya Reddy · MRN 00214 · Draft preview — not a signed record</div>';
+    const act = window.activeSuggestions && window.activeSuggestions['ortho-template'];
+    if(act) h += '<div class="np-line"><b>Condition template:</b> ' + esc(act.label.replace('Template: ', '')) + (act.source === 'manual' ? ' (manually selected)' : ' (suggested, accepted)') + '</div>';
+    SECTIONS.forEach(id => {
+      const sec = document.getElementById(id); if(!sec) return;
+      const title = clean((sec.querySelector('.section-title h2') || {}).textContent) || id;
+      const lines = collect(sec);
+      const extra = [];
+      if(id === 'sec-history' && F.noRelevantHistory) extra.push({ label: 'History', text: 'No relevant history (confirmed)' });
+      if(id === 'sec-objective' && F.screenedNoOtherDeficits) extra.push({ label: 'Screening', text: 'Screened, no other deficits' });
+      if(id === 'sec-objective' && window.getPinnedFindings){ const p = window.getPinnedFindings(); if(p.length) extra.push({ label: 'Pinned for follow-up', text: p.map(x => x.region + ' ' + x.name).join('; ') }); }
+      if(id === 'sec-plan-goals' && window.getHepRows){
+        window.getHepRows().filter(r => r.name).forEach(r => extra.push({ label: 'HEP', text: [r.name, [r.sets, r.reps].filter(Boolean).join('×'), r.hold && r.hold + ' s hold', r.frequency, r.cue].filter(Boolean).join(' · ') }));
+      }
+      const all = lines.concat(extra);
+      h += '<h3>' + esc(title.replace(/^\d+\.\s*/, '')) + '</h3>';
+      if(!all.length){ h += '<div class="np-empty">Nothing recorded</div>'; return; }
+      all.forEach(l => { h += l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>'; });
+    });
+    return h;
+  }
+  const host = document.createElement('div'); host.id = 'note-preview';
+  host.innerHTML = '<div class="np-sheet"><div class="np-bar"><button type="button" id="np-close">Close</button><button type="button" id="np-print">Print</button></div><div id="np-body"></div></div>';
+  document.body.appendChild(host);
+  const open = () => { document.getElementById('np-body').innerHTML = render(); host.classList.add('open'); host.scrollTop = 0; };
+  document.querySelectorAll('.preview-open').forEach(b => b.addEventListener('click', open));
+  document.getElementById('np-close').addEventListener('click', () => host.classList.remove('open'));
+  document.getElementById('np-print').addEventListener('click', () => window.print());
+  host.addEventListener('click', e => { if(e.target === host) host.classList.remove('open'); });
+  window.renderNotePreview = render;
 })();
 </script>
 </body>

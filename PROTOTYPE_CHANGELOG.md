@@ -411,3 +411,10 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **ROM:** degree boxes now use the numeric keypad (`inputmode="numeric"`); a per-side **Full / WNL** toggle records a flag and locks the boxes. It shows in the row summary and in pin snapshots. The 5° stepper stays in the session note only; 0°/90° preset chips were not added (not meaningful for every joint).
 - **Module registry:** `window.MODULE_REGISTRY` (23 entries: group, label, opener, argument) now drives the Objective module dock instead of scraping the sidebar's DOM. A test checks it matches the sidebar entries. Next (at port): make the sidebar scroll-spy navigation only.
 - Test: `tests/step3.mjs`.
+
+## Preview, WhatsApp HEP, FM point chips (Gemini #14, #28, #29, #30)
+- **Whole-note preview** (`👁 Preview note`, top of the note and beside Sign): reads only what is entered and visible, section by section, as a clinical document with Print. Generic walk of live controls, so new fields appear without editing it. Not yet true prose (lines read "Label: value"); PDF export waits for the port.
+- **Share HEP via WhatsApp:** button under the HEP card builds a plain-text plan (exercise, sets × reps, hold, frequency, cue, next step) and opens `wa.me/?text=`. Review box and Copy fallback; nothing is sent automatically. At port: address to the patient's number and block when do-not-message.
+- **FM point chips (session note):** the assessment's graded fascial points appear as chips ("GE-An (R)"); a tap marks treated, saved as `fmTreated`. Shown only for FM patients. Scenario E (mock) and D (live bridge via `localStorage['cn.fm']`).
+- **Decisions:** no auto-generated hypothesis text (keep the rule-based `fm-hyp-diag` and the therapist's own one line); single-visit PDF deferred until after the React port (cumulative `SessionLogPrintPage.tsx` is what insurers ask for); no FM segments on the body chart.
+- Tests: `tests/preview.mjs`, `tests/hep-share.mjs`, `tests/fm-chips.mjs`.

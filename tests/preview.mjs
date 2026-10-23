@@ -1,0 +1,44 @@
+// Whole-note preview. Run: node tests/preview.mjs   (set SHOT=/path.png to save a screenshot)
+import { createRequire } from 'module';
+const require = createRequire('/home/theranet/TN Project/thera-net-1/package.json');
+const { chromium } = require('playwright-core');
+import path from 'path';
+import { fileURLToPath } from 'url';
+const dir = path.dirname(fileURLToPath(import.meta.url));
+const results = []; const ok = (n, c, x) => { results.push([n, !!c]); console.log((c ? 'PASS ' : 'FAIL ') + n + (c ? '' : '  ' + JSON.stringify(x))); };
+const browser = await chromium.launch({ executablePath: '/usr/bin/google-chrome', headless: true });
+const page = await (await browser.newContext({ viewport: { width: 900, height: 900 } })).newPage();
+const errors = []; page.on('pageerror', e => errors.push(e.message));
+await page.goto('file://' + path.join(dir, '..', 'clinical-note.html'));
+
+await page.click('#preview-open');
+let body = await page.textContent('#np-body');
+ok('empty note shows "Nothing recorded" for every section', (body.match(/Nothing recorded/g) || []).length === 7, body.slice(0, 400));
+await page.click('#np-close');
+
+await page.fill('#presenting-problem', 'Right knee pain on stairs for 3 weeks');
+await page.click('#region-chips [data-chip="Knee"]');
+await page.evaluate(() => { window.leanSuggest.add('rom', 'Flexion'); window.leanSuggest.add('mmt', 'Quadriceps'); });
+const rom = page.locator('#rom-rows .obj-row').first();
+await rom.locator('.deg-input').first().fill('95');
+await rom.locator('.wnl-toggle').nth(1).click();
+await rom.locator('.pin-btn').click();
+await page.locator('#mmt-rows .obj-row').first().locator('.mrc-numbers button', { hasText: '4' }).first().click();
+await page.evaluate(() => window.addGoalRow({ description: 'Climb a flight of stairs without pain' }));
+await page.waitForTimeout(400);
+await page.click('#preview-open-2');
+body = await page.textContent('#np-body');
+ok('presenting problem appears', /Right knee pain on stairs/.test(body));
+ok('region chip appears', /Knee/.test(body));
+ok('ROM row with value and WNL flag', /Flexion:.*95° active/.test(body) && /full \/ WNL/.test(body), body);
+ok('MMT row appears', /Quadriceps:.*MMT 4/.test(body), body);
+ok('pinned finding listed', /Pinned for follow-up:.*Knee Flexion/.test(body));
+ok('goal appears', /Climb a flight of stairs/.test(body));
+ok('sections without data still say so', /Nothing recorded/.test(body));
+if (process.env.SHOT) await page.screenshot({ path: process.env.SHOT });
+await page.click('#np-close');
+ok('close hides it', !(await page.locator('#note-preview.open').count()));
+ok('no page errors', errors.length === 0, errors);
+await browser.close();
+const failed = results.filter(r => !r[1]).length;
+console.log(failed ? failed + ' FAILED' : 'ALL PASS'); process.exit(failed ? 1 : 0);

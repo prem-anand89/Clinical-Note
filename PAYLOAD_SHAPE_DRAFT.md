@@ -122,3 +122,6 @@ Removed fields (do not port): the second `precautions` textarea in Load-manageme
 
 ## ROM Full / WNL (Gemini #20)
 Each ROM side has an optional `full: true` flag instead of degree values (the degree boxes are cleared and locked while it is on). It is a flag tapped for that movement and side, never a bulk "all normal" and never a number. Pin snapshots carry it as `baseline[side].full`.
+
+## Session note: fascial points
+`fmTreated: { segment: string; side: string | null; plane: string }[]` — points from the assessment's FM grid marked treated today (only present for FM patients; ids are segment + side + plane, never a column index).

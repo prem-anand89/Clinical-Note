@@ -586,6 +586,19 @@
   .pv-t .pv-group-head { background:var(--surface); color:var(--ink-soft); }
   .pv-t th.pv-cc-head { text-transform:none; font-size:10px; }  /* CCs in true case (An, Ir…); CFs stay capitals (AL, AM…) */
 
+  /* Mobile / Focused side filter for PV Grid */
+  .pv-container[data-side-view="rt"] .pv-col-lt { display:none !important; }
+  .pv-container[data-side-view="lt"] .pv-col-rt { display:none !important; }
+  .pv-container[data-side-view="rt"] .pv-t,
+  .pv-container[data-side-view="lt"] .pv-t { min-width:520px; }
+  .pv-container[data-side-view="lt"] .div-left { border-left:1px solid var(--line) !important; }
+
+  /* CCs only layout: hide CF columns */
+  .pv-container[data-layout-view="cc-only"] .pv-col-cf { display:none !important; }
+  .pv-container[data-layout-view="cc-only"][data-side-view="rt"] .pv-t,
+  .pv-container[data-layout-view="cc-only"][data-side-view="lt"] .pv-t { min-width:360px; }
+  .pv-container[data-layout-view="cc-only"]:not([data-side-view]) .pv-t { min-width:600px; }
+
   .pv-cell {
     width:100%; height:100%; appearance:none; border:none; border-radius:4px;
     font:inherit; font-size:12px; font-weight:600; cursor:pointer;
@@ -2175,10 +2188,6 @@
         <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
           <span>1. Segment Assessment</span>
         </div>
-        <!-- Quick-add: chips render before the "Not listed" group (outside the table's scroll area) -->
-        <div id="fm-seg-chips" style="display:flex; flex-wrap:wrap; gap:10px 14px; margin:0 0 12px;">
-          <div class="fm-seg-other"><div class="field-note" style="margin:0 0 4px;">Not listed</div><div class="chip-row"><button type="button" class="chip" id="fm-add-seg" title="Add a blank row for a segment not in the list">＋ Other</button></div></div>
-        </div>
         <datalist id="fm-seg-codes"></datalist>
         <div style="overflow-x:auto;">
           <table class="fm-t" id="fm-seg-table">
@@ -2197,6 +2206,23 @@
               <!-- JS populates this -->
             </tbody>
           </table>
+        </div>
+
+        <!-- Below-the-table Region Disclosure Picker -->
+        <div id="fm-seg-picker" style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment:</span>
+            <div class="chip-row" id="fm-region-tabs">
+              <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
+              <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
+              <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
+              <button type="button" class="chip" id="fm-add-seg" title="Add a blank row for a custom segment">＋ Other</button>
+            </div>
+          </div>
+          <!-- Disclosed segment drawer -->
+          <div id="fm-region-drawer" style="margin-top:10px; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
+            <div id="fm-region-chips" class="chip-row" style="gap:6px;"></div>
+          </div>
         </div>
       </div>
 
@@ -2231,15 +2257,35 @@
           Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it.
         </div>
         
+        <!-- Toolbar: Side Filter & Layout Switcher -->
+        <div style="padding:0 28px; margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Side:</span>
+            <div class="chip-row" id="pv-side-toggle">
+              <button type="button" class="chip selected" data-pv-side="rt">Right (rt)</button>
+              <button type="button" class="chip" data-pv-side="lt">Left (lt)</button>
+              <button type="button" class="chip" data-pv-side="all">Both sides</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Layout:</span>
+            <div class="chip-row" id="pv-layout-toggle">
+              <button type="button" class="chip selected" data-pv-layout="cf-cc" title="CF diagonals first, then CC coordination planes">CF · CC</button>
+              <button type="button" class="chip" data-pv-layout="ante-retro" title="Ante planes, then Retro planes">Ante · Retro</button>
+              <button type="button" class="chip" data-pv-layout="cc-only" title="Hide CF diagonals (Level 1 focus)">CCs only</button>
+            </div>
+          </div>
+        </div>
+        
         <!-- Desktop Sticky Table -->
-        <div class="pv-container" style="border-left:none; border-right:none; border-radius:0; margin-top:16px;">
+        <div class="pv-container" data-side-view="rt" data-layout-view="cf-cc" style="border-left:none; border-right:none; border-radius:0; margin-top:14px;">
           <table class="pv-t" id="fm-pv-table">
             <thead>
               <tr>
                 <th rowspan="3" class="sticky-col" style="width:60px;">Date</th>
                 <th rowspan="3" class="sticky-col" style="width:60px; left:60px;">Seg</th>
-                <th colspan="10" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
-                <th colspan="10" class="div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
+                <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
+                <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
               </tr>
               <tr id="pv-head-groups"></tr>
               <tr id="pv-head-planes"></tr>
@@ -7846,6 +7892,7 @@ setupSegmented('patient-progress');
         pickedCell = null;
         picker.classList.remove('open');
     }
+    window.closePvPicker = closePicker;
     function openPicker(cell) {
         if (pickedCell) pickedCell.classList.remove('pv-picked');
         pickedCell = cell;
@@ -7968,6 +8015,14 @@ setupSegmented('patient-progress');
         // Build Footer
         let footerHtml = `<div><span style="color:var(--clinical); font-weight:600;">Treated this session: ${totalTreated} point${totalTreated!==1?'s':''}</span> <span style="color:var(--ink-faint); margin:0 8px;">|</span> <span style="${totalUntreatedHigh > 0 ? 'color:var(--amber); font-weight:600;' : 'color:var(--ink-faint);'}">Untreated grade ≥2: ${totalUntreatedHigh} point${totalUntreatedHigh!==1?'s':''}</span></div>`;
         
+        let cfGradedCount = 0;
+        cells.forEach(cell => {
+            if (cell.getAttribute('data-kind') === 'cf' && cell.getAttribute('data-grade')) cfGradedCount++;
+        });
+        if (window.getCurrentPvLayout && window.getCurrentPvLayout() === 'cc-only' && cfGradedCount > 0) {
+            footerHtml += `<div style="margin-top:6px; font-size:11.5px; color:var(--amber); font-weight:600;">⚠️ ${cfGradedCount} graded CF diagonal finding${cfGradedCount!==1?'s are':' is'} hidden in CCs-only mode. Switch layout to "CF · CC" to view.</div>`;
+        }
+
         summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml;
     }
 
@@ -8007,53 +8062,174 @@ setupSegmented('patient-progress');
     // PV grid column order — the ONLY place it is defined. Headers, cells and the
     // density summary all read this; each cell also carries its own plane/side so
     // nothing maps a tap to a plane by column position. Same order on R and L.
-    const PV_COLUMNS = [
-        {code:'AL', kind:'cf', plane:'AN-LA', group:'Ante'},
-        {code:'AM', kind:'cf', plane:'AN-ME', group:'Ante'},
-        {code:'An', kind:'cc', plane:'An',    group:'Ante'},
-        {code:'Ir', kind:'cc', plane:'Ir',    group:'Ante'},
-        {code:'Me', kind:'cc', plane:'Me',    group:'Ante'},
-        {code:'RL', kind:'cf', plane:'RE-LA', group:'Retro'},
-        {code:'RM', kind:'cf', plane:'RE-ME', group:'Retro'},
-        {code:'Re', kind:'cc', plane:'Re',    group:'Retro'},
-        {code:'Er', kind:'cc', plane:'Er',    group:'Retro'},
-        {code:'La', kind:'cc', plane:'La',    group:'Retro'}
-    ];
-    window.PV_COLUMNS = PV_COLUMNS; // read by the grade picker (separate script)
+    // Canonical column definitions with metadata
+    const PV_COLUMNS_DEFS = {
+        'AL': { code:'AL', kind:'cf', plane:'AN-LA' },
+        'AM': { code:'AM', kind:'cf', plane:'AN-ME' },
+        'RL': { code:'RL', kind:'cf', plane:'RE-LA' },
+        'RM': { code:'RM', kind:'cf', plane:'RE-ME' },
+        'An': { code:'An', kind:'cc', plane:'An' },
+        'Re': { code:'Re', kind:'cc', plane:'Re' },
+        'Me': { code:'Me', kind:'cc', plane:'Me' },
+        'La': { code:'La', kind:'cc', plane:'La' },
+        'Ir': { code:'Ir', kind:'cc', plane:'Ir' },
+        'Er': { code:'Er', kind:'cc', plane:'Er' }
+    };
+
+    // Full 10-column list for lookups across scripts (preserves changelog #316)
+    const PV_COLUMNS = Object.values(PV_COLUMNS_DEFS);
+    window.PV_COLUMNS = PV_COLUMNS;
     const PV_SIDES = ['rt', 'lt'];
-    // Stecco segments, head to toe — the one list used by the quick-add chips,
-    // the name suggestions and the Hypothesis Builder. Free text still allowed.
-    window.FM_SEGMENT_GROUPS = [
-        {label:'Trunk',      codes:['CP1','CP2','CP3','CL','TH','LU','PV']},
-        {label:'Upper limb', codes:['SC','HU','CU','CA','DI']},
-        {label:'Lower limb', codes:['CX','GE','TA','PE']}
-    ];
-    window.FM_SEGMENTS = window.FM_SEGMENT_GROUPS.reduce((all, g) => all.concat(g.codes), []);
-    function pvColClass(sideIdx, colIdx) {
-        if (sideIdx > 0 && colIdx === 0) return 'div-left';
-        if (colIdx > 0 && PV_COLUMNS[colIdx].group !== PV_COLUMNS[colIdx - 1].group) return 'div-group';
-        return '';
+
+    // 3 Layout sequences: Default is 'cf-cc' (CF diagonals first, then CC coordination planes)
+    const PV_LAYOUTS = {
+        'cf-cc': [
+            { group: 'CF (Diagonals)', codes: ['AL', 'AM', 'RL', 'RM'] },
+            { group: 'CC (Coordination)', codes: ['An', 'Re', 'Me', 'La', 'Ir', 'Er'] }
+        ],
+        'ante-retro': [
+            { group: 'Ante', codes: ['AL', 'AM', 'An', 'Ir', 'Me'] },
+            { group: 'Retro', codes: ['RL', 'RM', 'Re', 'Er', 'La'] }
+        ],
+        'cc-only': [
+            { group: 'CC (Coordination)', codes: ['An', 'Re', 'Me', 'La', 'Ir', 'Er'] }
+        ]
+    };
+
+    let currentPvLayout = 'cf-cc';
+    window.getCurrentPvLayout = function() { return currentPvLayout; };
+
+    function getActivePvColumns(layoutKey) {
+        const layout = PV_LAYOUTS[layoutKey] || PV_LAYOUTS['cf-cc'];
+        const cols = [];
+        layout.forEach(g => {
+            g.codes.forEach(code => {
+                const def = PV_COLUMNS_DEFS[code];
+                cols.push({ ...def, group: g.group });
+            });
+        });
+        return cols;
     }
-    (function renderPvHeader() {
+
+    function renderPvHeader(layoutKey) {
         const groupsRow = document.getElementById('pv-head-groups');
         const planesRow = document.getElementById('pv-head-planes');
+        const rtHead = document.getElementById('pv-head-rt');
+        const ltHead = document.getElementById('pv-head-lt');
         if (!groupsRow || !planesRow) return;
+
+        const cols = getActivePvColumns(layoutKey);
+        const colCount = cols.length;
+        if (rtHead) rtHead.colSpan = colCount;
+        if (ltHead) ltHead.colSpan = colCount;
+
+        function pvColClass(sideIdx, colIdx) {
+            if (sideIdx > 0 && colIdx === 0) return 'div-left';
+            if (colIdx > 0 && cols[colIdx].group !== cols[colIdx - 1].group) return 'div-group';
+            return '';
+        }
+
         let g = '', pl = '';
         PV_SIDES.forEach((side, si) => {
             let i = 0;
-            while (i < PV_COLUMNS.length) {
-                const name = PV_COLUMNS[i].group;
+            while (i < cols.length) {
+                const name = cols[i].group;
                 let span = 0;
-                while (i + span < PV_COLUMNS.length && PV_COLUMNS[i + span].group === name) span++;
-                g += `<th colspan="${span}" class="pv-group-head ${pvColClass(si, i)}">${name}</th>`;
+                while (i + span < cols.length && cols[i + span].group === name) span++;
+                g += `<th colspan="${span}" class="pv-group-head pv-col-${side} ${pvColClass(si, i)}">${name}</th>`;
                 i += span;
             }
-            PV_COLUMNS.forEach((c, ci) => {
-                pl += `<th class="${c.kind === 'cf' ? 'pv-cf-head' : 'pv-cc-head'} ${pvColClass(si, ci)}" style="width:40px">${c.code}</th>`;
+            cols.forEach((c, ci) => {
+                pl += `<th class="${c.kind === 'cf' ? 'pv-cf-head pv-col-cf' : 'pv-cc-head pv-col-cc'} pv-col-${side} ${pvColClass(si, ci)}" style="width:40px">${c.code}</th>`;
             });
         });
         groupsRow.innerHTML = g;
         planesRow.innerHTML = pl;
+    }
+
+    // Dynamic non-destructive layout reordering
+    function applyPvLayout(layoutKey) {
+        if (window.closePvPicker) window.closePvPicker();
+        currentPvLayout = layoutKey;
+        const container = document.querySelector('.pv-container');
+        if (container) {
+            container.setAttribute('data-layout-view', layoutKey);
+        }
+        renderPvHeader(layoutKey);
+
+        const cols = getActivePvColumns(layoutKey);
+        const activePlanes = new Set(cols.map(c => c.plane));
+        const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
+        const fullCols = cols.concat(extraCols);
+        const rows = document.querySelectorAll('#fm-pv-table tbody tr');
+
+        function pvColClass(sideIdx, colIdx, col) {
+            if (sideIdx > 0 && colIdx === 0) return 'div-left';
+            if (colIdx > 0 && colIdx < cols.length && cols[colIdx].group !== cols[colIdx - 1].group) return 'div-group';
+            return '';
+        }
+
+        rows.forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll('td:not(.sticky-col)'));
+            const map = {};
+            cells.forEach(td => {
+                const btn = td.querySelector('.pv-cell');
+                if (btn) {
+                    map[`${btn.dataset.side}_${btn.dataset.plane}`] = td;
+                }
+            });
+
+            PV_SIDES.forEach((side, si) => {
+                fullCols.forEach((c, ci) => {
+                    const key = `${side}_${c.plane}`;
+                    let td = map[key];
+                    if (!td) {
+                        td = document.createElement('td');
+                        td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
+                        td.innerHTML = `<button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button>`;
+                    } else {
+                        td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
+                    }
+                    tr.appendChild(td);
+                });
+            });
+        });
+
+        if (window.updateDensitySummary) window.updateDensitySummary();
+    }
+
+    (function initPvControls() {
+        renderPvHeader(currentPvLayout);
+
+        // Wire Side Toggle (Default is Right)
+        const sideToggle = document.getElementById('pv-side-toggle');
+        if (sideToggle) {
+            sideToggle.addEventListener('click', function(e) {
+                const chip = e.target.closest('button[data-pv-side]');
+                if (!chip) return;
+                sideToggle.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                chip.classList.add('selected');
+                const view = chip.getAttribute('data-pv-side');
+                const container = document.querySelector('.pv-container');
+                if (container) {
+                    if (view === 'all') container.removeAttribute('data-side-view');
+                    else container.setAttribute('data-side-view', view);
+                }
+            });
+        }
+
+        // Wire Layout Toggle (Default is CF · CC)
+        const layoutToggle = document.getElementById('pv-layout-toggle');
+        if (layoutToggle) {
+            layoutToggle.addEventListener('click', function(e) {
+                const chip = e.target.closest('button[data-pv-layout]');
+                if (!chip) return;
+                layoutToggle.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                chip.classList.add('selected');
+                const layout = chip.getAttribute('data-pv-layout');
+                applyPvLayout(layout);
+            });
+        }
     })();
 
     function addFmSegment(dateStr, segStr) {
@@ -8075,15 +8251,27 @@ setupSegmented('patient-progress');
             segTableBody.appendChild(trSeg);
         }
 
-        // --- 2. Add to PV Grid ---
+        // --- 2. Add to PV Grid in active layout order ---
         if (pvTableBody) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
             let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);"></td>`;
             htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
+            
+            const cols = getActivePvColumns(currentPvLayout);
+            const activePlanes = new Set(cols.map(c => c.plane));
+            const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
+            const fullCols = cols.concat(extraCols);
+
+            function pvColClass(sideIdx, colIdx, col) {
+                if (sideIdx > 0 && colIdx === 0) return 'div-left';
+                if (colIdx > 0 && colIdx < cols.length && cols[colIdx].group !== cols[colIdx - 1].group) return 'div-group';
+                return '';
+            }
+
             PV_SIDES.forEach((side, si) => {
-                PV_COLUMNS.forEach((c, ci) => {
-                    htmlPv += `<td class="${pvColClass(si, ci)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
+                fullCols.forEach((c, ci) => {
+                    htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
                 });
             });
             trPv.innerHTML = htmlPv;
@@ -8105,7 +8293,38 @@ setupSegmented('patient-progress');
         }
     }
 
-    // Bind Add Segment Button
+    // Segment details with Stecco codes and anatomical names
+    window.FM_SEGMENT_DETAILS = {
+        'Lower limb': [
+            { code: 'CX', name: 'Coxa (Hip)', label: 'Hip' },
+            { code: 'GE', name: 'Genu (Knee)', label: 'Knee' },
+            { code: 'TA', name: 'Talus (Ankle)', label: 'Ankle' },
+            { code: 'PE', name: 'Pes (Foot)', label: 'Foot' }
+        ],
+        'Upper limb': [
+            { code: 'SC', name: 'Scapula (Shoulder)', label: 'Shoulder' },
+            { code: 'HU', name: 'Humerus (Arm)', label: 'Arm' },
+            { code: 'CU', name: 'Cubitus (Elbow)', label: 'Elbow' },
+            { code: 'CA', name: 'Carpus (Wrist)', label: 'Wrist' },
+            { code: 'DI', name: 'Digits (Fingers)', label: 'Fingers' }
+        ],
+        'Trunk': [
+            { code: 'CP1', name: 'CP1 (Upper Head)', label: 'Upper Head' },
+            { code: 'CP2', name: 'CP2 (Mid Head)', label: 'Mid Head' },
+            { code: 'CP3', name: 'CP3 (Lower Head)', label: 'Lower Head' },
+            { code: 'CL',  name: 'Cervical (Neck)', label: 'Neck' },
+            { code: 'TH',  name: 'Thorax', label: 'Thorax' },
+            { code: 'LU',  name: 'Lumbar', label: 'Lumbar' },
+            { code: 'PV',  name: 'Pelvis', label: 'Pelvis' }
+        ]
+    };
+
+    window.FM_SEGMENT_GROUPS = Object.entries(window.FM_SEGMENT_DETAILS).map(([label, items]) => ({
+        label, codes: items.map(i => i.code)
+    }));
+    window.FM_SEGMENTS = window.FM_SEGMENT_GROUPS.reduce((all, g) => all.concat(g.codes), []);
+
+    // Bind Add Segment Button ("＋ Other")
     const addSegBtn = document.getElementById('fm-add-seg');
     if (addSegBtn) {
         addSegBtn.addEventListener('click', function() {
@@ -8114,21 +8333,70 @@ setupSegmented('patient-progress');
         });
     }
 
-    (function renderSegmentChips() {
-        const host = document.getElementById('fm-seg-chips');
+    let activeFmRegion = null;
+    function toggleFmRegion(region) {
+        const drawer = document.getElementById('fm-region-drawer');
+        const chipsContainer = document.getElementById('fm-region-chips');
+        const tabs = document.querySelectorAll('#fm-region-tabs button[data-region]');
+        if (!drawer || !chipsContainer) return;
+
+        if (activeFmRegion === region) {
+            drawer.style.display = 'none';
+            activeFmRegion = null;
+            tabs.forEach(tab => {
+                tab.classList.remove('selected');
+                const reg = tab.getAttribute('data-region');
+                const count = (window.FM_SEGMENT_DETAILS[reg] || []).length;
+                tab.textContent = `${reg} (${count}) ▾`;
+            });
+            return;
+        }
+
+        activeFmRegion = region;
+        tabs.forEach(tab => {
+            const reg = tab.getAttribute('data-region');
+            const count = (window.FM_SEGMENT_DETAILS[reg] || []).length;
+            if (reg === region) {
+                tab.classList.add('selected');
+                tab.textContent = `${reg} (${count}) ▴`;
+            } else {
+                tab.classList.remove('selected');
+                tab.textContent = `${reg} (${count}) ▾`;
+            }
+        });
+
+        const list = window.FM_SEGMENT_DETAILS[region] || [];
+        chipsContainer.innerHTML = list.map(item => `
+            <button type="button" class="chip fm-seg-chip" data-seg="${item.code}" title="${item.name}" style="font-size:12px; padding:5px 10px;">
+                <b>${item.code}</b> <span style="color:var(--ink-faint); font-weight:normal; margin-left:3px;">– ${item.label || item.name}</span>
+            </button>
+        `).join('');
+        drawer.style.display = 'block';
+    }
+    window.toggleFmRegion = toggleFmRegion;
+
+    (function initSegmentPicker() {
         const dl = document.getElementById('fm-seg-codes');
         if (dl) dl.innerHTML = window.FM_SEGMENTS.map(c => `<option value="${c}">`).join('');
-        if (!host) return;
-        host.insertAdjacentHTML('afterbegin', window.FM_SEGMENT_GROUPS.map(g =>
-            `<div><div class="field-note" style="margin:0 0 4px;">${g.label}</div><div class="chip-row">` +
-            g.codes.map(c => `<button type="button" class="chip fm-seg-chip" data-seg="${c}">${c}</button>`).join('') +
-            `</div></div>`).join(''));
-        host.addEventListener('click', function(e) {
-            const chip = e.target.closest('.fm-seg-chip');
-            if (!chip) return;
-            const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-            addFmSegment(today, chip.getAttribute('data-seg'));
-        });
+
+        const regionTabs = document.getElementById('fm-region-tabs');
+        if (regionTabs) {
+            regionTabs.addEventListener('click', function(e) {
+                const tab = e.target.closest('button[data-region]');
+                if (!tab) return;
+                toggleFmRegion(tab.getAttribute('data-region'));
+            });
+        }
+
+        const drawer = document.getElementById('fm-region-drawer');
+        if (drawer) {
+            drawer.addEventListener('click', function(e) {
+                const chip = e.target.closest('.fm-seg-chip');
+                if (!chip) return;
+                const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+                addFmSegment(today, chip.getAttribute('data-seg'));
+            });
+        }
     })();
 
     // Sync input changes across the 3 tables via event delegation
@@ -8372,6 +8640,13 @@ setupSegmented('patient-progress');
         if(!existing){
             var today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
             addFmSegment(today, segStr);
+            // Auto-open region drawer matching this segment
+            for (var rName in (window.FM_SEGMENT_DETAILS || {})) {
+                if ((window.FM_SEGMENT_DETAILS[rName] || []).some(function(item){ return item.code === segStr; })) {
+                    if (window.toggleFmRegion) window.toggleFmRegion(rName);
+                    break;
+                }
+            }
             existing = segTableBody.lastElementChild;
             existing.setAttribute('data-fm-source', sourceKey);
             existing.classList.add('fm-auto-row');

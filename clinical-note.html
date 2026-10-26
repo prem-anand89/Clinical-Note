@@ -722,9 +722,59 @@
   .fm-collapse[open] summary { border-bottom: 1px solid var(--line); }
   .fm-collapse-body { padding: 12px; }
 
+  /* Section 4: Hybrid 1 Smart Synthesis */
+  .hyp-banner-hybrid {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 12px; background: var(--clinical-dim);
+    border: 1px solid rgba(44,95,99,0.22); border-radius: var(--radius-sm);
+    margin-bottom: 14px; flex-wrap: wrap; gap: 8px;
+  }
+  .hyp-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .hyp-title { font-size: 13px; font-weight: 700; color: var(--clinical); display: flex; align-items: center; gap: 6px; }
+  .hyp-meta { font-size: 11.5px; color: var(--ink-soft); }
+  .hyp-badge {
+    background: #fff; border: 1px solid rgba(44,95,99,0.25);
+    color: var(--clinical); font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+  }
+
+  .seq-pills-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .point-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--surface); border: 1.5px solid var(--line);
+    padding: 4px 8px 4px 6px; border-radius: var(--radius-pill);
+    font-size: 12px; font-weight: 700; color: var(--ink);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03); transition: all .12s ease;
+    cursor: pointer;
+  }
+  .point-chip:hover { border-color: var(--clinical); }
+  .point-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; border-radius: 50%;
+    background: var(--clinical); color: #fff; font-size: 10px; font-weight: 700;
+  }
+  .point-seg { color: var(--clinical); font-weight: 700; }
+  .point-plane { color: var(--ink-soft); font-weight: 600; font-size: 11px; }
+  .point-side {
+    background: #fff; border: 1px solid var(--line);
+    padding: 1px 4px; border-radius: 3px; font-size: 9.5px;
+    font-weight: 700; color: var(--ink);
+  }
+  .point-del {
+    background: transparent; border: none; color: var(--ink-faint);
+    cursor: pointer; font-size: 14px; line-height: 1;
+    margin-left: 2px; padding: 0 2px;
+  }
+  .point-del:hover { color: var(--rust, #b3261e); }
+
+  #fm-seq-picker {
+    position: fixed; z-index: 60; display: none; background: #fff;
+    border: 1px solid var(--line); border-radius: var(--radius-md);
+    box-shadow: 0 4px 16px rgba(0,0,0,.12); padding: 10px 12px;
+    width: 290px;
+  }
+  #fm-seq-picker.open { display: block; }
   .seq-builder { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
-  .seq-step { display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); padding:6px 10px; border-radius:var(--radius-pill); font-size:13px; font-weight:600; }
-  .seq-step .num { width:16px; height:16px; background:#fff; border:1px solid var(--line); border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:9px; color:var(--ink-faint); }
   
   /* Phones keep the same R + L table: it scrolls sideways with Date/Seg pinned
      (the sticky columns above). No separate mobile layout to keep in sync. */
@@ -2561,35 +2611,57 @@
 
       <!-- 4. Hypothesis & Sequence -->
       <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">4. Hypothesis &amp; Treatment Sequence</div>
-        
-        <div class="field" style="margin-bottom:16px;">
-          <label>Treatment Sequence <span class="hint">Build from findings</span></label>
-          <div class="seq-builder" id="fm-seq-builder">
-             <button type="button" class="add-link" id="fm-seq-from-findings" title="Add a step for each highest-graded finding">＋ From highest findings</button>
-             <button type="button" class="add-link" id="fm-add-seq-step">＋ Add Step</button>
+        <div class="card-heading">
+          <span>4. Hypothesis &amp; Treatment Sequence</span>
+          <span style="font-size:12px; font-weight:500; color:var(--ink-faint);">Clinical pattern synthesis</span>
+        </div>
+
+        <!-- 1. Sleek Diagnostic Hypothesis Banner -->
+        <div class="hyp-banner-hybrid" id="fm-hyp-banner">
+          <div class="hyp-info">
+            <span class="hyp-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span id="fm-hyp-diag">None</span>
+            </span>
+            <span class="hyp-badge" id="fm-hyp-badge" style="display:none;"></span>
+            <span class="hyp-meta" id="fm-hyp-meta">Palpate and grade points in Card 3 to derive pattern</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="add-link" id="fm-re-derive-btn" style="padding:2px 6px; font-size:11.5px;" title="Re-scan grid findings">↻ Re-derive</button>
           </div>
         </div>
 
-        <div class="row-2">
-          <div class="field">
-            <label>Auto-derived diagonal / sequence</label>
-            <div class="derived-field" style="padding:10px 12px;"><span class="val" id="fm-hyp-diag">None</span></div>
+        <!-- 2. Clean Planned Sequence -->
+        <div class="field" style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="margin-bottom:0;">Treatment Sequence <span class="hint">Treated in numerical order</span></label>
+            <span id="fm-seq-count" style="font-size:11px; color:var(--clinical); font-weight:600;">0 points planned</span>
           </div>
-          <div class="field">
-            <label>Reasoning Tags</label>
-            <div class="chip-row" id="fm-reasoning-tags">
-              <button type="button" class="chip" data-chip="Density chain">Density chain</button>
-              <button type="button" class="chip" data-chip="Referred pattern">Referred pattern</button>
-              <button type="button" class="chip" data-chip="Compensatory">Compensatory</button>
+
+          <div class="seq-builder seq-pills-row" id="fm-seq-builder">
+            <button type="button" class="add-link" id="fm-seq-from-findings" title="Add highest graded findings from Card 3">＋ From findings</button>
+            <button type="button" class="add-link" id="fm-add-seq-step" title="Add another point to sequence">＋ Add point</button>
+          </div>
+        </div>
+
+        <!-- 3. Collapsed Clinical Reasoning -->
+        <details class="fm-collapse" id="fm-reasoning-collapse">
+          <summary>
+            <span>Optional: Clinical Reasoning &amp; Context</span>
+            <span style="font-size:10px; font-weight:400; opacity:0.8;">Tap to expand ▾</span>
+          </summary>
+          <div class="fm-collapse-body">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+              <span style="font-size:11px; color:var(--ink-faint); font-weight:700; text-transform:uppercase;">Quick Tags:</span>
+              <div class="chip-row" id="fm-reasoning-tags" style="display:inline-flex; gap:6px;">
+                <button type="button" class="chip" data-chip="Density chain">Density chain</button>
+                <button type="button" class="chip" data-chip="Referred pattern">Referred pattern</button>
+                <button type="button" class="chip" data-chip="Compensatory">Compensatory</button>
+              </div>
             </div>
+            <textarea class="text-input" id="fm-seq-reasoning" rows="2" placeholder="Clinical reasoning for this sequence (e.g. chronic ankle sprain causing ascending tension along the lateral line to knee)..."></textarea>
           </div>
-        </div>
-        
-        <div class="field" style="margin-top:16px;">
-          <label>Detailed Reasoning</label>
-          <textarea class="text-input" rows="2" placeholder="Clinical reasoning for this sequence..."></textarea>
-        </div>
+        </details>
       </div>
 
       <!-- 5. Mo/Ve & Session -->
@@ -2667,7 +2739,7 @@
         </div>
         
         <!-- Treatment Notes & Guidance (Collapsed by default) -->
-        <details class="fm-collapse">
+        <details class="fm-collapse" id="fm-notes-collapse">
           <summary>
             <span>▸ Treatment Notes &amp; Stecco Guidance <span class="hint" style="font-weight:400; text-transform:none;">(optional)</span></span>
             <span style="color:var(--clinical); font-size:11px; text-transform:none; font-weight:600;">＋ Add Notes</span>
@@ -9587,18 +9659,40 @@ setupSegmented('patient-progress');
 
 
     // -----------------------------------------
-    // 3. Hypothesis Sequence Builder
+    // 3. Hypothesis Sequence Builder (Hybrid 1 Smart Synthesis)
     // -----------------------------------------
     const seqBuilder = document.getElementById('fm-seq-builder');
     const addSeqBtn = document.getElementById('fm-add-seq-step');
     const diagOutput = document.getElementById('fm-hyp-diag');
+    const reDeriveBtn = document.getElementById('fm-re-derive-btn');
     
     const planes = ['AN-LA', 'AN-ME', 'An', 'Ir', 'Me', 'RE-LA', 'RE-ME', 'Re', 'Er', 'La']; // same order + case as PV_COLUMNS
-    const segments = window.FM_SEGMENTS; // canonical list (previously had CX twice)
-    
+    const segments = window.FM_SEGMENTS; // canonical list
+
+    let pickerEl = null;
+    let activeEditingStep = null;
+
+    function reindexSeqSteps() {
+        if (!seqBuilder) return;
+        const chips = seqBuilder.querySelectorAll('.seq-step');
+        chips.forEach((c, idx) => {
+            const num = c.querySelector('.point-num');
+            if (num) num.textContent = idx + 1;
+        });
+        const countEl = document.getElementById('fm-seq-count');
+        if (countEl) {
+            countEl.textContent = `${chips.length} point${chips.length === 1 ? '' : 's'} planned`;
+        }
+    }
+
     function updateDiagonal() {
         if (!diagOutput) return;
-        const steps = seqBuilder ? seqBuilder.querySelectorAll('.seq-step select.plane-select') : [];
+        const badge = document.getElementById('fm-hyp-badge');
+        const meta = document.getElementById('fm-hyp-meta');
+        const steps = seqBuilder ? Array.from(seqBuilder.querySelectorAll('.seq-step')) : [];
+        
+        reindexSeqSteps();
+
         if (steps.length === 0) {
             const patterns = window.__fmDetectedPatterns || [];
             if (patterns.length > 0) {
@@ -9606,33 +9700,173 @@ setupSegmented('patient-progress');
                 diagOutput.innerHTML = `<span class="fm-hyp-suggest" style="cursor:pointer; color:var(--ink-faint);" title="Tap to add to sequence">Suggested: <b style="color:var(--ink);">${topPat.text}</b> — <span style="color:var(--clinical); text-decoration:underline;">tap to add</span></span>`;
                 diagOutput.style.color = "var(--ink-faint)";
                 diagOutput.style.fontWeight = "500";
+                if (badge) badge.style.display = 'none';
+                if (meta) meta.textContent = "Suggested from Card 3 findings — tap to add";
             } else {
                 diagOutput.textContent = "None";
                 diagOutput.style.color = "var(--ink-soft)";
                 diagOutput.style.fontWeight = "400";
+                if (badge) badge.style.display = 'none';
+                if (meta) meta.textContent = "Palpate and grade points in Card 3 to derive pattern";
             }
             return;
         }
-        
-        let firstPlane = steps[0].value;
+
+        const getStepPlane = (s) => {
+            if (s.dataset.plane) return s.dataset.plane;
+            const sel = s.querySelector('select.plane-select');
+            return sel ? sel.value : '';
+        };
+
+        let firstPlane = getStepPlane(steps[0]);
         let allMatch = true;
-        
+
         steps.forEach(s => {
-            if (s.value !== firstPlane) allMatch = false;
+            if (getStepPlane(s) !== firstPlane) allMatch = false;
         });
-        
+
         if (allMatch && firstPlane) {
             const firstCode = (((window.PV_COLUMNS || []).filter(c => c.plane === firstPlane)[0]) || {}).code || firstPlane;
-            diagOutput.textContent = `${firstCode} ${firstPlane.indexOf('-') !== -1 ? 'diagonal' : 'sequence'}`;
+            const isDiag = firstPlane.indexOf('-') !== -1;
+            diagOutput.textContent = `${firstCode} ${isDiag ? 'diagonal' : 'sequence'}`;
             diagOutput.style.color = "var(--clinical)";
             diagOutput.style.fontWeight = "700";
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.textContent = isDiag ? 'Diagonal' : 'Sequence';
+            }
+            if (meta) {
+                meta.textContent = `${steps.length} point${steps.length === 1 ? '' : 's'} aligned with ${firstCode}`;
+            }
         } else {
             diagOutput.textContent = "Mixed / Custom Sequence";
             diagOutput.style.color = "var(--ink-soft)";
             diagOutput.style.fontWeight = "400";
+            if (badge) {
+                badge.style.display = 'inline-block';
+                badge.textContent = 'Custom';
+            }
+            if (meta) {
+                meta.textContent = `${steps.length} point${steps.length === 1 ? '' : 's'} across multiple planes`;
+            }
         }
     }
     window.updateFmDiagonal = updateDiagonal;
+
+    function ensureSeqPicker() {
+        if (pickerEl) return pickerEl;
+        pickerEl = document.getElementById('fm-seq-picker');
+        if (!pickerEl) {
+            pickerEl = document.createElement('div');
+            pickerEl.id = 'fm-seq-picker';
+            document.body.appendChild(pickerEl);
+        }
+        
+        const code = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
+        let planeOpts = planes.map(p => `<option value="${p}">${code(p)} · ${p}</option>`).join('');
+        let segOpts = (segments || []).map(s => `<option value="${s}">${s}</option>`).join('');
+        
+        pickerEl.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <span id="fm-picker-title" style="font-size:12px; font-weight:700; color:var(--clinical);">Add Point</span>
+                <button type="button" id="fm-picker-close" style="border:none; background:transparent; font-size:16px; cursor:pointer; color:var(--ink-faint); padding:0 4px; line-height:1;">×</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+                <div>
+                    <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px; display:block;">Plane / Diagonal</label>
+                    <select id="fm-picker-plane" class="select-input" style="width:100%; font-size:12px; padding:4px 6px;">${planeOpts}</select>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <div style="flex:1;">
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px; display:block;">Segment</label>
+                        <select id="fm-picker-seg" class="select-input" style="width:100%; font-size:12px; padding:4px 6px;">${segOpts}</select>
+                    </div>
+                    <div style="width:85px;">
+                        <label style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--ink-faint); margin-bottom:2px; display:block;">Side</label>
+                        <select id="fm-picker-side" class="select-input" style="width:100%; font-size:12px; padding:4px 6px;">
+                            <option value="rt">Rt (R)</option>
+                            <option value="lt">Lt (L)</option>
+                            <option value="bil">Bil</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
+                    <button type="button" id="fm-picker-cancel" class="btn" style="font-size:11px; padding:3px 8px; border:1px solid var(--line); background:#fff; cursor:pointer;">Cancel</button>
+                    <button type="button" id="fm-picker-save" class="btn btn-primary" style="font-size:11px; padding:3px 10px; background:var(--clinical); color:#fff; border:none; border-radius:4px; cursor:pointer;">Save</button>
+                </div>
+            </div>
+        `;
+
+        pickerEl.querySelector('#fm-picker-close').addEventListener('click', closeSeqPicker);
+        pickerEl.querySelector('#fm-picker-cancel').addEventListener('click', closeSeqPicker);
+        pickerEl.querySelector('#fm-picker-save').addEventListener('click', function() {
+            const pl = pickerEl.querySelector('#fm-picker-plane').value;
+            const sg = pickerEl.querySelector('#fm-picker-seg').value;
+            const sd = pickerEl.querySelector('#fm-picker-side').value;
+            if (activeEditingStep) {
+                activeEditingStep.dataset.plane = pl;
+                activeEditingStep.dataset.segment = sg;
+                activeEditingStep.dataset.side = sd;
+                const segEl = activeEditingStep.querySelector('.point-seg');
+                const planeEl = activeEditingStep.querySelector('.point-plane');
+                const sideEl = activeEditingStep.querySelector('.point-side');
+                if (segEl) segEl.textContent = sg;
+                if (planeEl) planeEl.textContent = pl;
+                if (sideEl) sideEl.textContent = sd.toUpperCase();
+                updateDiagonal();
+            } else {
+                addSeqStep({ plane: pl, segment: sg, side: sd });
+            }
+            closeSeqPicker();
+        });
+
+        document.addEventListener('pointerdown', function(e) {
+            if (pickerEl && pickerEl.classList.contains('open')) {
+                if (!pickerEl.contains(e.target) && !e.target.closest('#fm-add-seq-step') && !e.target.closest('.point-chip')) {
+                    closeSeqPicker();
+                }
+            }
+        });
+
+        return pickerEl;
+    }
+
+    function openSeqPicker(anchorEl, editingStep) {
+        const picker = ensureSeqPicker();
+        activeEditingStep = editingStep || null;
+        const titleEl = picker.querySelector('#fm-picker-title');
+        if (titleEl) titleEl.textContent = editingStep ? 'Edit Sequence Point' : 'Add Sequence Point';
+        
+        if (editingStep) {
+            picker.querySelector('#fm-picker-plane').value = editingStep.dataset.plane || planes[0];
+            picker.querySelector('#fm-picker-seg').value = editingStep.dataset.segment || segments[0];
+            picker.querySelector('#fm-picker-side').value = editingStep.dataset.side || 'rt';
+        } else {
+            picker.querySelector('#fm-picker-plane').value = planes[0];
+            picker.querySelector('#fm-picker-seg').value = (segments && segments[0]) || 'CX';
+            picker.querySelector('#fm-picker-side').value = 'rt';
+        }
+
+        const rect = anchorEl.getBoundingClientRect();
+        let top = rect.bottom + 6;
+        if (top + 220 > window.innerHeight) {
+            top = Math.max(10, rect.top - 220);
+        }
+        picker.style.top = top + 'px';
+        let left = rect.left;
+        if (left + 300 > window.innerWidth - 12) {
+            left = window.innerWidth - 312;
+        }
+        if (left < 10) left = 10;
+        picker.style.left = left + 'px';
+        picker.classList.add('open');
+    }
+
+    function closeSeqPicker() {
+        if (pickerEl) pickerEl.classList.remove('open');
+        activeEditingStep = null;
+    }
+
     if (diagOutput) {
         diagOutput.addEventListener('click', function(e) {
             const suggest = e.target.closest('.fm-hyp-suggest');
@@ -9643,54 +9877,83 @@ setupSegmented('patient-progress');
         });
     }
 
-    function addSeqStep(preset) {
-            let div = document.createElement('div');
-            div.className = 'seq-step';
-            div.style.display = 'flex';
-            div.style.alignItems = 'center';
-            div.style.gap = '8px';
-            div.style.marginBottom = '8px';
-            
-            const code = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
-            let planeOpts = planes.map(p => `<option value="${p}">${code(p)}</option>`).join('');
-            let segOpts = segments.map(s => `<option>${s}</option>`).join('');
-            
-            div.innerHTML = `
-                <span style="font-size:11px; font-weight:700; color:var(--ink-faint);">Step</span>
-                <select class="select-input plane-select" style="width:90px; padding:4px; font-size:12px;">${planeOpts}</select>
-                <select class="select-input" style="width:70px; padding:4px; font-size:12px;">${segOpts}</select>
-                <select class="select-input" style="width:60px; padding:4px; font-size:12px;"><option>rt</option><option>lt</option><option>bil</option></select>
-                <button type="button" class="del-step" style="border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:16px;">×</button>
-            `;
-            
-            div.querySelector('.plane-select').addEventListener('change', updateDiagonal);
-            div.querySelector('.del-step').addEventListener('click', function() {
-                div.remove();
-                updateDiagonal();
-            });
-            
-            if (preset) {
-                const sel = div.querySelectorAll('select');
-                if (preset.segment && !Array.from(sel[1].options).some(o => o.value === preset.segment)) sel[1].insertAdjacentHTML('beforeend', `<option>${preset.segment}</option>`);
-                sel[0].value = preset.plane; sel[1].value = preset.segment; sel[2].value = preset.side;
+    if (reDeriveBtn) {
+        reDeriveBtn.addEventListener('click', function() {
+            if (typeof updateDensitySummary === 'function') {
+                updateDensitySummary();
             }
-            seqBuilder.insertBefore(div, document.getElementById('fm-seq-from-findings') || addSeqBtn);
             updateDiagonal();
-    }
-    if (addSeqBtn && seqBuilder) {
-        addSeqBtn.addEventListener('click', function() { addSeqStep(null); });
-        const fromFindings = document.getElementById('fm-seq-from-findings');
-        if (fromFindings) fromFindings.addEventListener('click', function() {
-            const order = ['', '1', '2', '2+', '3', '3+'];
-            const graded = (window.getFmData ? window.getFmData().pv : []).filter(c => !c.isPrior && order.indexOf(c.grade) >= 2);
-            if (!graded.length) { window.alert('No findings graded 2 or higher yet.'); return; }
-            const top = Math.max.apply(null, graded.map(c => order.indexOf(c.grade)));
-            const existing = new Set(Array.from(seqBuilder.querySelectorAll('.seq-step')).map(st => Array.from(st.querySelectorAll('select')).map(x => x.value).join('|')));
-            graded.filter(c => order.indexOf(c.grade) === top).slice(0, 6).forEach(c => {
-                const key = [c.plane, c.segment, c.side].join('|');
-                if (!existing.has(key)) { existing.add(key); addSeqStep({plane: c.plane, segment: c.segment, side: c.side}); }
-            });
+            reDeriveBtn.textContent = '✓ Updated';
+            setTimeout(() => { reDeriveBtn.textContent = '↻ Re-derive'; }, 1000);
         });
+    }
+
+    function addSeqStep(preset) {
+        if (!seqBuilder) return;
+        const p = preset || { plane: 'AN-LA', segment: 'CX', side: 'rt' };
+        
+        let div = document.createElement('div');
+        div.className = 'seq-step point-chip';
+        div.dataset.plane = p.plane;
+        div.dataset.segment = p.segment;
+        div.dataset.side = p.side;
+        div.setAttribute('title', 'Tap to edit point');
+
+        div.innerHTML = `
+            <span class="point-num"></span>
+            <span class="point-seg">${p.segment}</span>
+            <span class="point-plane">${p.plane}</span>
+            <span class="point-side">${String(p.side || '').toUpperCase()}</span>
+            <button type="button" class="del-step point-del" title="Remove point">×</button>
+        `;
+
+        div.addEventListener('click', function(e) {
+            if (e.target.closest('.del-step')) return;
+            openSeqPicker(div, div);
+        });
+
+        div.querySelector('.del-step').addEventListener('click', function(e) {
+            e.stopPropagation();
+            div.remove();
+            reindexSeqSteps();
+            updateDiagonal();
+        });
+
+        const refBtn = document.getElementById('fm-seq-from-findings') || document.getElementById('fm-add-seq-step');
+        if (refBtn) {
+            seqBuilder.insertBefore(div, refBtn);
+        } else {
+            seqBuilder.appendChild(div);
+        }
+        reindexSeqSteps();
+        updateDiagonal();
+        return div;
+    }
+
+    if (addSeqBtn && seqBuilder) {
+        addSeqBtn.addEventListener('click', function() {
+            openSeqPicker(addSeqBtn, null);
+        });
+        const fromFindings = document.getElementById('fm-seq-from-findings');
+        if (fromFindings) {
+            fromFindings.addEventListener('click', function() {
+                const order = ['', '1', '2', '2+', '3', '3+'];
+                const graded = (window.getFmData ? window.getFmData().pv : []).filter(c => !c.isPrior && order.indexOf(c.grade) >= 2);
+                if (!graded.length) { window.alert('No findings graded 2 or higher yet.'); return; }
+                const top = Math.max.apply(null, graded.map(c => order.indexOf(c.grade)));
+                const existing = new Set(Array.from(seqBuilder.querySelectorAll('.seq-step')).map(st => {
+                    if (st.dataset.plane) return [st.dataset.plane, st.dataset.segment, st.dataset.side].join('|');
+                    return Array.from(st.querySelectorAll('select')).map(x => x.value).join('|');
+                }));
+                graded.filter(c => order.indexOf(c.grade) === top).slice(0, 6).forEach(c => {
+                    const key = [c.plane, c.segment, c.side].join('|');
+                    if (!existing.has(key)) {
+                        existing.add(key);
+                        addSeqStep({ plane: c.plane, segment: c.segment, side: c.side });
+                    }
+                });
+            });
+        }
     }
 
     // -----------------------------------------
@@ -9782,10 +10045,16 @@ setupSegmented('patient-progress');
         }));
         const seqCard = document.getElementById('fm-seq-builder') ? document.getElementById('fm-seq-builder').closest('.card') : null;
         const hypothesis = seqCard ? {
-            steps: Array.from(seqCard.querySelectorAll('.seq-step')).map(st => { const sel = st.querySelectorAll('select'); return { plane: val(sel[0]), segment: val(sel[1]), side: val(sel[2]) }; }),
+            steps: Array.from(seqCard.querySelectorAll('.seq-step')).map(st => {
+                if (st.dataset.plane) {
+                    return { plane: st.dataset.plane, segment: st.dataset.segment, side: st.dataset.side };
+                }
+                const sel = st.querySelectorAll('select');
+                return { plane: val(sel[0]), segment: val(sel[1]), side: val(sel[2]) };
+            }),
             derived: (seqCard && seqCard.querySelectorAll('.seq-step').length > 0) ? ((document.getElementById('fm-hyp-diag') || {}).textContent || '') : 'None',
             tags: Array.from(seqCard.querySelectorAll('#fm-reasoning-tags .chip.selected')).map(c => c.getAttribute('data-chip')),
-            reasoning: val(seqCard.querySelector('textarea'))
+            reasoning: val(document.getElementById('fm-seq-reasoning')) || val(seqCard.querySelector('textarea'))
         } : null;
         const moveCard = document.getElementById('fm-move-table') ? document.getElementById('fm-move-table').closest('.card') : null;
         const moVe = Array.from(document.querySelectorAll('#fm-move-table tbody tr')).map(tr => {

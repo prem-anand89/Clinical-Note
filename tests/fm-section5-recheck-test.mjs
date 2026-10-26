@@ -96,9 +96,9 @@ function ok(name, cond, info) {
     ok('Post grade updated to 0', postGradeAfter === '0' && postBtnTextAfter.trim() === '0', { postGradeAfter, postBtnTextAfter });
 
     // 6. Test Quick Add Aftercare Note
-    await page.click('.fm-collapse summary'); // open details
+    await page.click('#fm-notes-collapse summary'); // open details
     await page.waitForTimeout(100);
-    const quickChip = page.locator('.fm-collapse .chip').first();
+    const quickChip = page.locator('#fm-notes-collapse .chip').first();
     await quickChip.click();
     const notesVal = await page.inputValue('#fm-rx-notes');
     ok('Clicking quick aftercare chip appends to notes', notesVal.includes('soreness explained'), notesVal);

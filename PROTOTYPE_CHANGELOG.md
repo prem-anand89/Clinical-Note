@@ -447,6 +447,11 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Overflow-free:** At 390px, the segment container fits perfectly without horizontal scrolling (`scrollWidth === clientWidth`).
 - **Display labels:** Side dropdown displays "R" and "L" across all viewports while retaining canonical `rt` and `lt` values.
 
+## Task 5: Context-aware smart side view
+- **Adaptive side view on module open:** Right (R) remains the default view. If graded palpation findings exist on the left side (e.g. from an auto-draft or restored patient history), the view toggle automatically initializes to "Both" so left-side findings are immediately visible without being hidden.
+- **Pure in-memory:** No state is persisted to `localStorage` for this switch.
+
+
 
 
 

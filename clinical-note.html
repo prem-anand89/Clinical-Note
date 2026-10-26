@@ -8407,22 +8407,41 @@ setupSegmented('patient-progress');
     (function initPvControls() {
         renderPvHeader(currentPvLayout);
 
-        // Wire Side Toggle (Default is Right)
+        function setPvSideView(view) {
+            const sideToggle = document.getElementById('pv-side-toggle');
+            if (sideToggle) {
+                sideToggle.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+                const chip = sideToggle.querySelector(`button[data-pv-side="${view}"]`);
+                if (chip) chip.classList.add('selected');
+            }
+            const container = document.querySelector('.pv-container');
+            if (container) {
+                if (view === 'all') container.removeAttribute('data-side-view');
+                else container.setAttribute('data-side-view', view);
+            }
+        }
+        window.setPvSideView = setPvSideView;
+
+        function applySmartPvSideView() {
+            const leftGraded = document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell[data-side="lt"][data-grade]:not([data-grade=""])').length;
+            if (leftGraded > 0) {
+                setPvSideView('all');
+            } else {
+                setPvSideView('rt');
+            }
+        }
+        window.applySmartPvSideView = applySmartPvSideView;
+
+        // Wire Side Toggle (Default is Right unless left findings exist)
         const sideToggle = document.getElementById('pv-side-toggle');
         if (sideToggle) {
             sideToggle.addEventListener('click', function(e) {
                 const chip = e.target.closest('button[data-pv-side]');
                 if (!chip) return;
-                sideToggle.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-                chip.classList.add('selected');
-                const view = chip.getAttribute('data-pv-side');
-                const container = document.querySelector('.pv-container');
-                if (container) {
-                    if (view === 'all') container.removeAttribute('data-side-view');
-                    else container.setAttribute('data-side-view', view);
-                }
+                setPvSideView(chip.getAttribute('data-pv-side'));
             });
         }
+        applySmartPvSideView();
 
         // Wire Layout Toggle (Default is CF · CC)
         const layoutToggle = document.getElementById('pv-layout-toggle');
@@ -9461,6 +9480,9 @@ window.openTier2Module = function(key) {
 };
 
 window.openAdvancedModule = function(key) {
+  if (key === 'fascial-manipulation' && window.applySmartPvSideView) {
+    window.applySmartPvSideView();
+  }
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));
   if(sec) {

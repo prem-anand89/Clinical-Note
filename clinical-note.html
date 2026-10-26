@@ -682,6 +682,91 @@
     .pv-container { -webkit-overflow-scrolling:touch; }
     #fm-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     #fm-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
+
+    /* Segment Assessment table-to-card transformation for phones (< 744px) */
+    #fm-seg-wrap { overflow-x: visible !important; }
+    #fm-seg-table {
+      display: block !important;
+      width: 100% !important;
+      border: none !important;
+    }
+    #fm-seg-table thead {
+      display: none !important;
+    }
+    #fm-seg-table tbody {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      width: 100% !important;
+    }
+    #fm-seg-table tbody tr {
+      display: grid !important;
+      grid-template-columns: 1.1fr 0.9fr 1fr !important;
+      grid-template-areas:
+        "seg side del"
+        "dur traum vrs"
+        "pain pain pain" !important;
+      gap: 8px !important;
+      padding: 10px 12px !important;
+      background: #fff !important;
+      border: 1px solid var(--line) !important;
+      border-radius: var(--radius-sm, 8px) !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+      position: relative !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+    }
+    #fm-seg-table tr.fm-auto-row {
+      background: var(--context-dim, #f0f7f7) !important;
+      border-color: var(--context, #008080) !important;
+    }
+    #fm-seg-table tbody tr td {
+      display: flex !important;
+      flex-direction: column !important;
+      padding: 0 !important;
+      border: none !important;
+      background: transparent !important;
+      min-width: 0 !important;
+    }
+    #fm-seg-table td:nth-child(1) { grid-area: seg !important; position: static !important; box-shadow: none !important; }
+    #fm-seg-table td:nth-child(2) { grid-area: side !important; }
+    #fm-seg-table td:nth-child(3) { grid-area: dur !important; }
+    #fm-seg-table td:nth-child(4) { grid-area: traum !important; }
+    #fm-seg-table td:nth-child(5) { grid-area: vrs !important; }
+    #fm-seg-table td:nth-child(6) { grid-area: pain !important; }
+    #fm-seg-table td:nth-child(7) {
+      grid-area: del !important;
+      align-items: flex-end !important;
+      justify-content: flex-start !important;
+    }
+    #fm-seg-table td:nth-child(7) button {
+      width: 28px !important;
+      height: 28px !important;
+      line-height: 28px !important;
+      font-size: 20px !important;
+      color: var(--ink-faint) !important;
+      border-radius: 4px !important;
+      background: var(--surface) !important;
+      border: 1px solid var(--line-soft) !important;
+      cursor: pointer !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    #fm-seg-table td:nth-child(1)::before { content: 'Segment'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(3)::before { content: 'Duration'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(4)::before { content: 'Trauma?'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(5)::before { content: 'VRS (0–10)'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td input, #fm-seg-table td select {
+      width: 100% !important;
+      box-sizing: border-box !important;
+      font-size: 12px !important;
+      padding: 5px 7px !important;
+      border-radius: 6px !important;
+      height: 30px !important;
+    }
   }
 
   /* CSS-only check indicator for selected chips (replaces inline SVG) */
@@ -2204,7 +2289,7 @@
           <span>1. Segment Assessment</span>
         </div>
         <datalist id="fm-seg-codes"></datalist>
-        <div style="overflow-x:auto;">
+        <div id="fm-seg-wrap" style="overflow-x:auto;">
           <table class="fm-t" id="fm-seg-table">
             <thead>
               <tr>

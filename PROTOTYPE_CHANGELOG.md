@@ -441,5 +441,12 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Preservation across syncs:** Reconciling the Mo/Ve table looks up existing rows by `data-key` (`${seg}_${side}`), preserving existing therapist adjustments to post-VRS (`data-post`) and recomputing delta rather than clobbering state.
 - **Data export:** `getFmData().moVe` includes `key`, `segment`, and `side` without duplicate keys.
 
+## Task 4: Phone layout table-to-cards (< 744px)
+- **Responsive card layout:** Below 744px, `#fm-seg-table` rows transform via pure CSS grid into clean mobile cards (row 1: Segment & Side with delete × button; row 2: Duration, Trauma, VRS; row 3: Painful Movements spanning full width).
+- **Zero state duplication:** Uses the exact same form controls and input nodes, maintaining 100% data fidelity with `getFmData().segments` and Mo/Ve sync without duplicating state.
+- **Overflow-free:** At 390px, the segment container fits perfectly without horizontal scrolling (`scrollWidth === clientWidth`).
+- **Display labels:** Side dropdown displays "R" and "L" across all viewports while retaining canonical `rt` and `lt` values.
+
+
 
 

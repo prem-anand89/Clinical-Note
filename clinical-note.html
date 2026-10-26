@@ -571,7 +571,7 @@
   .fm-t td input:focus, .fm-t td select:focus { background:var(--surface); outline:none; }
   .fm-t .auto-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:var(--clinical); background:var(--clinical-dim); padding:2px 6px; border-radius:4px; }
   
-  .pv-container { overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--line); background:#fff; }
+  .pv-container, .recheck-container { overflow-x:auto; border-radius:var(--radius-md); border:1px solid var(--line); background:#fff; }
   .pv-t { width:100%; border-collapse:collapse; font-size:11px; table-layout:fixed; min-width:860px; }
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
   .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
@@ -656,7 +656,71 @@
   #pv-picker .pk-tr:disabled { opacity:.35; cursor:default; }
   #pv-picker .pk-clr { color:#B3261E; }
   /* Phones use the same small pop-up at the box (owner preference) */
-  
+
+  /* Palpatory Re-check Side-by-Side Sub-columns & Card 5 Refinements */
+  td.col-pre-bg { background: #FAFAF9; }
+  .pv-t .point-sep { border-left: 2px solid var(--line) !important; }
+  th.sub-pre { background: #FAFAF9; color: var(--ink-faint); font-size: 8.5px; font-weight: 600; text-align: center; }
+  th.sub-post { background: #fff; color: var(--clinical); font-size: 8.5px; font-weight: 700; text-align: center; }
+  .pre-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 26px; border-radius: 4px; font-size: 11.5px; font-weight: 600;
+    cursor: default; user-select: none; opacity: 0.88;
+  }
+  .pre-badge.pre-3 { background: #FDE8E8; color: #9B1C1C; }
+  .pre-badge.pre-2plus { background: #FEF08A; color: #854D0E; }
+  .pre-badge.pre-2 { background: #FEF3C7; color: #92400E; }
+  .pre-badge.pre-1 { background: #F3F4F6; color: #4B5563; }
+
+  .post-btn {
+    width: 32px; height: 30px; appearance: none; border: 1px solid var(--line);
+    border-radius: 5px; font: inherit; font-size: 13px; font-weight: 700;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+    background: #fff; color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    transition: all .12s ease;
+  }
+  .post-btn:hover { border-color: var(--clinical); box-shadow: 0 0 0 2px var(--clinical-ring); }
+  .post-btn.post-0 { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
+  .post-btn.post-1 { background: #E6F4F2; color: #0D766E; border-color: #99F6E4; }
+  .post-btn.post-2 { background: #FEF3C7; color: #B45309; border-color: #FDE68A; }
+  .post-btn.post-2plus { background: #FFEDD5; color: #C2410C; border-color: #FED7AA; }
+  .post-btn.post-3 { background: #FEE2E2; color: #B91C1C; border-color: #FECACA; }
+  .post-btn.post-unrated {
+    border: 1.5px dashed var(--clinical); color: var(--clinical);
+    background: var(--clinical-dim); font-size: 11px; font-weight: 700;
+  }
+  .post-btn.post-unrated:hover { background: #fff; box-shadow: 0 0 0 2px var(--clinical-ring); }
+  .post-btn.cur-picked { outline: 2px solid var(--clinical); outline-offset: 1px; }
+
+  #fm-recheck-picker {
+    position: fixed; z-index: 60; display: none; background: #fff;
+    border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 3px 10px rgba(0,0,0,.10); padding: 3px;
+  }
+  #fm-recheck-picker.open { display: block; }
+  #fm-recheck-picker .pk-row { display: flex; gap: 3px; align-items: center; }
+  #fm-recheck-picker .pk-sep { width: 1px; height: 18px; background: var(--line); margin: 0 2px; }
+  #fm-recheck-picker button {
+    min-width: 34px; height: 34px; border-radius: 6px; border: 1px solid transparent;
+    background: #fff; font: inherit; font-weight: 700; font-size: 12.5px; color: var(--ink);
+    cursor: pointer; padding: 0 6px;
+  }
+  #fm-recheck-picker button:hover { filter: brightness(.96); }
+
+  .outcome-relief { font-weight: 700; color: #2E7D32; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+  .outcome-sub { font-size: 10.5px; font-weight: 500; color: var(--ink-faint); }
+  @media (max-width: 743px) {
+    .outcome-sub { display: none; }
+  }
+
+  .fm-collapse { border: 1px solid var(--line); border-radius: var(--radius-sm); background: #fff; overflow: hidden; margin-top: 14px; }
+  .fm-collapse summary {
+    padding: 9px 12px; background: var(--surface); font-size: 11.5px; font-weight: 700;
+    color: var(--ink-faint); letter-spacing: .03em; text-transform: uppercase; cursor: pointer;
+    user-select: none; display: flex; align-items: center; justify-content: space-between;
+  }
+  .fm-collapse summary:hover { color: var(--ink); }
+  .fm-collapse[open] summary { border-bottom: 1px solid var(--line); }
+  .fm-collapse-body { padding: 12px; }
 
   .seq-builder { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:12px; }
   .seq-step { display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); padding:6px 10px; border-radius:var(--radius-pill); font-size:13px; font-weight:600; }
@@ -700,7 +764,7 @@
     .pv-t td { height:36px; padding:1px; }
     .pv-t th.sticky-col, .pv-t td.sticky-col { box-shadow:2px 0 5px rgba(0,0,0,.08); }
     .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { box-shadow:3px 0 6px rgba(0,0,0,.10); }
-    .pv-container { -webkit-overflow-scrolling:touch; }
+    .pv-container, .recheck-container { -webkit-overflow-scrolling:touch; }
     #fm-region-tabs, #pv-add-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     #fm-region-tabs::-webkit-scrollbar, #pv-add-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
 
@@ -2531,37 +2595,93 @@
       <!-- 5. Mo/Ve & Session -->
       <div class="card">
         <div class="card-heading">5. Mo/Ve &amp; Session Verification</div>
-        <div style="overflow-x:auto; margin-bottom:16px;">
-          <table class="fm-t" id="fm-move-table">
-            <thead>
-              <tr>
-                <th>Segment</th>
-                <th>Movement</th>
-                <th title="Pre-treatment VRS, from table 1">Pre</th>
-                <th title="Post-treatment VRS">Post</th>
-                <th>Δ</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- JS populated -->
-            </tbody>
-          </table>
+        
+        <!-- Motor Verification Table -->
+        <div class="field" style="margin-bottom:16px;">
+          <label>Motor Verification (Mo/Ve) <span class="hint">Pain Rating (0–10 scale)</span></label>
+          <div style="overflow-x:auto;">
+            <table class="fm-t" id="fm-move-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col" style="width:75px;">Segment</th>
+                  <th>Movement Tested <span class="hint">(tap to edit)</span></th>
+                  <th style="width:70px; text-align:center;" title="Pre-treatment VRS, from table 1">Pre</th>
+                  <th style="width:125px; text-align:center;" title="Post-treatment VRS">Post</th>
+                  <th style="width:130px; text-align:center;">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Palpatory Re-check Side-by-Side Matrix Table -->
+        <div class="field" style="margin-bottom:16px;" id="fm-recheck-field">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+            <label style="margin-bottom:0;">Palpatory Re-check <span class="hint">Treated points matrix · tap cell to grade post-treatment</span></label>
+            <span id="fm-recheck-count" style="font-size:10.5px; color:var(--clinical); font-weight:600;">0 points treated</span>
+          </div>
+
+          <div class="recheck-container" id="fm-recheck-container" style="display:none;">
+            <table class="pv-t" id="fm-recheck-table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div id="fm-recheck-empty" style="display:block; padding:14px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm);">
+            Mark points treated (✓) in Card 3 to populate palpatory re-check.
+          </div>
+
+          <div class="diff-legend" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:11px; color:var(--ink-faint);">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <span class="pre-badge pre-3" style="width:20px; height:18px; font-size:9px;">3</span>
+                <b style="color:var(--ink-soft);">Pre</b> = Prefilled baseline
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <span class="post-btn post-unrated" style="width:20px; height:18px; font-size:9px;">?</span>
+                <b style="color:var(--clinical);">Post</b> = Tap cell to grade
+              </span>
+            </div>
+            <div>
+              <span style="font-weight:600; color:#2E7D32;">0</span> = Abolished · 
+              <span style="font-weight:600; color:#0D766E;">1</span> = Minimal · 
+              <span style="font-weight:600; color:#B45309;">2 / 2+</span> = Reduced
+            </div>
+          </div>
         </div>
         
-        <div class="field">
+        <!-- Overall Session Response -->
+        <div class="field" style="margin-bottom:16px;">
           <label>Session Response</label>
           <div class="chip-row" id="fm-session-response">
             <button type="button" class="chip" data-chip="Immediate relief">Immediate relief</button>
             <button type="button" class="chip" data-chip="Gradual improvement">Gradual improvement</button>
+            <button type="button" class="chip" data-chip="Pain reduced, still stiff">Pain reduced, still stiff</button>
             <button type="button" class="chip" data-chip="No change">No change</button>
             <button type="button" class="chip" data-chip="Increased pain">Increased pain</button>
           </div>
         </div>
         
-        <div class="field">
-          <label>Treatment Notes</label>
-          <textarea class="text-input" rows="2" placeholder="Response to specific points..."></textarea>
-        </div>
+        <!-- Treatment Notes & Guidance (Collapsed by default) -->
+        <details class="fm-collapse">
+          <summary>
+            <span>▸ Treatment Notes &amp; Stecco Guidance <span class="hint" style="font-weight:400; text-transform:none;">(optional)</span></span>
+            <span style="color:var(--clinical); font-size:11px; text-transform:none; font-weight:600;">＋ Add Notes</span>
+          </summary>
+          <div class="fm-collapse-body">
+            <div class="chip-row" style="margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;">Quick Add:</span>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('24-48h post-friction soreness explained.')">24–48h soreness explained</button>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Apply heat to treated areas; avoid ice.')">Heat, avoid ice</button>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Avoid heavy exertion for 48h.')">Avoid heavy exertion</button>
+            </div>
+            <textarea id="fm-rx-notes" class="text-input" rows="2" placeholder="Response to specific points, patient sensations during friction, or home exercise guidance..."></textarea>
+          </div>
+        </details>
       </div>
     </section>
 
@@ -8064,6 +8184,7 @@ setupSegmented('patient-progress');
         cell.setAttribute('data-treated', grade && treated ? 'true' : 'false');
         cell.setAttribute('aria-label', cellLabel(cell) + (grade ? `, grade ${grade}` : ', not graded') + (grade && treated ? ', treated' : ''));
         updateDensitySummary();
+        if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
     }
 
     const picker = document.createElement('div');
@@ -8469,9 +8590,9 @@ setupSegmented('patient-progress');
                         td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
                         const isPrior = tr.classList.contains('fm-prior-row');
                         if (isPrior) {
-                            td.innerHTML = `<button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button>`;
+                            td.innerHTML = `<button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-code="${c.code}" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button>`;
                         } else {
-                            td.innerHTML = `<button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button>`;
+                            td.innerHTML = `<button type="button" class="pv-cell" data-grade="" data-treated="false" data-code="${c.code}" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button>`;
                         }
                     } else {
                         td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
@@ -8735,6 +8856,7 @@ setupSegmented('patient-progress');
         if (pvTableBody && addToPv) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
+            trPv.setAttribute('data-seg', segStr);
             trPv.setAttribute('data-session-date', dateStr);
             if (isPrior) {
                 trPv.classList.add('fm-prior-row');
@@ -8761,9 +8883,9 @@ setupSegmented('patient-progress');
             PV_SIDES.forEach((side, si) => {
                 fullCols.forEach((c, ci) => {
                     if (isPrior) {
-                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button></td>`;
+                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-code="${c.code}" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button></td>`;
                     } else {
-                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
+                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-code="${c.code}" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
                     }
                 });
             });
@@ -9002,16 +9124,25 @@ setupSegmented('patient-progress');
     })();
 
     // Mo/Ve post-VRS stepper. Delta shows only when both Pre and Post exist,
-    // so a missing Pre never reads as "worse".
+    // formatted on the Pain Rating Scale (0-10) without negative scores.
     function recomputeMoveDelta(tr) {
         let pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
         let post = tr.dataset.post;
         let deltaCell = tr.querySelector('.move-delta');
-        if (pre === '' || pre === null || post === undefined || post === '') { deltaCell.innerHTML = '<span style="color:var(--ink-faint);">—</span>'; return; }
+        if (pre === '' || pre === null || post === undefined || post === '') {
+            deltaCell.innerHTML = '<span style="color:var(--ink-faint);">—</span>';
+            deltaCell.removeAttribute('data-delta');
+            return;
+        }
         let delta = Number(post) - Number(pre);
-        if (delta < 0) deltaCell.innerHTML = `<span style="color:#2E7D32;">${delta} ▼</span>`;
-        else if (delta > 0) deltaCell.innerHTML = `<span style="color:#B3261E;">+${delta} ▲</span>`;
-        else deltaCell.innerHTML = '<span style="color:var(--ink-soft);">0 —</span>';
+        deltaCell.setAttribute('data-delta', String(delta));
+        if (delta < 0) {
+            deltaCell.innerHTML = `<span class="outcome-relief">↓ ${Math.abs(delta)} pts <span class="outcome-sub" style="font-size:10.5px; font-weight:500; color:var(--ink-faint);">(${pre} → ${post})</span></span>`;
+        } else if (delta > 0) {
+            deltaCell.innerHTML = `<span style="font-weight:700; color:#B3261E; white-space:nowrap;">↑ ${delta} pts <span class="outcome-sub" style="font-size:10.5px; font-weight:500; color:var(--ink-faint);">(${pre} → ${post})</span></span>`;
+        } else {
+            deltaCell.innerHTML = `<span style="font-weight:600; color:var(--ink-soft); white-space:nowrap;">0 pts <span class="outcome-sub" style="font-size:10.5px; font-weight:500; color:var(--ink-faint);">(No change)</span></span>`;
+        }
     }
 
     // Mo/Ve table sync: deduplicate by segment + side, max pre-VRS, preserve post-VRS and delta
@@ -9071,8 +9202,12 @@ setupSegmented('patient-progress');
                 
                 const movTd = trMove.querySelector('.move-movement');
                 if (movTd) {
-                    movTd.textContent = movStr || '—';
-                    movTd.style.color = movStr ? 'var(--ink)' : 'var(--ink-faint)';
+                    const movInput = movTd.querySelector('input');
+                    if (movInput) {
+                        if (!movInput.dataset.userEdited && movStr && movInput.value !== movStr) movInput.value = movStr;
+                    } else {
+                        movTd.innerHTML = `<input type="text" class="text-input move-movement-input" value="${movStr}" style="border:1px solid transparent; background:transparent; font-size:12px; padding:4px 6px; color:var(--ink); font-family:inherit; width:100%; border-radius:var(--radius-sm);" title="Click to edit movement description">`;
+                    }
                 }
                 
                 const preTd = trMove.querySelector('.move-prevrs');
@@ -9093,17 +9228,267 @@ setupSegmented('patient-progress');
                 trMove.setAttribute('data-seg', grp.seg);
                 trMove.setAttribute('data-side', grp.side);
                 trMove.innerHTML = `
-                    <td class="move-seg-name" style="font-weight:600; font-size:12px;">${label}</td>
-                    <td class="move-movement" title="Painful movement from table 1" style="font-size:12px; color:${movStr ? 'var(--ink)' : 'var(--ink-faint)'};">${movStr || '—'}</td>
-                    <td class="move-prevrs" data-prevrs="${maxVrs === null ? '' : maxVrs}" style="font-size:14px; font-weight:700; text-align:center; color:${maxVrs === null ? 'var(--ink-faint)' : 'var(--ink)'};">${maxVrs === null ? '—' : maxVrs}</td>
+                    <td class="move-seg-name sticky-col" style="font-weight:600; font-size:12px; color:var(--clinical);">${label}</td>
+                    <td class="move-movement" style="padding:2px;"><input type="text" class="text-input move-movement-input" value="${movStr}" style="border:1px solid transparent; background:transparent; font-size:12px; padding:4px 6px; color:var(--ink); font-family:inherit; width:100%; border-radius:var(--radius-sm);" title="Click to edit movement description"></td>
+                    <td class="move-prevrs" data-prevrs="${maxVrs === null ? '' : maxVrs}" style="font-size:13.5px; font-weight:700; text-align:center; color:${maxVrs === null ? 'var(--ink-faint)' : 'var(--ink)'};">${maxVrs === null ? '—' : maxVrs}</td>
                     <td><div class="move-post"><button type="button" class="mv-b" data-dir="-1" aria-label="Lower post VRS">−</button><span class="mv-val">—</span><button type="button" class="mv-b" data-dir="1" aria-label="Raise post VRS">+</button></div></td>
-                    <td class="move-delta" style="font-weight:700; text-align:center;">—</td>
+                    <td class="move-delta" style="text-align:center;">—</td>
                 `;
                 moveTableBody.appendChild(trMove);
             }
         });
     }
     window.syncFmMoveTable = syncMoveTable;
+
+    // Track user edits on movement description input
+    document.addEventListener('input', function(e) {
+        if (e.target.matches('.move-movement-input')) {
+            e.target.setAttribute('data-user-edited', 'true');
+        }
+    });
+
+    // ==========================================
+    // Palpatory Re-check Side-by-Side Matrix Sync
+    // ==========================================
+    const recheckPicker = document.createElement('div');
+    recheckPicker.id = 'fm-recheck-picker';
+    recheckPicker.setAttribute('role', 'dialog');
+    recheckPicker.setAttribute('aria-label', 'Pick post-treatment grade');
+    recheckPicker.innerHTML = `
+        <div class="pk-row">
+            <button type="button" class="post-0" data-post-grade="0" title="0 = Abolished / Densification resolved">0</button>
+            <button type="button" class="post-1" data-post-grade="1" title="1 = Minimal pain / Slight restriction">1</button>
+            <button type="button" class="post-2" data-post-grade="2" title="2 = Moderate pain">2</button>
+            <button type="button" class="post-2plus" data-post-grade="2+" title="2+ = Marked pain">2+</button>
+            <button type="button" class="post-3" data-post-grade="3" title="3 = Severe pain / Persistent">3</button>
+            <span class="pk-sep"></span>
+            <button type="button" style="color:var(--rust); font-size:13px;" data-act="clear" title="Clear post grade">⌫</button>
+        </div>
+    `;
+    document.body.appendChild(recheckPicker);
+    let pickedRecheckBtn = null;
+
+    function closeRecheckPicker() {
+        if (pickedRecheckBtn) pickedRecheckBtn.classList.remove('cur-picked');
+        pickedRecheckBtn = null;
+        recheckPicker.classList.remove('open');
+    }
+    window.closeFmRecheckPicker = closeRecheckPicker;
+
+    function openRecheckPicker(btn) {
+        if (pickedRecheckBtn) pickedRecheckBtn.classList.remove('cur-picked');
+        pickedRecheckBtn = btn;
+        btn.classList.add('cur-picked');
+        const curGrade = btn.getAttribute('data-post-grade') || '';
+        recheckPicker.querySelectorAll('[data-post-grade]').forEach(b => {
+            b.classList.toggle('cur', b.getAttribute('data-post-grade') === curGrade);
+        });
+        recheckPicker.classList.add('open');
+        const r = btn.getBoundingClientRect(), pw = recheckPicker.offsetWidth || 230, ph = recheckPicker.offsetHeight || 42;
+        let top = r.bottom + 4;
+        if (top + ph > window.innerHeight && r.top - ph - 4 > 0) top = r.top - ph - 4;
+        let left = r.left + r.width / 2 - pw / 2;
+        left = Math.max(8, Math.min(left, window.innerWidth - pw - 8));
+        recheckPicker.style.top = top + 'px';
+        recheckPicker.style.left = left + 'px';
+    }
+
+    recheckPicker.addEventListener('click', function(e) {
+        const b = e.target.closest('button');
+        if (!b || !pickedRecheckBtn) return;
+        const btn = pickedRecheckBtn;
+        if (b.hasAttribute('data-post-grade')) {
+            const g = b.getAttribute('data-post-grade');
+            btn.setAttribute('data-post-grade', g);
+            btn.className = `post-btn post-${g === '2+' ? '2plus' : g}`;
+            btn.textContent = g;
+            btn.title = `Post: ${g} (Pre: ${btn.getAttribute('data-pre-grade')})`;
+        } else if (b.getAttribute('data-act') === 'clear') {
+            btn.removeAttribute('data-post-grade');
+            btn.className = 'post-btn post-unrated';
+            btn.textContent = '?';
+            btn.title = `Pre: ${btn.getAttribute('data-pre-grade')}. Tap to grade post-treatment.`;
+        }
+        closeRecheckPicker();
+    });
+
+    document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.post-btn');
+        if (btn) {
+            if (btn === pickedRecheckBtn) closeRecheckPicker();
+            else openRecheckPicker(btn);
+            return;
+        }
+        if (pickedRecheckBtn && !recheckPicker.contains(e.target)) closeRecheckPicker();
+    });
+    document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeRecheckPicker(); });
+    window.addEventListener('resize', closeRecheckPicker);
+
+    function syncPalpatoryRecheck() {
+        const table = document.getElementById('fm-recheck-table');
+        const container = document.getElementById('fm-recheck-container');
+        const emptyMsg = document.getElementById('fm-recheck-empty');
+        const countSpan = document.getElementById('fm-recheck-count');
+        if (!table) return;
+
+        // Remember existing post-grades: Map of `${seg}_${side}_${plane}` -> postGrade
+        const existingPostGrades = new Map();
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const seg = tr.getAttribute('data-seg');
+            tr.querySelectorAll('.post-btn[data-post-grade]').forEach(btn => {
+                const g = btn.getAttribute('data-post-grade');
+                if (g) {
+                    existingPostGrades.set(`${seg}_${btn.dataset.side}_${btn.dataset.plane}`, g);
+                }
+            });
+        });
+
+        // Query all treated points from today's session in Card 3
+        const treatedCells = Array.from(document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell[data-treated="true"]'));
+        
+        if (treatedCells.length === 0) {
+            if (container) container.style.display = 'none';
+            if (emptyMsg) emptyMsg.style.display = 'block';
+            if (countSpan) countSpan.textContent = '0 points treated';
+            return;
+        }
+
+        if (container) container.style.display = 'block';
+        if (emptyMsg) emptyMsg.style.display = 'none';
+
+        // Collect segments and lines
+        const segMap = new Map();
+        const colMap = new Map();
+
+        treatedCells.forEach(cell => {
+            const trPv = cell.closest('tr');
+            const segInput = trPv ? trPv.querySelector('.pv-seg-name') : null;
+            const seg = (segInput && segInput.value ? segInput.value.trim() : (trPv.getAttribute('data-seg') || '—'));
+            const segId = trPv.getAttribute('data-seg-id');
+            const side = cell.dataset.side;
+            const plane = cell.dataset.plane;
+            const kind = cell.dataset.kind;
+            const code = cell.dataset.code || (Object.keys(PV_COLUMNS_DEFS || {}).find(k => PV_COLUMNS_DEFS[k].plane === plane && PV_COLUMNS_DEFS[k].kind === kind)) || plane;
+            const preGrade = cell.getAttribute('data-grade') || '';
+            const key = `${side}_${plane}`;
+
+            if (!colMap.has(key)) {
+                colMap.set(key, { side, plane, code, kind });
+            }
+            if (!segMap.has(seg)) {
+                segMap.set(seg, { seg, segId, points: new Map() });
+            }
+            segMap.get(seg).points.set(key, { preGrade, side, plane, code, kind });
+        });
+
+        if (countSpan) {
+            countSpan.textContent = `${treatedCells.length} point${treatedCells.length > 1 ? 's' : ''} treated across ${segMap.size} segment${segMap.size > 1 ? 's' : ''}`;
+        }
+
+        // Sort columns: Right first, then Left. Within side: CF first, then CC.
+        const cols = Array.from(colMap.values()).sort((a, b) => {
+            if (a.side !== b.side) return a.side === 'rt' ? -1 : 1;
+            if (a.kind !== b.kind) return a.kind === 'cf' ? -1 : 1;
+            return a.code.localeCompare(b.code);
+        });
+
+        const rtCols = cols.filter(c => c.side === 'rt');
+        const ltCols = cols.filter(c => c.side === 'lt');
+
+        // Build THEAD
+        let theadHtml = '<tr><th rowspan="3" class="sticky-col" style="width:65px; vertical-align:bottom;">Seg</th>';
+        if (rtCols.length > 0) {
+            theadHtml += `<th colspan="${rtCols.length * 2}" class="pv-col-rt">RIGHT</th>`;
+        }
+        if (ltCols.length > 0) {
+            theadHtml += `<th colspan="${ltCols.length * 2}" class="pv-col-lt div-left">LEFT</th>`;
+        }
+        theadHtml += '</tr>';
+
+        // Row 2: Point Line Headers (Spans 2 columns: Pre & Post)
+        theadHtml += '<tr>';
+        cols.forEach((c, idx) => {
+            const isFirstLt = (c.side === 'lt' && (idx === 0 || cols[idx - 1].side !== 'lt'));
+            const divCls = isFirstLt ? 'div-left' : (idx > 0 && cols[idx - 1].side === c.side ? 'point-sep' : '');
+            const kindCls = c.kind === 'cf' ? 'pv-cf-head' : 'pv-cc-head';
+            const kindBadge = `<span style="font-size:8px; opacity:0.8;">${c.kind === 'cf' ? 'CF' : 'CC'}</span>`;
+            theadHtml += `<th colspan="2" class="${kindCls} ${divCls}" style="width:84px;">${c.code} ${kindBadge}</th>`;
+        });
+        theadHtml += '</tr>';
+
+        // Row 3: Pre vs Post Sub-headers
+        theadHtml += '<tr>';
+        cols.forEach((c, idx) => {
+            const isFirstLt = (c.side === 'lt' && (idx === 0 || cols[idx - 1].side !== 'lt'));
+            const divCls = isFirstLt ? 'div-left' : (idx > 0 && cols[idx - 1].side === c.side ? 'point-sep' : '');
+            theadHtml += `<th class="sub-pre ${divCls}" title="Pre-treatment grade (Read-only)">Pre</th>`;
+            theadHtml += `<th class="sub-post" title="Post-treatment grade (Tap to set)">Post</th>`;
+        });
+        theadHtml += '</tr>';
+
+        // Build TBODY
+        let tbodyHtml = '';
+        segMap.forEach(segObj => {
+            tbodyHtml += `<tr data-seg="${segObj.seg}" data-seg-id="${segObj.segId}">`;
+            tbodyHtml += `<td class="sticky-col" style="font-weight:700; color:var(--clinical); font-size:12px;">${segObj.seg}</td>`;
+
+            cols.forEach((c, idx) => {
+                const key = `${c.side}_${c.plane}`;
+                const isFirstLt = (c.side === 'lt' && (idx === 0 || cols[idx - 1].side !== 'lt'));
+                const divCls = isFirstLt ? 'div-left' : (idx > 0 && cols[idx - 1].side === c.side ? 'point-sep' : '');
+                const pt = segObj.points.get(key);
+
+                if (pt) {
+                    const postGrade = existingPostGrades.get(`${segObj.seg}_${key}`) || '';
+                    const preBadgeCls = pt.preGrade === '2+' ? 'pre-2plus' : `pre-${pt.preGrade}`;
+                    const postBtnCls = postGrade ? (postGrade === '2+' ? 'post-2plus' : `post-${postGrade}`) : 'post-unrated';
+                    const postLabel = postGrade ? postGrade : '?';
+
+                    tbodyHtml += `<td class="col-pre-bg ${divCls}"><span class="pre-badge ${preBadgeCls}" title="Pre-treatment: ${pt.preGrade}">${pt.preGrade}</span></td>`;
+                    tbodyHtml += `<td><button type="button" class="post-btn ${postBtnCls}" data-post-grade="${postGrade}" data-pre-grade="${pt.preGrade}" data-seg="${segObj.seg}" data-side="${c.side}" data-plane="${c.plane}" data-code="${c.code}" title="${postGrade ? `Post: ${postGrade} (Pre: ${pt.preGrade})` : `Pre: ${pt.preGrade}. Tap to grade post-treatment.`}">${postLabel}</button></td>`;
+                } else {
+                    // Not treated on this segment
+                    tbodyHtml += `<td class="col-pre-bg ${divCls}"><span style="color:var(--ink-faint);">—</span></td>`;
+                    tbodyHtml += `<td><span style="color:var(--ink-faint);">—</span></td>`;
+                }
+            });
+
+            tbodyHtml += '</tr>';
+        });
+
+        table.querySelector('thead').innerHTML = theadHtml;
+        table.querySelector('tbody').innerHTML = tbodyHtml;
+    }
+    window.syncPalpatoryRecheck = syncPalpatoryRecheck;
+
+    window.getPalpatoryRecheckData = function() {
+        const table = document.getElementById('fm-recheck-table');
+        if (!table) return [];
+        const res = [];
+        table.querySelectorAll('tbody tr').forEach(tr => {
+            const seg = tr.getAttribute('data-seg');
+            const segId = tr.getAttribute('data-seg-id');
+            tr.querySelectorAll('.post-btn[data-pre-grade]').forEach(btn => {
+                res.push({
+                    segId: segId,
+                    segment: seg,
+                    side: btn.dataset.side,
+                    plane: btn.dataset.plane,
+                    code: btn.dataset.code,
+                    preGrade: btn.getAttribute('data-pre-grade'),
+                    postGrade: btn.getAttribute('data-post-grade') || null
+                });
+            });
+        });
+        return res;
+    };
+
+    window.addFmAftercareNote = function(text) {
+        const area = document.getElementById('fm-rx-notes');
+        if (!area) return;
+        area.value = area.value ? area.value + ' ' + text : text;
+        area.focus();
+    };
 
     // Sync input changes across the 3 tables via event delegation
     document.addEventListener('input', function(e) {
@@ -9402,16 +9787,18 @@ setupSegmented('patient-progress');
         const moveCard = document.getElementById('fm-move-table') ? document.getElementById('fm-move-table').closest('.card') : null;
         const moVe = Array.from(document.querySelectorAll('#fm-move-table tbody tr')).map(tr => {
             const pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
-            const mv = tr.querySelector('.move-movement').textContent;
+            const mvInput = tr.querySelector('.move-movement input');
+            const mv = mvInput ? mvInput.value.trim() : (tr.querySelector('.move-movement') ? tr.querySelector('.move-movement').textContent.trim() : '');
             return { segId: tr.getAttribute('data-seg-id'), key: tr.getAttribute('data-key') || tr.getAttribute('data-seg-id'),
                      segment: tr.getAttribute('data-seg') || '', side: tr.getAttribute('data-side') || '',
                      movement: mv === '—' ? '' : mv,
                      pre: pre === '' || pre === null ? null : Number(pre), post: tr.dataset.post === undefined || tr.dataset.post === '' ? null : Number(tr.dataset.post) };
         });
+        const palpatoryRecheck = typeof getPalpatoryRecheckData === 'function' ? getPalpatoryRecheckData() : [];
         return {
-            segments, history, pv, hypothesis, moVe,
+            segments, history, pv, hypothesis, moVe, palpatoryRecheck,
             sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
-            treatmentNotes: moveCard ? val(moveCard.querySelector('textarea')) : ''
+            treatmentNotes: val(document.getElementById('fm-rx-notes')) || (moveCard ? val(moveCard.querySelector('textarea')) : '')
         };
     };
     // Prototype bridge to session-note.html: the graded points (compact list), mirrored to localStorage.

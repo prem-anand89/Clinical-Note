@@ -111,7 +111,9 @@ try {
     await moVeGe.locator('.mv-b[data-dir="-1"]').click(); // 4 -> 3
     await page1.waitForTimeout(100);
     ok('Task 3: Post-VRS adjusted to 3', (await moVeGe.locator('.mv-val').textContent()) === '3');
-    ok('Task 3: Delta computed as -2', (await moVeGe.locator('.move-delta').textContent()).includes('-2'));
+    const delta1 = await moVeGe.locator('.move-delta').textContent();
+    const dataDelta1 = await moVeGe.locator('.move-delta').getAttribute('data-delta');
+    ok('Task 3: Outcome formatted on pain scale (↓ 2 pts) with data-delta -2', delta1.includes('2 pts') && dataDelta1 === '-2', { delta1, dataDelta1 });
 
     // Add duplicate GE rt row with VRS 8, movement 'Squat'
     await page1.evaluate(() => {
@@ -137,7 +139,8 @@ try {
     ok('Task 3: Post-VRS preserved across sync (3)', postVrsPreserved === '3', postVrsPreserved);
 
     const deltaRecomputed = await moVeGe.locator('.move-delta').textContent();
-    ok('Task 3: Delta recomputed with preserved post-VRS (-5)', deltaRecomputed.includes('-5'), deltaRecomputed);
+    const dataDelta2 = await moVeGe.locator('.move-delta').getAttribute('data-delta');
+    ok('Task 3: Delta recomputed on pain scale (↓ 5 pts) with data-delta -5', deltaRecomputed.includes('5 pts') && dataDelta2 === '-5', { deltaRecomputed, dataDelta2 });
 
     const moVeData = await page1.evaluate(() => window.getFmData().moVe);
     const geKeys = moVeData.filter(m => m.key === 'GE_rt');

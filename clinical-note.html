@@ -7966,6 +7966,7 @@ setupSegmented('patient-progress');
         const c = String(s || '').replace(/[()]/g, '').trim().toLowerCase();
         return c === 'rt' ? 'R' : (c === 'lt' ? 'L' : c.toUpperCase());
     }
+    window.sideLetter = sideLetter;
     // Side filter chips show how many graded points sit on a side so findings on a hidden side are never missed.
     function updateSideBadges() {
         const counts = { rt: 0, lt: 0 };
@@ -8409,17 +8410,8 @@ setupSegmented('patient-progress');
         }
 
         // --- 3. Add to Mo/Ve Table (Today's rows only) ---
-        if (!isPrior && moveTableBody) {
-            let trMove = document.createElement('tr');
-            trMove.setAttribute('data-seg-id', uniqueId);
-            trMove.innerHTML = `
-                <td class="move-seg-name" style="font-weight:600; font-size:12px;">${segStr} · R</td>
-                <td class="move-movement" title="Painful movement from table 1" style="font-size:12px; color:var(--ink-faint);">—</td>
-                <td class="move-prevrs" data-prevrs="" style="font-size:14px; font-weight:700; text-align:center; color:var(--ink-faint);">—</td>
-                <td><div class="move-post"><button type="button" class="mv-b" data-dir="-1" aria-label="Lower post VRS">−</button><span class="mv-val">—</span><button type="button" class="mv-b" data-dir="1" aria-label="Raise post VRS">+</button></div></td>
-                <td class="move-delta" style="font-weight:700; text-align:center;">—</td>
-            `;
-            moveTableBody.appendChild(trMove);
+        if (!isPrior) {
+            syncMoveTable();
         }
     }
 
@@ -8529,11 +8521,113 @@ setupSegmented('patient-progress');
         }
     })();
 
+    // Mo/Ve post-VRS stepper. Delta shows only when both Pre and Post exist,
+    // so a missing Pre never reads as "worse".
+    function recomputeMoveDelta(tr) {
+        let pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
+        let post = tr.dataset.post;
+        let deltaCell = tr.querySelector('.move-delta');
+        if (pre === '' || pre === null || post === undefined || post === '') { deltaCell.innerHTML = '<span style="color:var(--ink-faint);">—</span>'; return; }
+        let delta = Number(post) - Number(pre);
+        if (delta < 0) deltaCell.innerHTML = `<span style="color:#2E7D32;">${delta} ▼</span>`;
+        else if (delta > 0) deltaCell.innerHTML = `<span style="color:#B3261E;">+${delta} ▲</span>`;
+        else deltaCell.innerHTML = '<span style="color:var(--ink-soft);">0 —</span>';
+    }
+
+    // Mo/Ve table sync: deduplicate by segment + side, max pre-VRS, preserve post-VRS and delta
+    function syncMoveTable() {
+        if (!moveTableBody) return;
+        const segRows = Array.from(document.querySelectorAll('#fm-seg-table tbody tr'));
+        const groups = new Map();
+        
+        segRows.forEach(tr => {
+            const id = tr.getAttribute('data-seg-id');
+            const segInput = tr.querySelector('.seg-name');
+            const seg = segInput ? segInput.value.trim().toUpperCase() : '';
+            const sideSelect = tr.querySelector('.seg-side');
+            const side = sideSelect ? sideSelect.value : 'rt';
+            const vrsInput = tr.querySelector('.seg-vrs');
+            const vrsVal = vrsInput && vrsInput.value !== '' && !isNaN(Number(vrsInput.value)) ? Number(vrsInput.value) : null;
+            const painfulInput = tr.querySelector('.seg-painful');
+            const painful = painfulInput ? painfulInput.value.trim() : '';
+            
+            const key = `${seg || '—'}_${side}`;
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    key: key,
+                    seg: seg || '—',
+                    side: side,
+                    vrsList: [],
+                    movements: [],
+                    firstId: id
+                });
+            }
+            const grp = groups.get(key);
+            if (vrsVal !== null) grp.vrsList.push(vrsVal);
+            if (painful) grp.movements.push(painful);
+        });
+        
+        const activeKeys = new Set(groups.keys());
+        
+        // Remove rows whose key is no longer in segment table
+        Array.from(moveTableBody.querySelectorAll('tr')).forEach(tr => {
+            const k = tr.getAttribute('data-key');
+            if (!k || !activeKeys.has(k)) {
+                tr.remove();
+            }
+        });
+        
+        // Update or insert rows
+        groups.forEach((grp, key) => {
+            let trMove = moveTableBody.querySelector(`tr[data-key="${key}"]`);
+            const maxVrs = grp.vrsList.length > 0 ? Math.max.apply(null, grp.vrsList) : null;
+            const movStr = Array.from(new Set(grp.movements.filter(Boolean))).join(', ');
+            const sLetter = typeof sideLetter === 'function' ? sideLetter(grp.side) : (window.sideLetter ? window.sideLetter(grp.side) : (grp.side === 'rt' ? 'R' : (grp.side === 'lt' ? 'L' : grp.side)));
+            const label = `${grp.seg} · ${sLetter}`;
+            
+            if (trMove) {
+                const nameTd = trMove.querySelector('.move-seg-name');
+                if (nameTd && nameTd.textContent !== label) nameTd.textContent = label;
+                
+                const movTd = trMove.querySelector('.move-movement');
+                if (movTd) {
+                    movTd.textContent = movStr || '—';
+                    movTd.style.color = movStr ? 'var(--ink)' : 'var(--ink-faint)';
+                }
+                
+                const preTd = trMove.querySelector('.move-prevrs');
+                if (preTd) {
+                    const prevAttr = maxVrs === null ? '' : String(maxVrs);
+                    preTd.textContent = maxVrs === null ? '—' : String(maxVrs);
+                    preTd.setAttribute('data-prevrs', prevAttr);
+                    preTd.style.color = maxVrs === null ? 'var(--ink-faint)' : 'var(--ink)';
+                }
+                
+                trMove.setAttribute('data-seg', grp.seg);
+                trMove.setAttribute('data-side', grp.side);
+                recomputeMoveDelta(trMove);
+            } else {
+                trMove = document.createElement('tr');
+                trMove.setAttribute('data-key', key);
+                trMove.setAttribute('data-seg-id', grp.firstId);
+                trMove.setAttribute('data-seg', grp.seg);
+                trMove.setAttribute('data-side', grp.side);
+                trMove.innerHTML = `
+                    <td class="move-seg-name" style="font-weight:600; font-size:12px;">${label}</td>
+                    <td class="move-movement" title="Painful movement from table 1" style="font-size:12px; color:${movStr ? 'var(--ink)' : 'var(--ink-faint)'};">${movStr || '—'}</td>
+                    <td class="move-prevrs" data-prevrs="${maxVrs === null ? '' : maxVrs}" style="font-size:14px; font-weight:700; text-align:center; color:${maxVrs === null ? 'var(--ink-faint)' : 'var(--ink)'};">${maxVrs === null ? '—' : maxVrs}</td>
+                    <td><div class="move-post"><button type="button" class="mv-b" data-dir="-1" aria-label="Lower post VRS">−</button><span class="mv-val">—</span><button type="button" class="mv-b" data-dir="1" aria-label="Raise post VRS">+</button></div></td>
+                    <td class="move-delta" style="font-weight:700; text-align:center;">—</td>
+                `;
+                moveTableBody.appendChild(trMove);
+            }
+        });
+    }
+    window.syncFmMoveTable = syncMoveTable;
+
     // Sync input changes across the 3 tables via event delegation
     document.addEventListener('input', function(e) {
         if (e.target.matches('.pv-seg-name')) {
-            // Seg stays editable in the PV grid; push the change to table 1, whose
-            // own input handler then updates Mo/Ve (and adopts an auto-filled row).
             const id = e.target.closest('tr').getAttribute('data-seg-id');
             const segName = document.querySelector(`#fm-seg-table tr[data-seg-id="${id}"] .seg-name`);
             if (segName && segName.value !== e.target.value) {
@@ -8549,15 +8643,12 @@ setupSegmented('patient-progress');
         if (!id) return;
         
         let name = tr.querySelector('.seg-name').value;
-        let side = tr.querySelector('.seg-side').value;
         // VRS is a 0-10 scale; clamp typed values, blank means "not rated".
         let vrsInput = tr.querySelector('.seg-vrs');
-        if (vrsInput.value !== '') {
+        if (vrsInput && vrsInput.value !== '') {
             let n = Math.max(0, Math.min(10, Math.round(Number(vrsInput.value))));
             if (String(n) !== vrsInput.value) vrsInput.value = isNaN(n) ? '' : n;
         }
-        let vrs = vrsInput.value;
-        let painful = tr.querySelector('.seg-painful') ? tr.querySelector('.seg-painful').value.trim() : '';
         
         // Update PV Table
         let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
@@ -8567,22 +8658,12 @@ setupSegmented('patient-progress');
         }
         
         // Update Mo/Ve Table
-        let moveRow = document.querySelector(`#fm-move-table tr[data-seg-id="${id}"]`);
-        if (moveRow) {
-            let moveNameLabel = moveRow.querySelector('.move-seg-name');
-            if (moveNameLabel) moveNameLabel.textContent = `${name} (${side})`;
-            
-            let movePreLabel = moveRow.querySelector('.move-prevrs');
-            if (movePreLabel) {
-                movePreLabel.textContent = vrs === '' ? '—' : vrs;
-                movePreLabel.setAttribute('data-prevrs', vrs);
-            }
-            let moveMovement = moveRow.querySelector('.move-movement');
-            if (moveMovement) {
-                moveMovement.textContent = painful || '—';
-                moveMovement.style.color = painful ? 'var(--ink)' : 'var(--ink-faint)';
-            }
-            recomputeMoveDelta(moveRow);
+        syncMoveTable();
+    });
+
+    document.addEventListener('change', function(e) {
+        if (e.target.matches('.seg-side')) {
+            syncMoveTable();
         }
     });
 
@@ -8599,8 +8680,6 @@ setupSegmented('patient-progress');
                 (moveRowCheck && moveRowCheck.dataset.post !== undefined);
             let name = tr.querySelector('.seg-name').value || 'this segment';
             if (hasData && !window.confirm(`Delete ${name}? Its palpation findings and Mo/Ve entry will be removed too.`)) return;
-            // An auto-filled row the therapist deletes must not reappear on the next
-            // Chief Complaint change (unless that source now points at another segment).
             if (tr.getAttribute('data-fm-source')) {
                 window.__fmDismissedSources = window.__fmDismissedSources || {};
                 window.__fmDismissedSources[tr.getAttribute('data-fm-source')] = tr.querySelector('.seg-name').value;
@@ -8609,26 +8688,12 @@ setupSegmented('patient-progress');
             tr.remove();
             let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
             if (pvRow) pvRow.remove();
-            let moveRow = document.querySelector(`#fm-move-table tr[data-seg-id="${id}"]`);
-            if (moveRow) moveRow.remove();
+            syncMoveTable();
             
-            // Lives in the PV-grid script's scope; reach it through window.
             if (window.updateDensitySummary) window.updateDensitySummary();
         }
     });
 
-    // Mo/Ve post-VRS stepper. Delta shows only when both Pre and Post exist,
-    // so a missing Pre never reads as "worse".
-    function recomputeMoveDelta(tr) {
-        let pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
-        let post = tr.dataset.post;
-        let deltaCell = tr.querySelector('.move-delta');
-        if (pre === '' || pre === null || post === undefined || post === '') { deltaCell.innerHTML = '<span style="color:var(--ink-faint);">—</span>'; return; }
-        let delta = Number(post) - Number(pre);
-        if (delta < 0) deltaCell.innerHTML = `<span style="color:#2E7D32;">${delta} ▼</span>`;
-        else if (delta > 0) deltaCell.innerHTML = `<span style="color:#B3261E;">+${delta} ▲</span>`;
-        else deltaCell.innerHTML = '<span style="color:var(--ink-soft);">0 —</span>';
-    }
     document.addEventListener('click', function(e) {
         let btn = e.target.closest('#fm-move-table .mv-b');
         if (!btn) return;
@@ -8858,7 +8923,9 @@ setupSegmented('patient-progress');
         const moVe = Array.from(document.querySelectorAll('#fm-move-table tbody tr')).map(tr => {
             const pre = tr.querySelector('.move-prevrs').getAttribute('data-prevrs');
             const mv = tr.querySelector('.move-movement').textContent;
-            return { segId: tr.getAttribute('data-seg-id'), movement: mv === '—' ? '' : mv,
+            return { segId: tr.getAttribute('data-seg-id'), key: tr.getAttribute('data-key') || tr.getAttribute('data-seg-id'),
+                     segment: tr.getAttribute('data-seg') || '', side: tr.getAttribute('data-side') || '',
+                     movement: mv === '—' ? '' : mv,
                      pre: pre === '' || pre === null ? null : Number(pre), post: tr.dataset.post === undefined || tr.dataset.post === '' ? null : Number(tr.dataset.post) };
         });
         return {

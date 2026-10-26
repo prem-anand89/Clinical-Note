@@ -435,4 +435,11 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Tap-to-add action:** Tapping the suggestion triggers sequence creation from findings without writing into the Detailed Reasoning textarea or auto-populating arbitrary hypothesis text.
 - **Dynamic state:** Once steps are added, the suggestion cleanly transitions into the derived diagonal/sequence (or "Mixed / Custom Sequence"). When steps are deleted, the suggestion reappears if patterns are present.
 
+## Task 3: Mo/Ve table deduplication & state preservation
+- **Deduplication by segment and side:** Multiple rows in the segment table for the same segment code and side (e.g., two GE R rows) map to a single Mo/Ve row (`GE · R`).
+- **Pre-VRS aggregation:** When duplicate rows exist, the Mo/Ve row displays the highest pre-VRS rating among duplicates. Distinct painful movements from duplicates are combined.
+- **Preservation across syncs:** Reconciling the Mo/Ve table looks up existing rows by `data-key` (`${seg}_${side}`), preserving existing therapist adjustments to post-VRS (`data-post`) and recomputing delta rather than clobbering state.
+- **Data export:** `getFmData().moVe` includes `key`, `segment`, and `side` without duplicate keys.
+
+
 

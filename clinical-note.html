@@ -576,7 +576,7 @@
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
   .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
   
-  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; background:#fff; z-index:2; border-right:2px solid var(--line); }
+  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
   .pv-t th.pv-date-col, .pv-t td.pv-date-col { left:0 !important; width:60px; min-width:60px; max-width:60px; }
   .pv-t th.pv-seg-col, .pv-t td.pv-seg-col { left:60px !important; width:60px; min-width:60px; max-width:60px; }
   .pv-t tbody tr.session-sep td { border-top: 2.5px solid #cbd5e1 !important; }
@@ -8834,6 +8834,7 @@ setupSegmented('patient-progress');
     function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+        if (dateStr === 'today') dateStr = today;
         const isPrior = !!(dateStr && dateStr !== today);
         
         // --- 1. Add to Segment Assessment (Today's rows only) ---
@@ -9117,6 +9118,7 @@ setupSegmented('patient-progress');
                         if (window.updatePvTableGrouping) window.updatePvTableGrouping();
                         if (window.updatePvVisitDropdown) window.updatePvVisitDropdown();
                         if (window.updateDensitySummary) window.updateDensitySummary();
+                        if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
                     }
                 }
             });
@@ -9556,6 +9558,7 @@ setupSegmented('patient-progress');
             syncMoveTable();
             
             if (window.updateDensitySummary) window.updateDensitySummary();
+            if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
         }
     });
 
@@ -10251,6 +10254,7 @@ window.openAdvancedModule = function(key) {
     if (window.routePrimaryComplaintToFm) window.routePrimaryComplaintToFm();
     if (window.syncFmHistory) window.syncFmHistory();
     if (window.applySmartPvSideView) window.applySmartPvSideView();
+    if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
   }
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));

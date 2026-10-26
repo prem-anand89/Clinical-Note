@@ -613,6 +613,8 @@
   .pv-cell.grade-3 { background:#FEE2E2; color:#991B1B; }
   .pv-cell.grade-3plus { background:#FECACA; color:#7F1D1D; font-weight:700; }
   
+  .pv-cell.pv-cell-prior { opacity:0.6 !important; cursor:default !important; pointer-events:none !important; }
+  .fm-prior-row { background:rgba(0,0,0,0.012); }
   .pv-cell { position:relative; }
   /* Treated = small corner tick; the grade number stays readable */
   .pv-cell[data-treated="true"]::after { content:'✓'; position:absolute; top:1px; right:3px; color:var(--clinical); font-size:10px; line-height:1; font-weight:800; }
@@ -7948,7 +7950,7 @@ setupSegmented('patient-progress');
         closePicker();
     });
     document.addEventListener('click', function(e) {
-        const cell = e.target.closest('.pv-cell');
+        const cell = e.target.closest('.pv-cell:not(.pv-cell-prior)');
         if (cell) { if (cell === pickedCell) closePicker(); else openPicker(cell); return; }
         if (pickedCell && !picker.contains(e.target)) closePicker();
     });
@@ -7965,7 +7967,7 @@ setupSegmented('patient-progress');
     // Side filter chips show how many graded points sit on a side so findings on a hidden side are never missed.
     function updateSideBadges() {
         const counts = { rt: 0, lt: 0 };
-        document.querySelectorAll('#fm-pv-table .pv-cell[data-grade]').forEach(c => { if (c.getAttribute('data-grade') && counts[c.dataset.side] !== undefined) counts[c.dataset.side]++; });
+        document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell[data-grade]').forEach(c => { if (c.getAttribute('data-grade') && counts[c.dataset.side] !== undefined) counts[c.dataset.side]++; });
         [['rt', 'R'], ['lt', 'L']].forEach(([k, l]) => {
             const chip = document.querySelector('#pv-side-toggle [data-pv-side="' + k + '"]');
             if (chip) chip.textContent = counts[k] ? l + ' · ' + counts[k] : l;
@@ -7973,7 +7975,7 @@ setupSegmented('patient-progress');
     }
     function updateDensitySummary() {
         updateSideBadges();
-        const cells = document.querySelectorAll('#fm-pv-table .pv-cell');
+        const cells = document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell');
         
         let highestIndex = 0;
         let findings = [];
@@ -8286,7 +8288,12 @@ setupSegmented('patient-progress');
                     if (!td) {
                         td = document.createElement('td');
                         td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
-                        td.innerHTML = `<button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button>`;
+                        const isPrior = tr.classList.contains('fm-prior-row');
+                        if (isPrior) {
+                            td.innerHTML = `<button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button>`;
+                        } else {
+                            td.innerHTML = `<button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button>`;
+                        }
                     } else {
                         td.className = `pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}`;
                     }
@@ -8334,14 +8341,16 @@ setupSegmented('patient-progress');
 
     function addFmSegment(dateStr, segStr) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
+        const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+        const isPrior = !!(dateStr && dateStr !== today);
         
-        // --- 1. Add to Segment Assessment ---
-        if (segTableBody) {
+        // --- 1. Add to Segment Assessment (Today's rows only) ---
+        if (!isPrior && segTableBody) {
             let trSeg = document.createElement('tr');
             trSeg.setAttribute('data-seg-id', uniqueId);
             trSeg.innerHTML = `
                 <td><input type="text" value="${segStr}" class="text-input seg-name" list="fm-seg-codes" placeholder="e.g. GE" style="width:100%; font-size:12px; padding:4px;"></td>
-                <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">rt</option><option value="lt">lt</option><option value="bil">bil</option><option value="N/A">N/A</option></select></td>
+                <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">R</option><option value="lt">L</option><option value="bil">Bil</option><option value="N/A">N/A</option></select></td>
                 <td><input type="text" class="text-input" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><select class="select-input" style="padding:4px; font-size:12px;"><option>N</option><option>Y</option></select></td>
                 <td><input type="number" class="text-input seg-vrs" min="0" max="10" inputmode="numeric" placeholder="0–10" style="width:100%; font-size:12px; padding:4px;"></td>
@@ -8355,7 +8364,11 @@ setupSegmented('patient-progress');
         if (pvTableBody) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
-            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);"></td>`;
+            if (isPrior) {
+                trPv.classList.add('fm-prior-row');
+                trPv.setAttribute('data-prior', 'true');
+            }
+            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior visit</div>' : ''}</td>`;
             htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
             
             const cols = getActivePvColumns(currentPvLayout);
@@ -8371,19 +8384,23 @@ setupSegmented('patient-progress');
 
             PV_SIDES.forEach((side, si) => {
                 fullCols.forEach((c, ci) => {
-                    htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
+                    if (isPrior) {
+                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell pv-cell-prior" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" data-prior="true" tabindex="-1" aria-label="${c.code} ${side} (Prior visit)" style="opacity:0.65; cursor:default; pointer-events:none;"></button></td>`;
+                    } else {
+                        htmlPv += `<td class="pv-col-${side} ${c.kind === 'cf' ? 'pv-col-cf' : 'pv-col-cc'} ${pvColClass(si, ci, c)}"><button type="button" class="pv-cell" data-grade="" data-treated="false" data-plane="${c.plane}" data-kind="${c.kind}" data-side="${side}" aria-label="${c.code} ${side}"></button></td>`;
+                    }
                 });
             });
             trPv.innerHTML = htmlPv;
             pvTableBody.appendChild(trPv);
         }
 
-        // --- 3. Add to Mo/Ve Table ---
-        if (moveTableBody) {
+        // --- 3. Add to Mo/Ve Table (Today's rows only) ---
+        if (!isPrior && moveTableBody) {
             let trMove = document.createElement('tr');
             trMove.setAttribute('data-seg-id', uniqueId);
             trMove.innerHTML = `
-                <td class="move-seg-name" style="font-weight:600; font-size:12px;">${segStr} (rt)</td>
+                <td class="move-seg-name" style="font-weight:600; font-size:12px;">${segStr} · R</td>
                 <td class="move-movement" title="Painful movement from table 1" style="font-size:12px; color:var(--ink-faint);">—</td>
                 <td class="move-prevrs" data-prevrs="" style="font-size:14px; font-weight:700; text-align:center; color:var(--ink-faint);">—</td>
                 <td><div class="move-post"><button type="button" class="mv-b" data-dir="-1" aria-label="Lower post VRS">−</button><span class="mv-val">—</span><button type="button" class="mv-b" data-dir="1" aria-label="Raise post VRS">+</button></div></td>
@@ -8611,9 +8628,15 @@ setupSegmented('patient-progress');
         recomputeMoveDelta(tr);
     });
 
-    // Inject Initial Mocks
-    addFmSegment("14/09/23", "GE");
-    addFmSegment("14/09/23", "HU");
+    // Inject Initial Mocks only when ?demo=fm-history is in the URL or window.FM_DEMO_HISTORY = true
+    const isDemoHistory = (typeof window !== 'undefined' && (
+        window.FM_DEMO_HISTORY === true ||
+        (typeof location !== 'undefined' && new URLSearchParams(location.search).get('demo') === 'fm-history')
+    ));
+    if (isDemoHistory) {
+        addFmSegment("14/09/23", "GE");
+        addFmSegment("14/09/23", "HU");
+    }
 
 
 
@@ -8693,7 +8716,7 @@ setupSegmented('patient-progress');
         const fromFindings = document.getElementById('fm-seq-from-findings');
         if (fromFindings) fromFindings.addEventListener('click', function() {
             const order = ['', '1', '2', '2+', '3', '3+'];
-            const graded = (window.getFmData ? window.getFmData().pv : []).filter(c => order.indexOf(c.grade) >= 2);
+            const graded = (window.getFmData ? window.getFmData().pv : []).filter(c => !c.isPrior && order.indexOf(c.grade) >= 2);
             if (!graded.length) { window.alert('No findings graded 2 or higher yet.'); return; }
             const top = Math.max.apply(null, graded.map(c => order.indexOf(c.grade)));
             const existing = new Set(Array.from(seqBuilder.querySelectorAll('.seq-step')).map(st => Array.from(st.querySelectorAll('select')).map(x => x.value).join('|')));
@@ -8788,7 +8811,8 @@ setupSegmented('patient-progress');
         }));
         const pv = Array.from(document.querySelectorAll('#fm-pv-table .pv-cell')).filter(c => c.getAttribute('data-grade')).map(c => ({
             segId: c.closest('tr').getAttribute('data-seg-id'), segment: val(c.closest('tr').querySelector('.pv-seg-name')),
-            side: c.dataset.side, plane: c.dataset.plane, kind: c.dataset.kind, grade: c.getAttribute('data-grade'), treated: c.getAttribute('data-treated') === 'true'
+            side: c.dataset.side, plane: c.dataset.plane, kind: c.dataset.kind, grade: c.getAttribute('data-grade'), treated: c.getAttribute('data-treated') === 'true',
+            isPrior: c.closest('tr').classList.contains('fm-prior-row')
         }));
         const seqCard = document.getElementById('fm-seq-builder') ? document.getElementById('fm-seq-builder').closest('.card') : null;
         const hypothesis = seqCard ? {
@@ -8813,7 +8837,7 @@ setupSegmented('patient-progress');
     // Prototype bridge to session-note.html: the graded points (compact list), mirrored to localStorage.
     function persistFmPoints(){
       try {
-        var pts = window.getFmData().pv.map(function(c){ return { segment: c.segment, side: c.side, plane: c.plane, kind: c.kind, grade: c.grade }; });
+        var pts = window.getFmData().pv.filter(function(c){ return !c.isPrior; }).map(function(c){ return { segment: c.segment, side: c.side, plane: c.plane, kind: c.kind, grade: c.grade }; });
         localStorage.setItem('cn.fm', JSON.stringify(pts));
       } catch(e) {}
     }

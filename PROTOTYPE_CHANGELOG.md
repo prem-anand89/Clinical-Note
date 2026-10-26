@@ -424,3 +424,9 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Display:** density and finding badges showed "((rt))" and raw "rt/lt"; now "R"/"L" (stored values unchanged).
 - **Hidden side:** with the default R-only view, left findings were counted but invisible. The R and L chips now show their graded-point counts ("L · 3").
 - Test: `tests/fm-density.mjs`. Open FM proposals are listed in the review reply (prior-visit rows read-only, suggestion in the derived-diagonal box, Mo/Ve duplicates, phone segment table, default view).
+
+## Task 1: Prior-visit rows read-only & mock gating
+- **Mock row gating:** `addFmSegment("14/09/23", "GE")` and `("HU")` now load only when `?demo=fm-history` is present or `window.FM_DEMO_HISTORY = true`. Initial note starts clean with zero rows.
+- **Prior-visit rows read-only:** Rows where date ≠ today are designated as prior visit rows (`.fm-prior-row`). Their PV cells receive `.pv-cell-prior` (muted opacity, pointer-events none, no picker dialog). They are excluded from density calculations, side badge counts, Mo/Ve movement tables, sequence finding suggestions, and `localStorage['cn.fm']` persistence.
+- **Data export:** `getFmData().pv` includes `isPrior: true|false` for accurate record classification.
+

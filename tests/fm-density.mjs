@@ -12,6 +12,12 @@ const errors = []; page.on('pageerror', e => errors.push(e.message));
 await page.goto('file://' + path.join(dir, '..', 'clinical-note.html'));
 await page.evaluate(() => window.openAdvancedModule('fascial-manipulation'));
 await page.waitForTimeout(400);
+await page.evaluate(() => {
+  const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+  window.addFmSegment(today, 'GE');
+  window.addFmSegment(today, 'HU');
+});
+await page.waitForTimeout(100);
 const grade = async (row, g, side) => {
   const c = page.locator('#fm-pv-table tbody tr').nth(row).locator('.pv-cell' + (side ? '[data-side="' + side + '"]' : '')).first();
   await c.scrollIntoViewIfNeeded(); await c.click(); await page.waitForTimeout(100);

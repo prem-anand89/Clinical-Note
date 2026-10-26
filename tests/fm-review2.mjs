@@ -64,7 +64,7 @@ try {
 
     // Grade GE AL and HU AL to 2
     const grade = async (rowIdx, g) => {
-        const c = page1.locator('#fm-pv-table tbody tr:not(.fm-prior-row)').nth(rowIdx).locator('.pv-cell').first();
+        const c = page1.locator('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)').nth(rowIdx).locator('.pv-cell').first();
         await c.scrollIntoViewIfNeeded();
         await c.click();
         await page1.waitForTimeout(100);

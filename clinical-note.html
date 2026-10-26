@@ -576,8 +576,25 @@
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
   .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
   
-  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
-  .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { left:60px; }
+  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); width:64px; }
+
+  /* Session section banner rows in PV grid */
+  .pv-t tr.pv-session-banner-row td {
+    padding: 7px 12px !important;
+    height: auto !important;
+    text-align: left !important;
+    background: #F4F5F7 !important;
+    border-top: 1px solid var(--line) !important;
+    border-bottom: 1px solid var(--line) !important;
+  }
+  .pv-t tr.pv-session-banner-row.banner-today td {
+    background: var(--clinical-dim, #f0f7f7) !important;
+    border-left: 3px solid var(--clinical, #008080) !important;
+  }
+  .pv-t tr.pv-session-banner-row.banner-prior td {
+    background: #F8F9FA !important;
+    border-left: 3px solid var(--ink-faint, #94a3b8) !important;
+  }
 
   .pv-t .pv-cf-head { background:#EEEDFE; color:#5D539E; }
   .pv-t .pv-cc-head { background:#E1F5EE; color:#1F5F5B; }
@@ -678,7 +695,6 @@
     .del-seg-btn, .del-hist-btn { min-width:30px; min-height:30px; font-size:18px; display:inline-flex; align-items:center; justify-content:center; }
     .pv-t td { height:36px; padding:1px; }
     .pv-t th.sticky-col, .pv-t td.sticky-col { box-shadow:2px 0 5px rgba(0,0,0,.08); }
-    .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { box-shadow:3px 0 6px rgba(0,0,0,.10); }
     .pv-container { -webkit-overflow-scrolling:touch; }
     #fm-region-tabs, #pv-add-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     #fm-region-tabs::-webkit-scrollbar, #pv-add-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
@@ -701,13 +717,12 @@
     }
     #fm-seg-table tbody tr {
       display: grid !important;
-      grid-template-columns: 1.2fr 1fr auto !important;
+      grid-template-columns: 1.1fr 1fr 1.2fr 0.9fr 1.1fr auto !important;
       grid-template-areas:
-        "seg side del"
-        "dur traum vrs"
-        "pain pain pain" !important;
-      gap: 10px 10px !important;
-      padding: 14px !important;
+        "seg side dur traum vrs del"
+        "pain pain pain pain pain pain" !important;
+      gap: 8px 6px !important;
+      padding: 10px 12px !important;
       background: #fff !important;
       border: 1px solid var(--line) !important;
       border-radius: 10px !important;
@@ -739,7 +754,7 @@
       grid-area: del !important;
       align-items: flex-end !important;
       justify-content: flex-end !important;
-      padding-bottom: 2px !important;
+      padding-top: 15px !important;
     }
     #fm-seg-table td:nth-child(7) button {
       width: 32px !important;
@@ -761,25 +776,28 @@
       border-color: #FCA5A5 !important;
       color: #DC2626 !important;
     }
-    #fm-seg-table td:nth-child(1)::before { content: 'Segment'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #fm-seg-table td:nth-child(3)::before { content: 'Duration'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #fm-seg-table td:nth-child(4)::before { content: 'Trauma?'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #fm-seg-table td:nth-child(5)::before { content: 'VRS (0–10)'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
-    #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(1)::before { content: 'Seg'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(3)::before { content: 'Dur'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(4)::before { content: 'Trauma'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(5)::before { content: 'VRS'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(7)::before { content: '' !important; display: none !important; }
     #fm-seg-table td input, #fm-seg-table td select {
       width: 100% !important;
       box-sizing: border-box !important;
-      font-size: 13px !important;
-      padding: 6px 10px !important;
+      font-size: 12px !important;
+      padding: 5px 6px !important;
       border: 1px solid var(--line) !important;
       border-radius: 6px !important;
       background: #FAFAFA !important;
       color: var(--ink) !important;
-      height: 34px !important;
+      height: 32px !important;
       display: block !important;
       transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease !important;
+    }
+    #fm-seg-table td input.seg-painful {
+      padding: 5px 8px !important;
     }
     #fm-seg-table td input:focus, #fm-seg-table td select:focus {
       background: #fff !important;
@@ -2410,27 +2428,12 @@
           </div>
         </div>
 
-        <!-- Add Segment Directly to PV Grid Toolbar -->
-        <div style="padding:0 28px; margin-top:12px; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
-          <div class="chip-row" id="pv-add-region-tabs">
-            <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
-            <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
-            <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
-            <button type="button" class="chip" id="pv-add-seg-custom" title="Add custom segment row to grid">＋ Other</button>
-          </div>
-        </div>
-        <div id="pv-region-drawer" style="margin:10px 28px 0; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
-          <div id="pv-region-chips" class="chip-row" style="gap:6px;"></div>
-        </div>
-        
         <!-- Desktop Sticky Table -->
         <div class="pv-container" data-side-view="rt" data-layout-view="cf-cc" style="border-left:none; border-right:none; border-radius:0; margin-top:14px;">
           <table class="pv-t" id="fm-pv-table">
             <thead>
               <tr>
-                <th rowspan="3" class="sticky-col" style="width:60px;">Date</th>
-                <th rowspan="3" class="sticky-col" style="width:60px; left:60px;">Seg</th>
+                <th rowspan="3" class="sticky-col" style="width:64px;">Seg</th>
                 <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
                 <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
               </tr>
@@ -2441,6 +2444,20 @@
               <!-- JS populates rows -->
             </tbody>
           </table>
+        </div>
+
+        <!-- Add Segment Directly to PV Grid (Below Table) -->
+        <div id="pv-seg-picker" style="padding:12px 28px 0; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
+          <div class="chip-row" id="pv-add-region-tabs">
+            <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
+            <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
+            <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
+            <button type="button" class="chip" id="pv-add-seg-custom" title="Add custom segment row to grid">＋ Other</button>
+          </div>
+        </div>
+        <div id="pv-region-drawer" style="margin:10px 28px 0; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
+          <div id="pv-region-chips" class="chip-row" style="gap:6px;"></div>
         </div>
 
 
@@ -8129,7 +8146,7 @@ setupSegmented('patient-progress');
             
             // Map cell to row and col
             let tr = cell.closest('tr');
-            let segInput = tr.querySelector('td:nth-child(2) input');
+            let segInput = tr.querySelector('.pv-seg-name') || tr.querySelector('.sticky-col input');
             let seg = segInput ? segInput.value : 'Unknown';
             
             // Each cell carries its own plane/side/kind (see PV_COLUMNS)
@@ -8405,6 +8422,7 @@ setupSegmented('patient-progress');
         const activePlanes = new Set(cols.map(c => c.plane));
         const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
         const fullCols = cols.concat(extraCols);
+        const totalCols = 1 + fullCols.length * 2;
         const rows = document.querySelectorAll('#fm-pv-table tbody tr');
 
         function pvColClass(sideIdx, colIdx, col) {
@@ -8414,6 +8432,11 @@ setupSegmented('patient-progress');
         }
 
         rows.forEach(tr => {
+            if (tr.classList.contains('pv-session-banner-row')) {
+                const td = tr.querySelector('td');
+                if (td) td.colSpan = totalCols;
+                return;
+            }
             const cells = Array.from(tr.querySelectorAll('td:not(.sticky-col)'));
             const map = {};
             cells.forEach(td => {
@@ -8523,19 +8546,58 @@ setupSegmented('patient-progress');
 
         // --- 2. Add to PV Grid in active layout order ---
         if (pvTableBody) {
-            let trPv = document.createElement('tr');
-            trPv.setAttribute('data-seg-id', uniqueId);
-            if (isPrior) {
-                trPv.classList.add('fm-prior-row');
-                trPv.setAttribute('data-prior', 'true');
-            }
-            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior visit</div>' : ''}</td>`;
-            htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
-            
             const cols = getActivePvColumns(currentPvLayout);
             const activePlanes = new Set(cols.map(c => c.plane));
             const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
             const fullCols = cols.concat(extraCols);
+            const totalCols = 1 + fullCols.length * 2; // 1 Seg col + 10 Right + 10 Left
+
+            // Ensure session banner exists for this date/session
+            const bannerClass = isPrior ? 'banner-prior' : 'banner-today';
+            let bannerRow = pvTableBody.querySelector(`tr.pv-session-banner-row[data-session-date="${dateStr || today}"]`);
+            if (!bannerRow) {
+                bannerRow = document.createElement('tr');
+                bannerRow.className = `pv-session-banner-row ${bannerClass}`;
+                bannerRow.setAttribute('data-session-date', dateStr || today);
+                if (isPrior) {
+                    bannerRow.innerHTML = `
+                        <td colspan="${totalCols}">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ink-faint);"></span>
+                                <b style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft);">Prior Visit Session — ${dateStr}</b>
+                                <span style="font-size:10px; color:var(--ink-faint); margin-left:4px;">(Read-only historical palpation)</span>
+                            </div>
+                        </td>
+                    `;
+                } else {
+                    bannerRow.innerHTML = `
+                        <td colspan="${totalCols}">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--clinical);"></span>
+                                <b style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--clinical);">Today's Session — ${today}</b>
+                                <span style="font-size:10px; color:var(--clinical); font-weight:600; background:rgba(0,128,128,0.1); padding:2px 6px; border-radius:4px;">Active Examination</span>
+                            </div>
+                        </td>
+                    `;
+                }
+
+                // If adding prior, insert at bottom; if today, insert before first prior banner if exists
+                const firstPriorBanner = pvTableBody.querySelector('tr.pv-session-banner-row.banner-prior');
+                if (!isPrior && firstPriorBanner) {
+                    pvTableBody.insertBefore(bannerRow, firstPriorBanner);
+                } else {
+                    pvTableBody.appendChild(bannerRow);
+                }
+            }
+
+            let trPv = document.createElement('tr');
+            trPv.setAttribute('data-seg-id', uniqueId);
+            trPv.setAttribute('data-session-date', dateStr || today);
+            if (isPrior) {
+                trPv.classList.add('fm-prior-row');
+                trPv.setAttribute('data-prior', 'true');
+            }
+            let htmlPv = `<td class="sticky-col"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:12px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
 
             function pvColClass(sideIdx, colIdx, col) {
                 if (sideIdx > 0 && colIdx === 0) return 'div-left';
@@ -8553,7 +8615,17 @@ setupSegmented('patient-progress');
                 });
             });
             trPv.innerHTML = htmlPv;
-            pvTableBody.appendChild(trPv);
+
+            // Insert trPv right after the banner or after the last row of this session
+            let nextSibling = bannerRow.nextSibling;
+            while (nextSibling && !nextSibling.classList.contains('pv-session-banner-row') && nextSibling.getAttribute && nextSibling.getAttribute('data-session-date') === (dateStr || today)) {
+                nextSibling = nextSibling.nextSibling;
+            }
+            if (nextSibling) {
+                pvTableBody.insertBefore(trPv, nextSibling);
+            } else {
+                pvTableBody.appendChild(trPv);
+            }
         }
 
         // --- 3. Add to Mo/Ve Table (Today's rows only) ---
@@ -8902,7 +8974,17 @@ setupSegmented('patient-progress');
             
             tr.remove();
             let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
-            if (pvRow) pvRow.remove();
+            if (pvRow) {
+                const sDate = pvRow.getAttribute('data-session-date');
+                pvRow.remove();
+                if (sDate) {
+                    const remainingInSession = document.querySelectorAll(`#fm-pv-table tr[data-session-date="${sDate}"]:not(.pv-session-banner-row)`);
+                    if (remainingInSession.length === 0) {
+                        const banner = document.querySelector(`#fm-pv-table tr.pv-session-banner-row[data-session-date="${sDate}"]`);
+                        if (banner) banner.remove();
+                    }
+                }
+            }
             syncMoveTable();
             
             if (window.updateDensitySummary) window.updateDensitySummary();

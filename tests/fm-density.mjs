@@ -19,7 +19,7 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(100);
 const grade = async (row, g, side) => {
-  const c = page.locator('#fm-pv-table tbody tr').nth(row).locator('.pv-cell' + (side ? '[data-side="' + side + '"]' : '')).first();
+  const c = page.locator('#fm-pv-table tbody tr:not(.pv-session-banner-row)').nth(row).locator('.pv-cell' + (side ? '[data-side="' + side + '"]' : '')).first();
   await c.scrollIntoViewIfNeeded(); await c.click(); await page.waitForTimeout(100);
   await page.locator('#pv-picker button[data-grade="' + g + '"]').click();
 };
@@ -32,7 +32,7 @@ ok('two different segments on one plane form a pattern', /AL diagonal/.test(d) &
 ok('side shown as R, no double brackets', /GE R/.test(d) && !/\(\(/.test(d), d);
 
 // the same segment graded twice is not a pattern
-await page.locator('#fm-pv-table tbody tr').nth(1).locator('.pv-cell').first().click();
+await page.locator('#fm-pv-table tbody tr:not(.pv-session-banner-row)').nth(1).locator('.pv-cell').first().click();
 await page.locator('#pv-picker button[data-act="clear"]').click();
 await page.locator('#fm-region-tabs [data-region="Lower limb"]').click();
 await page.locator('#fm-region-chips .chip', { hasText: 'GE' }).first().click();

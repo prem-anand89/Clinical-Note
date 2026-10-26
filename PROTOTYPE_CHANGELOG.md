@@ -430,3 +430,9 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Prior-visit rows read-only:** Rows where date ≠ today are designated as prior visit rows (`.fm-prior-row`). Their PV cells receive `.pv-cell-prior` (muted opacity, pointer-events none, no picker dialog). They are excluded from density calculations, side badge counts, Mo/Ve movement tables, sequence finding suggestions, and `localStorage['cn.fm']` persistence.
 - **Data export:** `getFmData().pv` includes `isPrior: true|false` for accurate record classification.
 
+## Task 2: Suggestion in Auto-derived diagonal / sequence box
+- **Suggested pattern line:** When patterns exist and no sequence steps exist, `#fm-hyp-diag` displays `Suggested: <Pattern> — tap to add` (e.g. `Suggested: AL diagonal (R) — tap to add`).
+- **Tap-to-add action:** Tapping the suggestion triggers sequence creation from findings without writing into the Detailed Reasoning textarea or auto-populating arbitrary hypothesis text.
+- **Dynamic state:** Once steps are added, the suggestion cleanly transitions into the derived diagonal/sequence (or "Mixed / Custom Sequence"). When steps are deleted, the suggestion reappears if patterns are present.
+
+

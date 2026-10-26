@@ -7962,8 +7962,10 @@ setupSegmented('patient-progress');
     // 3. Smart Density & Pattern Summary
     // Show the same codes as the column headers (AM, An…), not internal plane ids (AN-ME).
     const planeCode = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
-    // Display only: stored sides stay 'rt' / 'lt'.
-    function sideLetter(s) { return s === 'rt' ? 'R' : (s === 'lt' ? 'L' : String(s || '').toUpperCase()); }
+    function sideLetter(s) {
+        const c = String(s || '').replace(/[()]/g, '').trim().toLowerCase();
+        return c === 'rt' ? 'R' : (c === 'lt' ? 'L' : c.toUpperCase());
+    }
     // Side filter chips show how many graded points sit on a side so findings on a hidden side are never missed.
     function updateSideBadges() {
         const counts = { rt: 0, lt: 0 };
@@ -8026,6 +8028,8 @@ setupSegmented('patient-progress');
         if (!summaryDiv) return;
 
         if (highestIndex === 0) {
+            window.__fmDetectedPatterns = [];
+            if (window.updateFmDiagonal) window.updateFmDiagonal();
             summaryDiv.innerHTML = "<span style='color:var(--ink-faint); font-size:12.5px;'>No palpation data entered yet. Tap cells in the grid above to record densifications. When ≥2 segments on a plane reach grade 2+, the sequence or diagonal will synthesize here.</span>";
             return;
         }
@@ -8047,22 +8051,31 @@ setupSegmented('patient-progress');
         let patternHtml = `<div style="margin-top:10px;"><div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Pattern Detected:</div>`;
         let patternsFound = false;
         let patternPills = `<div style="display:flex; flex-wrap:wrap; gap:8px;">`;
+        let detectedPatterns = [];
         for (let [p, segSet] of Object.entries(planeCounts)) {
             const count = segSet.size;
             if (count >= 2) {
                 const [pName, pSide, pKind] = p.split(' ');
                 // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
                 const term = pKind === 'cf' ? 'diagonal' : 'sequence';
+                const pCode = planeCode(pName);
+                const sLet = sideLetter(pSide);
+                detectedPatterns.push({
+                    pName, pSide, pKind, count,
+                    text: `${pCode} ${term} (${sLet})`
+                });
                 patternPills += `
                     <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-pill); font-size:12px; font-weight:600;">
                         <span style="width:7px; height:7px; border-radius:50%; background:var(--clinical);"></span>
-                        <b>${planeCode(pName)}</b> ${term} <span style="color:var(--ink-faint);">${sideLetter(pSide)}</span>
+                        <b>${pCode}</b> ${term} <span style="color:var(--ink-faint);">${sLet}</span>
                         <span style="background:var(--clinical-dim); color:var(--clinical); font-size:11px; padding:1px 7px; border-radius:10px; font-weight:700;">${count} segments</span>
                     </span>`;
                 patternsFound = true;
             }
         }
         patternPills += `</div>`;
+        window.__fmDetectedPatterns = detectedPatterns;
+        if (window.updateFmDiagonal) window.updateFmDiagonal();
         if (!patternsFound) {
             patternHtml += `<div style="color:var(--ink-faint); font-size:12px;">No clear diagonal or sequence (needs ≥2 segments graded 2 or higher on the same plane).</div>`;
         } else {
@@ -8652,9 +8665,19 @@ setupSegmented('patient-progress');
     
     function updateDiagonal() {
         if (!diagOutput) return;
-        const steps = seqBuilder.querySelectorAll('.seq-step select.plane-select');
+        const steps = seqBuilder ? seqBuilder.querySelectorAll('.seq-step select.plane-select') : [];
         if (steps.length === 0) {
-            diagOutput.textContent = "None";
+            const patterns = window.__fmDetectedPatterns || [];
+            if (patterns.length > 0) {
+                const topPat = patterns[0];
+                diagOutput.innerHTML = `<span class="fm-hyp-suggest" style="cursor:pointer; color:var(--ink-faint);" title="Tap to add to sequence">Suggested: <b style="color:var(--ink);">${topPat.text}</b> — <span style="color:var(--clinical); text-decoration:underline;">tap to add</span></span>`;
+                diagOutput.style.color = "var(--ink-faint)";
+                diagOutput.style.fontWeight = "500";
+            } else {
+                diagOutput.textContent = "None";
+                diagOutput.style.color = "var(--ink-soft)";
+                diagOutput.style.fontWeight = "400";
+            }
             return;
         }
         
@@ -8675,6 +8698,16 @@ setupSegmented('patient-progress');
             diagOutput.style.color = "var(--ink-soft)";
             diagOutput.style.fontWeight = "400";
         }
+    }
+    window.updateFmDiagonal = updateDiagonal;
+    if (diagOutput) {
+        diagOutput.addEventListener('click', function(e) {
+            const suggest = e.target.closest('.fm-hyp-suggest');
+            if (suggest) {
+                const fromFindings = document.getElementById('fm-seq-from-findings');
+                if (fromFindings) fromFindings.click();
+            }
+        });
     }
 
     function addSeqStep(preset) {
@@ -8817,7 +8850,7 @@ setupSegmented('patient-progress');
         const seqCard = document.getElementById('fm-seq-builder') ? document.getElementById('fm-seq-builder').closest('.card') : null;
         const hypothesis = seqCard ? {
             steps: Array.from(seqCard.querySelectorAll('.seq-step')).map(st => { const sel = st.querySelectorAll('select'); return { plane: val(sel[0]), segment: val(sel[1]), side: val(sel[2]) }; }),
-            derived: (document.getElementById('fm-hyp-diag') || {}).textContent || '',
+            derived: (seqCard && seqCard.querySelectorAll('.seq-step').length > 0) ? ((document.getElementById('fm-hyp-diag') || {}).textContent || '') : 'None',
             tags: Array.from(seqCard.querySelectorAll('#fm-reasoning-tags .chip.selected')).map(c => c.getAttribute('data-chip')),
             reasoning: val(seqCard.querySelector('textarea'))
         } : null;

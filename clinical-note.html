@@ -2279,9 +2279,9 @@
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Side:</span>
             <div class="chip-row" id="pv-side-toggle">
-              <button type="button" class="chip selected" data-pv-side="rt">Right (rt)</button>
-              <button type="button" class="chip" data-pv-side="lt">Left (lt)</button>
-              <button type="button" class="chip" data-pv-side="all">Both sides</button>
+              <button type="button" class="chip selected" data-pv-side="rt" title="Right side">R</button>
+              <button type="button" class="chip" data-pv-side="lt" title="Left side">L</button>
+              <button type="button" class="chip" data-pv-side="all" title="Both sides">Both</button>
             </div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
@@ -2315,10 +2315,16 @@
 
 
         <!-- Density Summary Strip -->
-        <div style="margin:16px 28px 0; padding:16px; background:var(--derived); border:1.5px dashed var(--derived-border); border-radius:var(--radius-sm); font-size:13px; display:flex; flex-direction:column; gap:8px;">
-          <b style="color:var(--clinical); font-size:11px; text-transform:uppercase; letter-spacing:.05em;">🔍 Density & Pattern Summary</b>
-          <div id="fm-density-summary" style="font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; color:var(--ink); line-height:1.4;">
-            <span style="color:var(--ink-faint);">No palpation data entered. Tap cells in the grid above.</span>
+        <div class="density-summary-card" style="margin:16px 28px 0; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); font-size:13px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--clinical-dim); color:var(--clinical); font-size:11px;">🔍</span>
+              <b style="color:var(--clinical); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;">Density &amp; Pattern Intelligence</b>
+            </div>
+            <button type="button" class="chip" id="fm-apply-to-seq" style="font-size:11.5px; padding:4px 10px; font-weight:700; color:var(--clinical); border-color:var(--clinical); background:var(--clinical-dim); display:none; cursor:pointer;" title="Add highest findings to Treatment Sequence">⚡ Apply to Sequence</button>
+          </div>
+          <div id="fm-density-summary" style="font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; color:var(--ink); line-height:1.45;">
+            <span style="color:var(--ink-faint); font-size:12.5px;">Palpate and grade points across segments. When ≥2 segments on a plane reach grade 2+, the dominant sequence or diagonal will synthesize here.</span>
           </div>
         </div>
       </div>
@@ -7999,51 +8005,115 @@ setupSegmented('patient-progress');
         });
         
         const summaryDiv = document.getElementById('fm-density-summary');
+        const applyBtn = document.getElementById('fm-apply-to-seq');
+        if (applyBtn) {
+            applyBtn.style.display = highestIndex >= 2 ? 'inline-flex' : 'none';
+        }
         if (!summaryDiv) return;
 
         if (highestIndex === 0) {
-            summaryDiv.innerHTML = "<span style='color:var(--ink-faint);'>No palpation data entered. Tap cells in the grid above.</span>";
+            summaryDiv.innerHTML = "<span style='color:var(--ink-faint); font-size:12.5px;'>No palpation data entered yet. Tap cells in the grid above to record densifications. When ≥2 segments on a plane reach grade 2+, the sequence or diagonal will synthesize here.</span>";
             return;
         }
         
-        // Build Findings HTML
-        let findingsHtml = `<div style="margin-bottom:8px;"><b>Highest findings:</b><br>`;
+        // Build Findings HTML with Option A grade badges
+        let findingsHtml = `<div><div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Highest Findings:</div><div style="display:flex; flex-wrap:wrap; gap:8px;">`;
         findings.forEach(f => {
-            let tMark = f.isTreated ? '<span style="color:var(--clinical); font-weight:800;">✓</span>' : '';
-            findingsHtml += `<span style="display:inline-block; margin-right:16px;">• ${f.seg} (${f.side}) — ${planeCode(f.plane)}: <span style="background:var(--surface); padding:2px 6px; border:1px solid var(--line); border-radius:4px; font-weight:700;">${f.grade}</span> ${tMark}</span>`;
+            let tMark = f.isTreated ? '<span style="color:var(--clinical); font-weight:800; font-size:11px;" title="Treated">✓</span>' : '';
+            findingsHtml += `
+                <button type="button" class="chip pv-finding-badge" data-plane="${f.plane}" data-side="${f.side}" data-seg="${f.seg}" style="font-size:12px; padding:3px 8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:#fff; border:1px solid var(--line);" title="Tap to locate ${f.seg} ${f.side} ${planeCode(f.plane)} in grid">
+                    <b>${f.seg}</b> <span style="color:var(--ink-faint); text-transform:uppercase;">(${f.side})</span> · <span style="font-weight:600;">${planeCode(f.plane)}</span>
+                    <span class="pv-cell ${gradeClasses[f.grade]}" style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:20px; border-radius:4px; font-size:11px; font-weight:800; border:1px solid rgba(0,0,0,0.06);">${f.grade}</span>
+                    ${tMark}
+                </button>`;
         });
-        findingsHtml += `</div>`;
+        findingsHtml += `</div></div>`;
         
-        // Build Pattern HTML
-        let patternHtml = `<div style="margin-bottom:8px;"><b>Pattern detected:</b><br>`;
+        // Build Pattern HTML with pill badges
+        let patternHtml = `<div style="margin-top:10px;"><div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Pattern Detected:</div>`;
         let patternsFound = false;
+        let patternPills = `<div style="display:flex; flex-wrap:wrap; gap:8px;">`;
         for (let [p, count] of Object.entries(planeCounts)) {
             if (count >= 2) {
                 const [pName, pSide, pKind] = p.split(' ');
                 // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
                 const term = pKind === 'cf' ? 'diagonal' : 'sequence';
-                patternHtml += `<span style="display:inline-block; margin-right:16px;">• ${planeCode(pName)} ${term} ${pSide} — ${count} segments</span>`;
+                patternPills += `
+                    <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-pill); font-size:12px; font-weight:600;">
+                        <span style="width:7px; height:7px; border-radius:50%; background:var(--clinical);"></span>
+                        <b>${planeCode(pName)}</b> ${term} <span style="color:var(--ink-faint); text-transform:uppercase;">(${pSide})</span>
+                        <span style="background:var(--clinical-dim); color:var(--clinical); font-size:11px; padding:1px 7px; border-radius:10px; font-weight:700;">${count} segments</span>
+                    </span>`;
                 patternsFound = true;
             }
         }
-        if (!patternsFound) patternHtml += `<span style="color:var(--ink-faint);">No clear diagonal or sequence (needs ≥2 segments graded 2 or higher on the same plane)</span>`;
+        patternPills += `</div>`;
+        if (!patternsFound) {
+            patternHtml += `<div style="color:var(--ink-faint); font-size:12px;">No clear diagonal or sequence (needs ≥2 segments graded 2 or higher on the same plane).</div>`;
+        } else {
+            patternHtml += patternPills;
+        }
         patternHtml += `</div>`;
         
-        // Build Footer
-        let footerHtml = `<div><span style="color:var(--clinical); font-weight:600;">Treated this session: ${totalTreated} point${totalTreated!==1?'s':''}</span> <span style="color:var(--ink-faint); margin:0 8px;">|</span> <span style="${totalUntreatedHigh > 0 ? 'color:var(--amber); font-weight:600;' : 'color:var(--ink-faint);'}">Untreated grade ≥2: ${totalUntreatedHigh} point${totalUntreatedHigh!==1?'s':''}</span></div>`;
+        // Build Footer with KPI metric chips
+        let footerHtml = `
+            <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin-top:12px; padding-top:10px; border-top:1px solid var(--line-soft);">
+                <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-right:2px;">Summary:</span>
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; background:var(--clinical-dim); color:var(--clinical); border-radius:var(--radius-pill); font-size:11.5px; font-weight:700;">
+                    ✓ ${totalTreated} Treated
+                </span>
+                <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 9px; ${totalUntreatedHigh > 0 ? 'background:#FEF3C7; color:#92400E; border:1px solid #FDE68A;' : 'background:#fff; color:var(--ink-faint); border:1px solid var(--line);'} border-radius:var(--radius-pill); font-size:11.5px; font-weight:700;">
+                    ${totalUntreatedHigh > 0 ? '⚠️ ' + totalUntreatedHigh + ' Untreated (≥2)' : '0 Untreated (≥2)'}
+                </span>
+                <span style="font-size:11.5px; color:var(--ink-faint); margin-left:auto;">
+                    ${totalPoints} point${totalPoints !== 1 ? 's' : ''} evaluated
+                </span>
+            </div>`;
         
         let cfGradedCount = 0;
         cells.forEach(cell => {
             if (cell.getAttribute('data-kind') === 'cf' && cell.getAttribute('data-grade')) cfGradedCount++;
         });
         if (window.getCurrentPvLayout && window.getCurrentPvLayout() === 'cc-only' && cfGradedCount > 0) {
-            footerHtml += `<div style="margin-top:6px; font-size:11.5px; color:var(--amber); font-weight:600;">⚠️ ${cfGradedCount} graded CF diagonal finding${cfGradedCount!==1?'s are':' is'} hidden in CCs-only mode. Switch layout to "CF · CC" to view.</div>`;
+            footerHtml += `<div style="margin-top:8px; padding:6px 10px; background:#FEF3C7; border:1px solid #FDE68A; border-radius:6px; font-size:11.5px; color:#92400E; font-weight:600;">⚠️ ${cfGradedCount} graded CF diagonal finding${cfGradedCount!==1?'s are':' is'} hidden in CCs-only mode. Switch layout to "CF · CC" to view.</div>`;
         }
 
         summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml;
     }
 
     window.updateDensitySummary = updateDensitySummary;
+
+    // Finding badge click: scroll to and highlight cell in grid
+    document.addEventListener('click', function(e) {
+        const badge = e.target.closest('.pv-finding-badge');
+        if (badge) {
+            const plane = badge.getAttribute('data-plane');
+            const side = badge.getAttribute('data-side');
+            const seg = badge.getAttribute('data-seg');
+            const rows = document.querySelectorAll('#fm-pv-table tbody tr');
+            for (let tr of rows) {
+                const segName = tr.querySelector('.pv-seg-name');
+                if (segName && segName.value === seg) {
+                    const cell = tr.querySelector(`.pv-cell[data-plane="${plane}"][data-side="${side}"]`);
+                    if (cell) {
+                        cell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        cell.classList.add('pv-picked');
+                        setTimeout(() => cell.classList.remove('pv-picked'), 1600);
+                        break;
+                    }
+                }
+            }
+        }
+        const applyBtn = e.target.closest('#fm-apply-to-seq');
+        if (applyBtn) {
+            const fromFindings = document.getElementById('fm-seq-from-findings');
+            if (fromFindings) {
+                fromFindings.click();
+                const seqBuilder = document.getElementById('fm-seq-builder');
+                if (seqBuilder) seqBuilder.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+    });
 
     // Module Visibility — nav-fm's own onclick="openAdvancedModule('fascial-manipulation')"
     // (see that shared function's key==='fascial-manipulation'->'fm' nav-id mapping)

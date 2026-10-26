@@ -578,31 +578,7 @@
   
   .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
   .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { left:60px; }
-
-  /* Session side heading rows in PV grid */
-  .pv-t tr.pv-session-banner-row td {
-    padding: 3px 6px !important;
-    height: 24px !important;
-    text-align: left !important;
-    background: #F8F9FA !important;
-    border-top: 1px solid var(--line) !important;
-    border-bottom: 1px solid var(--line) !important;
-    border-right: none !important;
-  }
-  .pv-t tr.pv-session-banner-row td.sticky-col {
-    background: #F8F9FA !important;
-    border-right: none !important;
-  }
-  .pv-t tr.pv-session-banner-row.banner-today td {
-    background: var(--clinical-dim, #f0f7f7) !important;
-  }
-  .pv-t tr.pv-session-banner-row.banner-today td.sticky-col {
-    background: var(--clinical-dim, #f0f7f7) !important;
-    border-left: 3px solid var(--clinical, #008080) !important;
-  }
-  .pv-t tr.pv-session-banner-row.banner-prior td.sticky-col {
-    border-left: 3px solid var(--ink-faint, #94a3b8) !important;
-  }
+  .pv-t tbody tr:hover .del-pv-seg-btn, .del-pv-seg-btn:focus { opacity: 1 !important; }
 
   .pv-t .pv-cf-head { background:#EEEDFE; color:#5D539E; }
   .pv-t .pv-cc-head { background:#E1F5EE; color:#1F5F5B; }
@@ -4097,6 +4073,7 @@
     if(aggOther && aggOther.value) aggChips.push(aggOther.value);
     window.routeFmSegment('primary-complaint', seg, side, duration, aggChips.join(', '));
   }
+  window.routePrimaryComplaintToFm = routePrimaryComplaintToFm;
   document.addEventListener('click', function(e){
     if(e.target.closest('#region-chips') || e.target.closest('#laterality') || e.target.closest('#onset-timeline-chips') || e.target.closest('#aggravating-chips')){
       setTimeout(routePrimaryComplaintToFm, 30);
@@ -8432,7 +8409,6 @@ setupSegmented('patient-progress');
         const activePlanes = new Set(cols.map(c => c.plane));
         const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
         const fullCols = cols.concat(extraCols);
-        const restColSpan = fullCols.length * 2;
         const rows = document.querySelectorAll('#fm-pv-table tbody tr');
 
         function pvColClass(sideIdx, colIdx, col) {
@@ -8442,11 +8418,6 @@ setupSegmented('patient-progress');
         }
 
         rows.forEach(tr => {
-            if (tr.classList.contains('pv-session-banner-row')) {
-                const restTd = tr.querySelector('td:nth-child(2)');
-                if (restTd) restTd.colSpan = restColSpan;
-                return;
-            }
             const cells = Array.from(tr.querySelectorAll('td:not(.sticky-col)'));
             const map = {};
             cells.forEach(td => {
@@ -8533,13 +8504,13 @@ setupSegmented('patient-progress');
         }
     })();
 
-    function addFmSegment(dateStr, segStr) {
+    function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
         const isPrior = !!(dateStr && dateStr !== today);
         
         // --- 1. Add to Segment Assessment (Today's rows only) ---
-        if (!isPrior && segTableBody) {
+        if (!isPrior && segTableBody && addToSeg) {
             let trSeg = document.createElement('tr');
             trSeg.setAttribute('data-seg-id', uniqueId);
             trSeg.innerHTML = `
@@ -8555,60 +8526,25 @@ setupSegmented('patient-progress');
         }
 
         // --- 2. Add to PV Grid in active layout order ---
-        if (pvTableBody) {
-            const cols = getActivePvColumns(currentPvLayout);
-            const activePlanes = new Set(cols.map(c => c.plane));
-            const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
-            const fullCols = cols.concat(extraCols);
-            const restColSpan = fullCols.length * 2; // Right + Left columns
-
-            // Ensure session side heading row exists for this date/session
-            const bannerClass = isPrior ? 'banner-prior' : 'banner-today';
-            let bannerRow = pvTableBody.querySelector(`tr.pv-session-banner-row[data-session-date="${dateStr || today}"]`);
-            if (!bannerRow) {
-                bannerRow = document.createElement('tr');
-                bannerRow.className = `pv-session-banner-row ${bannerClass}`;
-                bannerRow.setAttribute('data-session-date', dateStr || today);
-                if (isPrior) {
-                    bannerRow.innerHTML = `
-                        <td class="sticky-col" colspan="2" style="padding:4px 8px !important; z-index:3;">
-                            <div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">
-                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--ink-faint);"></span>
-                                <b style="font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); font-family:inherit;">Prior · ${dateStr}</b>
-                            </div>
-                        </td>
-                        <td colspan="${restColSpan}" style="background:#F8F9FA !important; border-left:none !important;"></td>
-                    `;
-                } else {
-                    bannerRow.innerHTML = `
-                        <td class="sticky-col" colspan="2" style="padding:4px 8px !important; z-index:3;">
-                            <div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">
-                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--clinical);"></span>
-                                <b style="font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--clinical); font-family:inherit;">Today · ${today}</b>
-                            </div>
-                        </td>
-                        <td colspan="${restColSpan}" style="background:var(--clinical-dim, #f0f7f7) !important; border-left:none !important;"></td>
-                    `;
-                }
-
-                // If adding prior, insert at bottom; if today, insert before first prior banner if exists
-                const firstPriorBanner = pvTableBody.querySelector('tr.pv-session-banner-row.banner-prior');
-                if (!isPrior && firstPriorBanner) {
-                    pvTableBody.insertBefore(bannerRow, firstPriorBanner);
-                } else {
-                    pvTableBody.appendChild(bannerRow);
-                }
-            }
-
+        if (pvTableBody && addToPv) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
-            trPv.setAttribute('data-session-date', dateStr || today);
             if (isPrior) {
                 trPv.classList.add('fm-prior-row');
                 trPv.setAttribute('data-prior', 'true');
             }
-            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior</div>' : ''}</td>`;
-            htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
+            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior visit</div>' : ''}</td>`;
+            htmlPv += `<td class="sticky-col" style="left:60px;">
+                <div style="display:flex; align-items:center; justify-content:center; position:relative; width:100%; height:100%;">
+                    <input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" ${isPrior ? 'readonly' : ''}>
+                    ${!isPrior ? '<button type="button" class="del-pv-seg-btn" title="Remove segment from grid" style="position:absolute; right:1px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:13px; line-height:1; padding:0 2px; opacity:0; transition:opacity .15s ease;">×</button>' : ''}
+                </div>
+            </td>`;
+            
+            const cols = getActivePvColumns(currentPvLayout);
+            const activePlanes = new Set(cols.map(c => c.plane));
+            const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
+            const fullCols = cols.concat(extraCols);
 
             function pvColClass(sideIdx, colIdx, col) {
                 if (sideIdx > 0 && colIdx === 0) return 'div-left';
@@ -8626,21 +8562,11 @@ setupSegmented('patient-progress');
                 });
             });
             trPv.innerHTML = htmlPv;
-
-            // Insert trPv right after the banner or after the last row of this session
-            let nextSibling = bannerRow.nextSibling;
-            while (nextSibling && !nextSibling.classList.contains('pv-session-banner-row') && nextSibling.getAttribute && nextSibling.getAttribute('data-session-date') === (dateStr || today)) {
-                nextSibling = nextSibling.nextSibling;
-            }
-            if (nextSibling) {
-                pvTableBody.insertBefore(trPv, nextSibling);
-            } else {
-                pvTableBody.appendChild(trPv);
-            }
+            pvTableBody.appendChild(trPv);
         }
 
         // --- 3. Add to Mo/Ve Table (Today's rows only) ---
-        if (!isPrior) {
+        if (!isPrior && addToSeg) {
             syncMoveTable();
         }
     }
@@ -8806,7 +8732,7 @@ setupSegmented('patient-progress');
                 const chip = e.target.closest('.pv-seg-chip');
                 if (!chip) return;
                 const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-                addFmSegment(today, chip.getAttribute('data-seg'));
+                addFmSegment(today, chip.getAttribute('data-seg'), true, false);
             });
         }
 
@@ -8814,7 +8740,20 @@ setupSegmented('patient-progress');
         if (pvAddCustomBtn) {
             pvAddCustomBtn.addEventListener('click', function() {
                 const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-                addFmSegment(today, "");
+                addFmSegment(today, "", true, false);
+            });
+        }
+
+        if (pvTableBody) {
+            pvTableBody.addEventListener('click', function(e) {
+                const delBtn = e.target.closest('.del-pv-seg-btn');
+                if (delBtn) {
+                    const tr = delBtn.closest('tr');
+                    if (tr) {
+                        tr.remove();
+                        if (window.updateDensitySummary) window.updateDensitySummary();
+                    }
+                }
             });
         }
     })();
@@ -8985,17 +8924,7 @@ setupSegmented('patient-progress');
             
             tr.remove();
             let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
-            if (pvRow) {
-                const sDate = pvRow.getAttribute('data-session-date');
-                pvRow.remove();
-                if (sDate) {
-                    const remainingInSession = document.querySelectorAll(`#fm-pv-table tr[data-session-date="${sDate}"]:not(.pv-session-banner-row)`);
-                    if (remainingInSession.length === 0) {
-                        const banner = document.querySelector(`#fm-pv-table tr.pv-session-banner-row[data-session-date="${sDate}"]`);
-                        if (banner) banner.remove();
-                    }
-                }
-            }
+            if (pvRow) pvRow.remove();
             syncMoveTable();
             
             if (window.updateDensitySummary) window.updateDensitySummary();
@@ -9168,7 +9097,7 @@ setupSegmented('patient-progress');
         }
         if(!existing){
             var today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-            addFmSegment(today, segStr);
+            addFmSegment(today, segStr, false, true);
             // Auto-open region drawer matching this segment
             for (var rName in (window.FM_SEGMENT_DETAILS || {})) {
                 if ((window.FM_SEGMENT_DETAILS[rName] || []).some(function(item){ return item.code === segStr; })) {
@@ -9477,7 +9406,11 @@ setupSegmented('patient-progress');
     const histObserver = new MutationObserver(window.syncFmHistory);
     ['surgical-history-rows', 'trauma-history-rows', 'pain-history-rows'].forEach(id => {
         let el = document.getElementById(id);
-        if (el) histObserver.observe(el, { childList: true, subtree: true, attributes: true });
+        if (el) {
+            histObserver.observe(el, { childList: true, subtree: true, attributes: true });
+            el.addEventListener('change', window.syncFmHistory);
+            el.addEventListener('input', window.syncFmHistory);
+        }
     });
     setTimeout(window.syncFmHistory, 500);
 
@@ -9684,8 +9617,10 @@ window.openTier2Module = function(key) {
 };
 
 window.openAdvancedModule = function(key) {
-  if (key === 'fascial-manipulation' && window.applySmartPvSideView) {
-    window.applySmartPvSideView();
+  if (key === 'fascial-manipulation') {
+    if (window.routePrimaryComplaintToFm) window.routePrimaryComplaintToFm();
+    if (window.syncFmHistory) window.syncFmHistory();
+    if (window.applySmartPvSideView) window.applySmartPvSideView();
   }
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));

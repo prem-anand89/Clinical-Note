@@ -30,6 +30,18 @@ await c.goto(cn);
 await c.click('#region-chips [data-chip="Knee"]');
 await c.evaluate(() => window.openAdvancedModule('fascial-manipulation'));
 await c.waitForTimeout(400);
+
+// Verify decoupling: complaints autofill segment assessment, but NOT PV table
+const segCount = await c.locator('#fm-seg-table tbody tr').count();
+const pvCountBefore = await c.locator('#fm-pv-table tbody tr').count();
+ok('complaints autofill segment assessment but not PV table', segCount >= 1 && pvCountBefore === 0, { segCount, pvCountBefore });
+
+// Add segment directly to PV grid using Card 3 toolbar
+await c.click('#pv-add-region-tabs button[data-region="Lower limb"]');
+await c.waitForTimeout(200);
+await c.click('#pv-region-chips .pv-seg-chip[data-seg="GE"]');
+await c.waitForTimeout(300);
+
 const cc = c.locator('#fm-pv-table .pv-cell').first(); await cc.scrollIntoViewIfNeeded(); await cc.click();
 await c.locator('button.g2:visible').first().click();
 await c.waitForTimeout(400);

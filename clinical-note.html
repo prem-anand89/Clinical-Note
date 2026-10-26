@@ -576,23 +576,31 @@
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
   .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
   
-  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); width:64px; }
+  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
+  .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { left:60px; }
 
-  /* Session section banner rows in PV grid */
+  /* Session side heading rows in PV grid */
   .pv-t tr.pv-session-banner-row td {
-    padding: 7px 12px !important;
-    height: auto !important;
+    padding: 3px 6px !important;
+    height: 24px !important;
     text-align: left !important;
-    background: #F4F5F7 !important;
+    background: #F8F9FA !important;
     border-top: 1px solid var(--line) !important;
     border-bottom: 1px solid var(--line) !important;
+    border-right: none !important;
+  }
+  .pv-t tr.pv-session-banner-row td.sticky-col {
+    background: #F8F9FA !important;
+    border-right: none !important;
   }
   .pv-t tr.pv-session-banner-row.banner-today td {
     background: var(--clinical-dim, #f0f7f7) !important;
+  }
+  .pv-t tr.pv-session-banner-row.banner-today td.sticky-col {
+    background: var(--clinical-dim, #f0f7f7) !important;
     border-left: 3px solid var(--clinical, #008080) !important;
   }
-  .pv-t tr.pv-session-banner-row.banner-prior td {
-    background: #F8F9FA !important;
+  .pv-t tr.pv-session-banner-row.banner-prior td.sticky-col {
     border-left: 3px solid var(--ink-faint, #94a3b8) !important;
   }
 
@@ -695,6 +703,7 @@
     .del-seg-btn, .del-hist-btn { min-width:30px; min-height:30px; font-size:18px; display:inline-flex; align-items:center; justify-content:center; }
     .pv-t td { height:36px; padding:1px; }
     .pv-t th.sticky-col, .pv-t td.sticky-col { box-shadow:2px 0 5px rgba(0,0,0,.08); }
+    .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { box-shadow:3px 0 6px rgba(0,0,0,.10); }
     .pv-container { -webkit-overflow-scrolling:touch; }
     #fm-region-tabs, #pv-add-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
     #fm-region-tabs::-webkit-scrollbar, #pv-add-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
@@ -2433,7 +2442,8 @@
           <table class="pv-t" id="fm-pv-table">
             <thead>
               <tr>
-                <th rowspan="3" class="sticky-col" style="width:64px;">Seg</th>
+                <th rowspan="3" class="sticky-col" style="width:60px;">Date</th>
+                <th rowspan="3" class="sticky-col" style="width:60px; left:60px;">Seg</th>
                 <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
                 <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
               </tr>
@@ -8422,7 +8432,7 @@ setupSegmented('patient-progress');
         const activePlanes = new Set(cols.map(c => c.plane));
         const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
         const fullCols = cols.concat(extraCols);
-        const totalCols = 1 + fullCols.length * 2;
+        const restColSpan = fullCols.length * 2;
         const rows = document.querySelectorAll('#fm-pv-table tbody tr');
 
         function pvColClass(sideIdx, colIdx, col) {
@@ -8433,8 +8443,8 @@ setupSegmented('patient-progress');
 
         rows.forEach(tr => {
             if (tr.classList.contains('pv-session-banner-row')) {
-                const td = tr.querySelector('td');
-                if (td) td.colSpan = totalCols;
+                const restTd = tr.querySelector('td:nth-child(2)');
+                if (restTd) restTd.colSpan = restColSpan;
                 return;
             }
             const cells = Array.from(tr.querySelectorAll('td:not(.sticky-col)'));
@@ -8550,9 +8560,9 @@ setupSegmented('patient-progress');
             const activePlanes = new Set(cols.map(c => c.plane));
             const extraCols = PV_COLUMNS.filter(c => !activePlanes.has(c.plane));
             const fullCols = cols.concat(extraCols);
-            const totalCols = 1 + fullCols.length * 2; // 1 Seg col + 10 Right + 10 Left
+            const restColSpan = fullCols.length * 2; // Right + Left columns
 
-            // Ensure session banner exists for this date/session
+            // Ensure session side heading row exists for this date/session
             const bannerClass = isPrior ? 'banner-prior' : 'banner-today';
             let bannerRow = pvTableBody.querySelector(`tr.pv-session-banner-row[data-session-date="${dateStr || today}"]`);
             if (!bannerRow) {
@@ -8561,23 +8571,23 @@ setupSegmented('patient-progress');
                 bannerRow.setAttribute('data-session-date', dateStr || today);
                 if (isPrior) {
                     bannerRow.innerHTML = `
-                        <td colspan="${totalCols}">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--ink-faint);"></span>
-                                <b style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft);">Prior Visit Session — ${dateStr}</b>
-                                <span style="font-size:10px; color:var(--ink-faint); margin-left:4px;">(Read-only historical palpation)</span>
+                        <td class="sticky-col" colspan="2" style="padding:4px 8px !important; z-index:3;">
+                            <div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">
+                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--ink-faint);"></span>
+                                <b style="font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-soft); font-family:inherit;">Prior · ${dateStr}</b>
                             </div>
                         </td>
+                        <td colspan="${restColSpan}" style="background:#F8F9FA !important; border-left:none !important;"></td>
                     `;
                 } else {
                     bannerRow.innerHTML = `
-                        <td colspan="${totalCols}">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--clinical);"></span>
-                                <b style="font-size:11px; letter-spacing:.04em; text-transform:uppercase; color:var(--clinical);">Today's Session — ${today}</b>
-                                <span style="font-size:10px; color:var(--clinical); font-weight:600; background:rgba(0,128,128,0.1); padding:2px 6px; border-radius:4px;">Active Examination</span>
+                        <td class="sticky-col" colspan="2" style="padding:4px 8px !important; z-index:3;">
+                            <div style="display:flex; align-items:center; gap:5px; white-space:nowrap;">
+                                <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--clinical);"></span>
+                                <b style="font-size:10px; letter-spacing:.04em; text-transform:uppercase; color:var(--clinical); font-family:inherit;">Today · ${today}</b>
                             </div>
                         </td>
+                        <td colspan="${restColSpan}" style="background:var(--clinical-dim, #f0f7f7) !important; border-left:none !important;"></td>
                     `;
                 }
 
@@ -8597,7 +8607,8 @@ setupSegmented('patient-progress');
                 trPv.classList.add('fm-prior-row');
                 trPv.setAttribute('data-prior', 'true');
             }
-            let htmlPv = `<td class="sticky-col"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:12px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
+            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior</div>' : ''}</td>`;
+            htmlPv += `<td class="sticky-col" style="left:60px;"><input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" readonly></td>`;
 
             function pvColClass(sideIdx, colIdx, col) {
                 if (sideIdx > 0 && colIdx === 0) return 'div-left';

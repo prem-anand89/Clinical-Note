@@ -149,26 +149,68 @@ await page.waitForTimeout(200);
 const pvRowsAfterPicker = await page.locator('#fm-pv-table tbody tr').count();
 ok('Card 3 PV picker adds 2 independent rows to PV table', pvRowsAfterPicker === 2, pvRowsAfterPicker);
 
-// Verify each row has its own individual sticky Date and Seg columns (NO session banners)
+// Step 5b: Verify Option B grouped date cells (rowspan=2 for Today's 2 rows)
 const bannerRows = await page.locator('#fm-pv-table tbody tr.pv-session-banner-row').count();
 ok('No session banner rows exist in PV table', bannerRows === 0, bannerRows);
 
-const row1Date = await page.inputValue('#fm-pv-table tbody tr:nth-child(1) td.sticky-col:nth-child(1) input');
-const row1Seg = await page.inputValue('#fm-pv-table tbody tr:nth-child(1) td.sticky-col:nth-child(2) input');
-const row2Date = await page.inputValue('#fm-pv-table tbody tr:nth-child(2) td.sticky-col:nth-child(1) input');
-const row2Seg = await page.inputValue('#fm-pv-table tbody tr:nth-child(2) td.sticky-col:nth-child(2) input');
-ok('Row 1 has individual date and segment CX', !!row1Date && row1Seg === 'CX', { row1Date, row1Seg });
-ok('Row 2 has individual date and segment LU', !!row2Date && row2Seg === 'LU', { row2Date, row2Seg });
+const row1DateSpan = await page.locator('#fm-pv-table tbody tr:nth-child(1) td.pv-date-col').getAttribute('rowspan');
+const row1DateText = await page.locator('#fm-pv-table tbody tr:nth-child(1) td.pv-date-col .pv-date-val').textContent();
+const row1Seg = await page.inputValue('#fm-pv-table tbody tr:nth-child(1) td.pv-seg-col input');
+const row2Seg = await page.inputValue('#fm-pv-table tbody tr:nth-child(2) td.pv-seg-col input');
+const row2HasDate = await page.locator('#fm-pv-table tbody tr:nth-child(2) td.pv-date-col').count();
 
-// Step 6: Test PV row deletion using .del-pv-seg-btn
+ok('Option B: Row 1 has grouped date cell with rowspan=2', row1DateSpan === '2' && !!row1DateText, { row1DateSpan, row1DateText });
+ok('Option B: Row 1 has segment CX and Row 2 has segment LU', row1Seg === 'CX' && row2Seg === 'LU', { row1Seg, row2Seg });
+ok('Option B: Row 2 has no separate date cell (spanned by Row 1)', row2HasDate === 0, row2HasDate);
+
+// Step 6: Test Inverted Timeline & Multi-Visit Dropdown Filter with Prior Visit
+await page.evaluate(() => window.addFmSegment('14/09/23', 'GE'));
+await page.waitForTimeout(200);
+
+const rowsWithPrior = await page.locator('#fm-pv-table tbody tr').count();
+ok('Adding prior visit appends below today rows (total 3 rows)', rowsWithPrior === 3, rowsWithPrior);
+
+// Today's rows must still be at top (inverted timeline)
+const topSeg = await page.inputValue('#fm-pv-table tbody tr:nth-child(1) td.pv-seg-col input');
+ok('Inverted timeline: Today row CX remains at top', topSeg === 'CX', topSeg);
+
+const priorRowSep = await page.locator('#fm-pv-table tbody tr:nth-child(3)').getAttribute('class');
+ok('Prior visit row has session-sep divider class', (priorRowSep || '').includes('session-sep'), priorRowSep);
+
+const dropdownVisible = await page.locator('#pv-prior-visit-select').isVisible();
+const dropdownText = await page.locator('#pv-prior-visit-select').textContent();
+ok('Prior visit dropdown is visible with 14/09/23 option', dropdownVisible && dropdownText.includes('14/09/23 · Prior'), { dropdownVisible, dropdownText });
+
+// Test Visit Filter: Today only
+await page.click('#pv-visit-toggle button[data-pv-visit="today"]');
+await page.waitForTimeout(200);
+const visibleInToday = await page.locator('#fm-pv-table tbody tr:visible').count();
+ok('Filter "Today" shows only today 2 rows', visibleInToday === 2, visibleInToday);
+
+// Test Visit Filter: Prior visit dropdown
+await page.selectOption('#pv-prior-visit-select', '14/09/23');
+await page.waitForTimeout(200);
+const visibleInPrior = await page.locator('#fm-pv-table tbody tr:visible').count();
+ok('Dropdown selection "14/09/23" shows only prior visit 1 row', visibleInPrior === 1, visibleInPrior);
+
+// Test Visit Filter: All
+await page.click('#pv-visit-toggle button[data-pv-visit="all"]');
+await page.waitForTimeout(200);
+const visibleInAll = await page.locator('#fm-pv-table tbody tr:visible').count();
+ok('Filter "All" restores all 3 rows', visibleInAll === 3, visibleInAll);
+
+// Step 7: Test PV row deletion and dynamic rowspan recalculation
 const delBtn = page.locator('#fm-pv-table tbody tr:nth-child(2) .del-pv-seg-btn');
 await delBtn.click({ force: true });
 await page.waitForTimeout(200);
 
 const pvRowsAfterDelete = await page.locator('#fm-pv-table tbody tr').count();
-ok('Clicking delete on PV row removes that row', pvRowsAfterDelete === 1, pvRowsAfterDelete);
+ok('Clicking delete on PV row removes that row (2 rows remain)', pvRowsAfterDelete === 2, pvRowsAfterDelete);
 
-// Step 7: Verify getFmData exports match UI state
+const row1DateSpanAfterDel = await page.locator('#fm-pv-table tbody tr:nth-child(1) td.pv-date-col').getAttribute('rowspan');
+ok('Option B: Row 1 date cell dynamically reduces rowspan to 1', row1DateSpanAfterDel === '1', row1DateSpanAfterDel);
+
+// Step 8: Verify getFmData exports match UI state
 const fmData = await page.evaluate(() => window.getFmData());
 ok('getFmData().segments has 2 segments', fmData.segments.length === 2, fmData.segments.length);
 ok('getFmData().history has 2 history events', fmData.history.length >= 2, fmData.history.length);

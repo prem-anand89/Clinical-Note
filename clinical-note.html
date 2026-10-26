@@ -576,9 +576,29 @@
   .pv-t th { padding:6px; font-size:9px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:center; }
   .pv-t td { padding:2px; border:1px solid var(--line); text-align:center; height:40px; }
   
-  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; left:0; background:#fff; z-index:2; border-right:2px solid var(--line); }
-  .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { left:60px; }
+  .pv-t th.sticky-col, .pv-t td.sticky-col { position:sticky; background:#fff; z-index:2; border-right:2px solid var(--line); }
+  .pv-t th.pv-date-col, .pv-t td.pv-date-col { left:0 !important; width:60px; min-width:60px; max-width:60px; }
+  .pv-t th.pv-seg-col, .pv-t td.pv-seg-col { left:60px !important; width:60px; min-width:60px; max-width:60px; }
+  .pv-t tbody tr.session-sep td { border-top: 2.5px solid #cbd5e1 !important; }
   .pv-t tbody tr:hover .del-pv-seg-btn, .del-pv-seg-btn:focus { opacity: 1 !important; }
+
+  .select-pill {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    padding: 3px 8px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    cursor: pointer;
+    height: 24px;
+    line-height: 1;
+    transition: all .15s ease;
+  }
+  .select-pill:hover { border-color: var(--clinical); color: var(--clinical); }
+  .select-pill:focus { outline: none; border-color: var(--clinical); box-shadow: 0 0 0 2px var(--clinical-dim); }
+  .select-pill.active { border-color: var(--clinical); color: var(--clinical); background: var(--clinical-dim); font-weight: 700; }
 
   .pv-t .pv-cf-head { background:#EEEDFE; color:#5D539E; }
   .pv-t .pv-cc-head { background:#E1F5EE; color:#1F5F5B; }
@@ -794,6 +814,7 @@
 
   /* Remove tick marks from side toggle, layout toggle, and region tabs where active color highlight is sufficient */
   #pv-side-toggle .chip.selected::before,
+  #pv-visit-toggle .chip.selected::before,
   #pv-layout-toggle .chip.selected::before,
   #fm-region-tabs .chip.selected::before,
   #pv-add-region-tabs .chip.selected::before {
@@ -2387,13 +2408,13 @@
       <!-- 3. PV Grid -->
       <div class="card" style="margin-bottom:14px; padding-left:0; padding-right:0;">
         <div class="card-heading" style="padding:0 28px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <span>3. Palpation Verification (CF's &amp; CC's)</span>
+          <span>3. Palpation Verification — CC (Coordination) &amp; CF (Fusion)</span>
         </div>
         <div class="field-note" id="pv-mode-hint" style="padding:0 28px; margin-top:0; margin-bottom:0;">
-          Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it.
+          Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it. <b>CC</b> = Center of Coordination · <b>CF</b> = Center of Fusion.
         </div>
         
-        <!-- Toolbar: Side Filter & Layout Switcher -->
+        <!-- Toolbar: Side Filter, Visit Filter & Layout Switcher -->
         <div style="padding:0 28px; margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px;">
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Side:</span>
@@ -2403,6 +2424,18 @@
               <button type="button" class="chip" data-pv-side="all" title="Both sides">Both</button>
             </div>
           </div>
+
+          <div style="display:flex; align-items:center; gap:8px;" id="pv-visit-controls">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Visit:</span>
+            <div class="chip-row" id="pv-visit-toggle" style="align-items:center; gap:6px;">
+              <button type="button" class="chip selected" data-pv-visit="all" title="Show all visits in timeline">All</button>
+              <button type="button" class="chip" data-pv-visit="today" title="Show only today's assessment">Today</button>
+              <select id="pv-prior-visit-select" class="select-pill" style="display:none;" title="Filter by specific prior visit">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+
           <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Layout:</span>
             <div class="chip-row" id="pv-layout-toggle">
@@ -2418,8 +2451,8 @@
           <table class="pv-t" id="fm-pv-table">
             <thead>
               <tr>
-                <th rowspan="3" class="sticky-col" style="width:60px;">Date</th>
-                <th rowspan="3" class="sticky-col" style="width:60px; left:60px;">Seg</th>
+                <th rowspan="3" class="sticky-col pv-date-col" style="width:60px; left:0;">Date</th>
+                <th rowspan="3" class="sticky-col pv-seg-col" style="width:60px; left:60px;">Seg</th>
                 <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
                 <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
               </tr>
@@ -8451,6 +8484,156 @@ setupSegmented('patient-progress');
         if (window.updateDensitySummary) window.updateDensitySummary();
     }
 
+    function parseSessionDate(dStr) {
+        if (!dStr) return 0;
+        const parts = dStr.split('/');
+        if (parts.length === 3) {
+            let y = parseInt(parts[2], 10);
+            if (y < 100) y += 2000;
+            return new Date(y, parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)).getTime();
+        }
+        const t = Date.parse(dStr);
+        return isNaN(t) ? 0 : t;
+    }
+
+    let currentPvVisitFilter = 'all';
+
+    function updatePvTableGrouping() {
+        const tbody = document.querySelector('#fm-pv-table tbody');
+        if (!tbody) return;
+
+        // Clean out existing date cells and session separators
+        tbody.querySelectorAll('td.pv-date-col').forEach(td => td.remove());
+        tbody.querySelectorAll('tr').forEach(tr => tr.classList.remove('session-sep'));
+
+        const allRows = Array.from(tbody.querySelectorAll('tr'));
+        const visibleRows = allRows.filter(tr => tr.style.display !== 'none');
+        if (visibleRows.length === 0) return;
+
+        const groups = [];
+        let currentGroup = [];
+        visibleRows.forEach(tr => {
+            const d = tr.getAttribute('data-session-date') || '';
+            if (currentGroup.length === 0 || currentGroup[0].getAttribute('data-session-date') === d) {
+                currentGroup.push(tr);
+            } else {
+                groups.push(currentGroup);
+                currentGroup = [tr];
+            }
+        });
+        if (currentGroup.length > 0) {
+            groups.push(currentGroup);
+        }
+
+        const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+
+        groups.forEach((grp, idx) => {
+            const firstRow = grp[0];
+            const dateStr = firstRow.getAttribute('data-session-date') || '';
+            const isPrior = firstRow.classList.contains('fm-prior-row') || firstRow.getAttribute('data-prior') === 'true' || (dateStr && dateStr !== today);
+
+            // Option B divider line for subsequent sessions
+            if (idx > 0) {
+                firstRow.classList.add('session-sep');
+            }
+
+            // Option B grouped date cell with vertical centering
+            const dateTd = document.createElement('td');
+            dateTd.className = 'sticky-col pv-date-col';
+            dateTd.rowSpan = grp.length;
+            dateTd.style.cssText = 'background:#fff; vertical-align:middle; text-align:center; padding:4px 2px;';
+            dateTd.innerHTML = `
+                <div class="pv-date-val" style="font-weight:700; font-size:11px; color:var(--ink); line-height:1.2;">${dateStr}</div>
+                <div style="font-size:9px; color:${isPrior ? 'var(--ink-faint)' : 'var(--clinical)'}; font-weight:700; text-transform:uppercase; margin-top:2px;">
+                    ${isPrior ? 'Prior' : 'Today'}
+                </div>
+            `;
+            firstRow.insertBefore(dateTd, firstRow.firstElementChild);
+        });
+    }
+    window.updatePvTableGrouping = updatePvTableGrouping;
+
+    function updatePvVisitDropdown() {
+        const select = document.getElementById('pv-prior-visit-select');
+        if (!select) return;
+
+        const tbody = document.querySelector('#fm-pv-table tbody');
+        if (!tbody) return;
+
+        const priorRows = Array.from(tbody.querySelectorAll('tr.fm-prior-row'));
+        const dateSet = new Set();
+        priorRows.forEach(tr => {
+            const d = tr.getAttribute('data-session-date');
+            if (d) dateSet.add(d);
+        });
+        const priorDates = Array.from(dateSet);
+
+        if (priorDates.length === 0) {
+            select.style.display = 'none';
+            select.innerHTML = '';
+            return;
+        }
+
+        priorDates.sort((a, b) => parseSessionDate(b) - parseSessionDate(a));
+
+        const currentVal = select.value;
+        select.style.display = 'inline-block';
+        let html = `<option value="" disabled ${!currentVal ? 'selected' : ''}>Prior visits (${priorDates.length}) ▾</option>`;
+        priorDates.forEach(d => {
+            html += `<option value="${d}" ${currentVal === d ? 'selected' : ''}>${d} · Prior</option>`;
+        });
+        select.innerHTML = html;
+    }
+    window.updatePvVisitDropdown = updatePvVisitDropdown;
+
+    function applyPvVisitFilter(filterVal) {
+        currentPvVisitFilter = filterVal;
+        const tbody = document.querySelector('#fm-pv-table tbody');
+        if (!tbody) return;
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+
+        const visitToggle = document.getElementById('pv-visit-toggle');
+        const select = document.getElementById('pv-prior-visit-select');
+
+        if (visitToggle) {
+            visitToggle.querySelectorAll('button[data-pv-visit]').forEach(btn => {
+                if (btn.getAttribute('data-pv-visit') === filterVal) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+
+        if (select) {
+            if (filterVal === 'all' || filterVal === 'today') {
+                select.value = '';
+                select.classList.remove('active');
+            } else {
+                select.value = filterVal;
+                select.classList.add('active');
+            }
+        }
+
+        rows.forEach(tr => {
+            const d = tr.getAttribute('data-session-date') || '';
+            const isPrior = tr.classList.contains('fm-prior-row') || tr.getAttribute('data-prior') === 'true' || (d && d !== today);
+
+            if (filterVal === 'all') {
+                tr.style.display = '';
+            } else if (filterVal === 'today') {
+                tr.style.display = (!isPrior) ? '' : 'none';
+            } else {
+                tr.style.display = (d === filterVal) ? '' : 'none';
+            }
+        });
+
+        updatePvTableGrouping();
+    }
+    window.applyPvVisitFilter = applyPvVisitFilter;
+
     (function initPvControls() {
         renderPvHeader(currentPvLayout);
 
@@ -8490,6 +8673,26 @@ setupSegmented('patient-progress');
         }
         applySmartPvSideView();
 
+        // Wire Visit Toggle (All / Today)
+        const visitToggle = document.getElementById('pv-visit-toggle');
+        if (visitToggle) {
+            visitToggle.addEventListener('click', function(e) {
+                const btn = e.target.closest('button[data-pv-visit]');
+                if (!btn) return;
+                applyPvVisitFilter(btn.getAttribute('data-pv-visit'));
+            });
+        }
+
+        // Wire Prior Visit Dropdown
+        const priorSelect = document.getElementById('pv-prior-visit-select');
+        if (priorSelect) {
+            priorSelect.addEventListener('change', function() {
+                if (this.value) {
+                    applyPvVisitFilter(this.value);
+                }
+            });
+        }
+
         // Wire Layout Toggle (Default is CF · CC)
         const layoutToggle = document.getElementById('pv-layout-toggle');
         if (layoutToggle) {
@@ -8502,6 +8705,9 @@ setupSegmented('patient-progress');
                 applyPvLayout(layout);
             });
         }
+
+        updatePvTableGrouping();
+        updatePvVisitDropdown();
     })();
 
     function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
@@ -8529,12 +8735,12 @@ setupSegmented('patient-progress');
         if (pvTableBody && addToPv) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
+            trPv.setAttribute('data-session-date', dateStr);
             if (isPrior) {
                 trPv.classList.add('fm-prior-row');
                 trPv.setAttribute('data-prior', 'true');
             }
-            let htmlPv = `<td class="sticky-col"><input type="text" value="${dateStr}" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; color:var(--ink);" readonly>${isPrior ? '<div style="font-size:8px; color:var(--ink-faint); font-weight:700; text-transform:uppercase; text-align:center; line-height:1; margin-top:1px;">Prior visit</div>' : ''}</td>`;
-            htmlPv += `<td class="sticky-col" style="left:60px;">
+            let htmlPv = `<td class="sticky-col pv-seg-col" style="left:60px;">
                 <div style="display:flex; align-items:center; justify-content:center; position:relative; width:100%; height:100%;">
                     <input type="text" value="${segStr}" class="pv-seg-name" list="fm-seg-codes" style="width:100%; border:none; background:transparent; font-size:11px; text-align:center; font-weight:700; color:var(--ink);" ${isPrior ? 'readonly' : ''}>
                     ${!isPrior ? '<button type="button" class="del-pv-seg-btn" title="Remove segment from grid" style="position:absolute; right:1px; top:50%; transform:translateY(-50%); border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:13px; line-height:1; padding:0 2px; opacity:0; transition:opacity .15s ease;">×</button>' : ''}
@@ -8562,7 +8768,42 @@ setupSegmented('patient-progress');
                 });
             });
             trPv.innerHTML = htmlPv;
-            pvTableBody.appendChild(trPv);
+
+            // Inverted timeline insertion: Today's rows at the top; prior visits sorted reverse-chronologically below
+            if (!isPrior) {
+                const firstPrior = pvTableBody.querySelector('tr.fm-prior-row');
+                if (firstPrior) {
+                    pvTableBody.insertBefore(trPv, firstPrior);
+                } else {
+                    pvTableBody.appendChild(trPv);
+                }
+            } else {
+                const thisTime = parseSessionDate(dateStr);
+                const priorRows = Array.from(pvTableBody.querySelectorAll('tr.fm-prior-row'));
+                let targetRow = null;
+                for (const r of priorRows) {
+                    const rTime = parseSessionDate(r.getAttribute('data-session-date'));
+                    if (thisTime > rTime) {
+                        targetRow = r;
+                        break;
+                    }
+                }
+                if (targetRow) {
+                    pvTableBody.insertBefore(trPv, targetRow);
+                } else {
+                    pvTableBody.appendChild(trPv);
+                }
+            }
+
+            // Respect current visit filter visibility
+            if (currentPvVisitFilter === 'today' && isPrior) {
+                trPv.style.display = 'none';
+            } else if (currentPvVisitFilter !== 'all' && currentPvVisitFilter !== 'today' && dateStr !== currentPvVisitFilter) {
+                trPv.style.display = 'none';
+            }
+
+            updatePvTableGrouping();
+            updatePvVisitDropdown();
         }
 
         // --- 3. Add to Mo/Ve Table (Today's rows only) ---
@@ -8751,6 +8992,8 @@ setupSegmented('patient-progress');
                     const tr = delBtn.closest('tr');
                     if (tr) {
                         tr.remove();
+                        if (window.updatePvTableGrouping) window.updatePvTableGrouping();
+                        if (window.updatePvVisitDropdown) window.updatePvVisitDropdown();
                         if (window.updateDensitySummary) window.updateDensitySummary();
                     }
                 }
@@ -9360,9 +9603,9 @@ setupSegmented('patient-progress');
         extractRows('pain-history-rows', 'Pain');
         
         allEvents.sort((a, b) => {
-            if (!a.dateStr) return -1;
-            if (!b.dateStr) return 1;
-            return new Date(a.dateStr) - new Date(b.dateStr);
+            if (!a.dateStr) return 1;
+            if (!b.dateStr) return -1;
+            return new Date(b.dateStr) - new Date(a.dateStr);
         });
         
         allEvents.forEach(e => {

@@ -451,6 +451,24 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **Adaptive side view on module open:** Right (R) remains the default view. If graded palpation findings exist on the left side (e.g. from an auto-draft or restored patient history), the view toggle automatically initializes to "Both" so left-side findings are immediately visible without being hidden.
 - **Pure in-memory:** No state is persisted to `localStorage` for this switch.
 
+## Verification & Screenshots (Tasks 1–5)
+- **New Test Suite:** `tests/fm-review2.mjs` verifies all 5 tasks (prior-visit row gating, hypothesis auto-derived suggestion tap, Mo/Ve deduplication & delta preservation, 390px card overflow & binding, and adaptive side view toggle).
+- **All 10 Test Suites Passing:**
+  - `tests/fm-chips.mjs`: ALL PASS
+  - `tests/fm-density.mjs`: ALL PASS
+  - `tests/fm-review2.mjs`: ALL PASS
+  - `tests/hep-share.mjs`: ALL PASS
+  - `tests/pins.mjs`: ALL PASS
+  - `tests/preview.mjs`: ALL PASS
+  - `tests/pv-layout-test.mjs`: ALL PASS
+  - `tests/session-pins.mjs`: ALL PASS
+  - `tests/session-step2.mjs`: ALL PASS
+  - `tests/step3.mjs`: ALL PASS
+- **Visual Artifacts:**
+  - `fm-review2-1024px.png`: Desktop layout showing muted prior-visit row ("14/09/23 PRIOR VISIT"), today's palpation findings, density & pattern intelligence pills, and side count badges ("R · 2").
+  - `fm-review2-390px.png`: Mobile viewport (390px) demonstrating the pure CSS table-to-card transformation for Segment Assessment with zero horizontal overflow, clear uppercase labels, and top-right delete action.
+
+
 
 
 

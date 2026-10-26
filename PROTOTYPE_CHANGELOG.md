@@ -418,3 +418,9 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 - **FM point chips (session note):** the assessment's graded fascial points appear as chips ("GE-An (R)"); a tap marks treated, saved as `fmTreated`. Shown only for FM patients. Scenario E (mock) and D (live bridge via `localStorage['cn.fm']`).
 - **Decisions:** no auto-generated hypothesis text (keep the rule-based `fm-hyp-diag` and the therapist's own one line); single-visit PDF deferred until after the React port (cumulative `SessionLogPrintPage.tsx` is what insurers ask for); no FM segments on the body chart.
 - Tests: `tests/preview.mjs`, `tests/hep-share.mjs`, `tests/fm-chips.mjs`.
+
+## FM review fixes (review of the 26 Oct FM work)
+- **Pattern counting:** "N segments" counted graded cells, so two rows for the same segment made a false diagonal. It now counts distinct segments per plane, side and kind.
+- **Display:** density and finding badges showed "((rt))" and raw "rt/lt"; now "R"/"L" (stored values unchanged).
+- **Hidden side:** with the default R-only view, left findings were counted but invisible. The R and L chips now show their graded-point counts ("L · 3").
+- Test: `tests/fm-density.mjs`. Open FM proposals are listed in the review reply (prior-visit rows read-only, suggestion in the derived-diagonal box, Mo/Ve duplicates, phone segment table, default view).

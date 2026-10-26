@@ -7960,7 +7960,19 @@ setupSegmented('patient-progress');
     // 3. Smart Density & Pattern Summary
     // Show the same codes as the column headers (AM, An…), not internal plane ids (AN-ME).
     const planeCode = pl => (((window.PV_COLUMNS || []).filter(c => c.plane === pl)[0]) || {}).code || pl;
+    // Display only: stored sides stay 'rt' / 'lt'.
+    function sideLetter(s) { return s === 'rt' ? 'R' : (s === 'lt' ? 'L' : String(s || '').toUpperCase()); }
+    // Side filter chips show how many graded points sit on a side so findings on a hidden side are never missed.
+    function updateSideBadges() {
+        const counts = { rt: 0, lt: 0 };
+        document.querySelectorAll('#fm-pv-table .pv-cell[data-grade]').forEach(c => { if (c.getAttribute('data-grade') && counts[c.dataset.side] !== undefined) counts[c.dataset.side]++; });
+        [['rt', 'R'], ['lt', 'L']].forEach(([k, l]) => {
+            const chip = document.querySelector('#pv-side-toggle [data-pv-side="' + k + '"]');
+            if (chip) chip.textContent = counts[k] ? l + ' · ' + counts[k] : l;
+        });
+    }
     function updateDensitySummary() {
+        updateSideBadges();
         const cells = document.querySelectorAll('#fm-pv-table .pv-cell');
         
         let highestIndex = 0;
@@ -7994,7 +8006,7 @@ setupSegmented('patient-progress');
             let fullPlane = `${plane} (${side}) ${kind}`;
             
             // A pattern needs grade 2 or higher on that plane (grade 1 is too faint to count).
-            if (idx >= 2) planeCounts[fullPlane] = (planeCounts[fullPlane] || 0) + 1;
+            if (idx >= 2) { (planeCounts[fullPlane] = planeCounts[fullPlane] || new Set()).add(String(seg).trim().toUpperCase()); }
             
             if (idx > highestIndex) {
                 highestIndex = idx;
@@ -8022,7 +8034,7 @@ setupSegmented('patient-progress');
             let tMark = f.isTreated ? '<span style="color:var(--clinical); font-weight:800; font-size:11px;" title="Treated">✓</span>' : '';
             findingsHtml += `
                 <button type="button" class="chip pv-finding-badge" data-plane="${f.plane}" data-side="${f.side}" data-seg="${f.seg}" style="font-size:12px; padding:3px 8px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; background:#fff; border:1px solid var(--line);" title="Tap to locate ${f.seg} ${f.side} ${planeCode(f.plane)} in grid">
-                    <b>${f.seg}</b> <span style="color:var(--ink-faint); text-transform:uppercase;">(${f.side})</span> · <span style="font-weight:600;">${planeCode(f.plane)}</span>
+                    <b>${f.seg}</b> <span style="color:var(--ink-faint);">${sideLetter(f.side)}</span> · <span style="font-weight:600;">${planeCode(f.plane)}</span>
                     <span class="pv-cell ${gradeClasses[f.grade]}" style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:20px; border-radius:4px; font-size:11px; font-weight:800; border:1px solid rgba(0,0,0,0.06);">${f.grade}</span>
                     ${tMark}
                 </button>`;
@@ -8033,7 +8045,8 @@ setupSegmented('patient-progress');
         let patternHtml = `<div style="margin-top:10px;"><div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Pattern Detected:</div>`;
         let patternsFound = false;
         let patternPills = `<div style="display:flex; flex-wrap:wrap; gap:8px;">`;
-        for (let [p, count] of Object.entries(planeCounts)) {
+        for (let [p, segSet] of Object.entries(planeCounts)) {
+            const count = segSet.size;
             if (count >= 2) {
                 const [pName, pSide, pKind] = p.split(' ');
                 // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
@@ -8041,7 +8054,7 @@ setupSegmented('patient-progress');
                 patternPills += `
                     <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-pill); font-size:12px; font-weight:600;">
                         <span style="width:7px; height:7px; border-radius:50%; background:var(--clinical);"></span>
-                        <b>${planeCode(pName)}</b> ${term} <span style="color:var(--ink-faint); text-transform:uppercase;">(${pSide})</span>
+                        <b>${planeCode(pName)}</b> ${term} <span style="color:var(--ink-faint);">${sideLetter(pSide)}</span>
                         <span style="background:var(--clinical-dim); color:var(--clinical); font-size:11px; padding:1px 7px; border-radius:10px; font-weight:700;">${count} segments</span>
                     </span>`;
                 patternsFound = true;

@@ -680,8 +680,8 @@
     .pv-t th.sticky-col, .pv-t td.sticky-col { box-shadow:2px 0 5px rgba(0,0,0,.08); }
     .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { box-shadow:3px 0 6px rgba(0,0,0,.10); }
     .pv-container { -webkit-overflow-scrolling:touch; }
-    #fm-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
-    #fm-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
+    #fm-region-tabs, #pv-add-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+    #fm-region-tabs::-webkit-scrollbar, #pv-add-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
 
     /* Segment Assessment table-to-card transformation for phones (< 744px) */
     #fm-seg-wrap { overflow-x: visible !important; }
@@ -696,22 +696,22 @@
     #fm-seg-table tbody {
       display: flex !important;
       flex-direction: column !important;
-      gap: 10px !important;
+      gap: 12px !important;
       width: 100% !important;
     }
     #fm-seg-table tbody tr {
       display: grid !important;
-      grid-template-columns: 1.1fr 0.9fr 1fr !important;
+      grid-template-columns: 1.2fr 1fr auto !important;
       grid-template-areas:
         "seg side del"
         "dur traum vrs"
         "pain pain pain" !important;
-      gap: 8px !important;
-      padding: 10px 12px !important;
+      gap: 10px 10px !important;
+      padding: 14px !important;
       background: #fff !important;
       border: 1px solid var(--line) !important;
-      border-radius: var(--radius-sm, 8px) !important;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+      border-radius: 10px !important;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
       position: relative !important;
       width: 100% !important;
       box-sizing: border-box !important;
@@ -719,6 +719,7 @@
     #fm-seg-table tr.fm-auto-row {
       background: var(--context-dim, #f0f7f7) !important;
       border-color: var(--context, #008080) !important;
+      border-left: 4px solid var(--context, #008080) !important;
     }
     #fm-seg-table tbody tr td {
       display: flex !important;
@@ -737,36 +738,64 @@
     #fm-seg-table td:nth-child(7) {
       grid-area: del !important;
       align-items: flex-end !important;
-      justify-content: flex-start !important;
+      justify-content: flex-end !important;
+      padding-bottom: 2px !important;
     }
     #fm-seg-table td:nth-child(7) button {
-      width: 28px !important;
-      height: 28px !important;
-      line-height: 28px !important;
-      font-size: 20px !important;
+      width: 32px !important;
+      height: 32px !important;
+      line-height: 1 !important;
+      font-size: 18px !important;
       color: var(--ink-faint) !important;
-      border-radius: 4px !important;
+      border-radius: 6px !important;
       background: var(--surface) !important;
-      border: 1px solid var(--line-soft) !important;
+      border: 1px solid var(--line) !important;
       cursor: pointer !important;
       display: inline-flex !important;
       align-items: center !important;
       justify-content: center !important;
+      transition: all 0.15s ease !important;
     }
-    #fm-seg-table td:nth-child(1)::before { content: 'Segment'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(3)::before { content: 'Duration'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(4)::before { content: 'Trauma?'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(5)::before { content: 'VRS (0–10)'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(7) button:hover {
+      background: #FEE2E2 !important;
+      border-color: #FCA5A5 !important;
+      color: #DC2626 !important;
+    }
+    #fm-seg-table td:nth-child(1)::before { content: 'Segment'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(3)::before { content: 'Duration'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(4)::before { content: 'Trauma?'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(5)::before { content: 'VRS (0–10)'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 10px; font-weight: 700; color: var(--ink-faint); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    #fm-seg-table td:nth-child(7)::before { content: '' !important; display: none !important; }
     #fm-seg-table td input, #fm-seg-table td select {
       width: 100% !important;
       box-sizing: border-box !important;
-      font-size: 12px !important;
-      padding: 5px 7px !important;
+      font-size: 13px !important;
+      padding: 6px 10px !important;
+      border: 1px solid var(--line) !important;
       border-radius: 6px !important;
-      height: 30px !important;
+      background: #FAFAFA !important;
+      color: var(--ink) !important;
+      height: 34px !important;
+      display: block !important;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease !important;
     }
+    #fm-seg-table td input:focus, #fm-seg-table td select:focus {
+      background: #fff !important;
+      border-color: var(--clinical) !important;
+      box-shadow: 0 0 0 2px var(--clinical-dim) !important;
+      outline: none !important;
+    }
+  }
+
+  /* Remove tick marks from side toggle, layout toggle, and region tabs where active color highlight is sufficient */
+  #pv-side-toggle .chip.selected::before,
+  #pv-layout-toggle .chip.selected::before,
+  #fm-region-tabs .chip.selected::before,
+  #pv-add-region-tabs .chip.selected::before {
+    display: none !important;
+    content: none !important;
   }
 
   /* CSS-only check indicator for selected chips (replaces inline SVG) */
@@ -2379,6 +2408,20 @@
               <button type="button" class="chip" data-pv-layout="cc-only" title="Hide CF diagonals (Level 1 focus)">CCs only</button>
             </div>
           </div>
+        </div>
+
+        <!-- Add Segment Directly to PV Grid Toolbar -->
+        <div style="padding:0 28px; margin-top:12px; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
+          <div class="chip-row" id="pv-add-region-tabs">
+            <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
+            <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
+            <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
+            <button type="button" class="chip" id="pv-add-seg-custom" title="Add custom segment row to grid">＋ Other</button>
+          </div>
+        </div>
+        <div id="pv-region-drawer" style="margin:10px 28px 0; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
+          <div id="pv-region-chips" class="chip-row" style="gap:6px;"></div>
         </div>
         
         <!-- Desktop Sticky Table -->
@@ -8599,7 +8642,47 @@ setupSegmented('patient-progress');
         `).join('');
         drawer.style.display = 'block';
     }
-    window.toggleFmRegion = toggleFmRegion;
+    let activePvRegion = null;
+    function togglePvRegion(region) {
+        const drawer = document.getElementById('pv-region-drawer');
+        const chipsContainer = document.getElementById('pv-region-chips');
+        const tabs = document.querySelectorAll('#pv-add-region-tabs button[data-region]');
+        if (!drawer || !chipsContainer) return;
+
+        if (activePvRegion === region) {
+            drawer.style.display = 'none';
+            activePvRegion = null;
+            tabs.forEach(tab => {
+                tab.classList.remove('selected');
+                const reg = tab.getAttribute('data-region');
+                const count = (window.FM_SEGMENT_DETAILS[reg] || []).length;
+                tab.textContent = `${reg} (${count}) ▾`;
+            });
+            return;
+        }
+
+        activePvRegion = region;
+        tabs.forEach(tab => {
+            const reg = tab.getAttribute('data-region');
+            const count = (window.FM_SEGMENT_DETAILS[reg] || []).length;
+            if (reg === region) {
+                tab.classList.add('selected');
+                tab.textContent = `${reg} (${count}) ▴`;
+            } else {
+                tab.classList.remove('selected');
+                tab.textContent = `${reg} (${count}) ▾`;
+            }
+        });
+
+        const list = window.FM_SEGMENT_DETAILS[region] || [];
+        chipsContainer.innerHTML = list.map(item => `
+            <button type="button" class="chip pv-seg-chip" data-seg="${item.code}" title="${item.name}" style="font-size:12px; padding:5px 10px;">
+                <b>${item.code}</b> <span style="color:var(--ink-faint); font-weight:normal; margin-left:3px;">– ${item.label || item.name}</span>
+            </button>
+        `).join('');
+        drawer.style.display = 'block';
+    }
+    window.togglePvRegion = togglePvRegion;
 
     (function initSegmentPicker() {
         const dl = document.getElementById('fm-seg-codes');
@@ -8621,6 +8704,34 @@ setupSegmented('patient-progress');
                 if (!chip) return;
                 const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
                 addFmSegment(today, chip.getAttribute('data-seg'));
+            });
+        }
+
+        // Direct PV Grid Segment Picker
+        const pvRegionTabs = document.getElementById('pv-add-region-tabs');
+        if (pvRegionTabs) {
+            pvRegionTabs.addEventListener('click', function(e) {
+                const tab = e.target.closest('button[data-region]');
+                if (!tab) return;
+                togglePvRegion(tab.getAttribute('data-region'));
+            });
+        }
+
+        const pvDrawer = document.getElementById('pv-region-drawer');
+        if (pvDrawer) {
+            pvDrawer.addEventListener('click', function(e) {
+                const chip = e.target.closest('.pv-seg-chip');
+                if (!chip) return;
+                const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+                addFmSegment(today, chip.getAttribute('data-seg'));
+            });
+        }
+
+        const pvAddCustomBtn = document.getElementById('pv-add-seg-custom');
+        if (pvAddCustomBtn) {
+            pvAddCustomBtn.addEventListener('click', function() {
+                const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
+                addFmSegment(today, "");
             });
         }
     })();

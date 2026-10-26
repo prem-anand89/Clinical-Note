@@ -138,6 +138,34 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(300);
 
+// 12. Test Manual Add & Override in FM History Section
+await page.click('#fm-add-hist');
+await page.waitForTimeout(200);
+
+const histRows = await page.locator('#fm-hist-table tbody tr').count();
+ok('adding manual history row creates a row', histRows >= 1, histRows);
+
+const lastHistRow = page.locator('#fm-hist-table tbody tr').last();
+await lastHistRow.locator('.hist-seg').fill('GE (rt)');
+await lastHistRow.locator('.hist-date').fill('2023');
+await lastHistRow.locator('.hist-diag').fill('Meniscus tear');
+await lastHistRow.locator('.hist-type').selectOption('Trauma');
+
+const fmDataWithHist = await page.evaluate(() => window.getFmData());
+const foundHist = fmDataWithHist.history.find(h => h.segment === 'GE (rt)' && h.type === 'Trauma');
+ok('getFmData accurately reads manual history inputs', !!foundHist, foundHist);
+
+// Verify syncFmHistory preserves manual row
+await page.evaluate(() => window.syncFmHistory());
+const histCountAfterSync = await page.locator('#fm-hist-table tbody tr').count();
+ok('syncFmHistory preserves manual rows', histCountAfterSync >= 1);
+
+// Test delete button
+await lastHistRow.locator('.del-hist-btn').click();
+await page.waitForTimeout(100);
+const histCountAfterDelete = await page.locator('#fm-hist-table tbody tr').count();
+ok('deleting manual history row removes it', histCountAfterDelete === histRows - 1);
+
 ok('no page errors throughout operations', errors.length === 0, errors);
 
 await browser.close();

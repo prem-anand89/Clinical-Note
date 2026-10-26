@@ -667,6 +667,19 @@
     .text-input, select.select-input{ font-size:12.5px; padding:7px 9px; }
     .row-2{ gap:8px; }
     .section-title h2{ font-size:15px; }
+
+    /* Mobile Table & FM Optimizations */
+    .fm-t { font-size:11px; }
+    .fm-t th { padding:5px 6px; font-size:9px; }
+    .fm-t td { padding:2px; }
+    .fm-t td input, .fm-t td select { padding:6px 4px; font-size:11.5px; }
+    .del-seg-btn, .del-hist-btn { min-width:30px; min-height:30px; font-size:18px; display:inline-flex; align-items:center; justify-content:center; }
+    .pv-t td { height:36px; padding:1px; }
+    .pv-t th.sticky-col, .pv-t td.sticky-col { box-shadow:2px 0 5px rgba(0,0,0,.08); }
+    .pv-t th.sticky-col:nth-child(2), .pv-t td.sticky-col:nth-child(2) { box-shadow:3px 0 6px rgba(0,0,0,.10); }
+    .pv-container { -webkit-overflow-scrolling:touch; }
+    #fm-region-tabs, #pv-side-toggle, #pv-layout-toggle { overflow-x:auto; flex-wrap:nowrap; max-width:100%; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px; }
+    #fm-region-tabs::-webkit-scrollbar, #pv-side-toggle::-webkit-scrollbar, #pv-layout-toggle::-webkit-scrollbar { display:none; }
   }
 
   /* CSS-only check indicator for selected chips (replaces inline SVG) */
@@ -2228,17 +2241,21 @@
 
       <!-- 2. History -->
       <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">2. FM History (Pa Prev · Trauma · Surgery)</div>
-        <div class="field-note" style="margin-top:-8px; margin-bottom:12px;">Auto-pulled from general assessment history cards.</div>
+        <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>2. FM History (Pa Prev · Trauma · Surgery)</span>
+          <button type="button" class="chip" id="fm-add-hist" style="font-size:11px; padding:3px 10px;">＋ Add Event</button>
+        </div>
+        <div class="field-note" style="margin-top:-6px; margin-bottom:12px;">Auto-pulled from general assessment history cards, or add/override manually below.</div>
         <div style="overflow-x:auto;">
           <table class="fm-t" id="fm-hist-table">
             <thead>
               <tr>
-                <th style="width:80px">Type</th>
-                <th style="width:100px">Segment</th>
+                <th style="width:110px">Type</th>
+                <th style="width:110px">Segment</th>
                 <th style="width:90px">Date</th>
-                <th style="min-width:150px">Diagnosis</th>
-                <th style="width:120px">Recovery</th>
+                <th style="min-width:140px">Diagnosis</th>
+                <th style="width:105px">Recovery</th>
+                <th style="width:30px"></th>
               </tr>
             </thead>
             <tbody>
@@ -8679,8 +8696,12 @@ setupSegmented('patient-progress');
             painfulMovements: val(tr.querySelector('.seg-painful')).trim(), autoFilled: tr.classList.contains('fm-auto-row')
         }));
         const history = Array.from(document.querySelectorAll('#fm-hist-table tbody tr')).map(tr => ({
-            type: tr.children[0].textContent.trim(), segment: tr.children[1].textContent.trim(), region: tr.children[1].getAttribute('title') || '',
-            date: tr.children[2].textContent.trim(), diagnosis: tr.children[3].textContent.trim(), recovery: val(tr.querySelector('select'))
+            type: val(tr.querySelector('.hist-type')) || tr.children[0].textContent.trim(),
+            segment: val(tr.querySelector('.hist-seg')) || tr.children[1].textContent.trim(),
+            region: tr.querySelector('.hist-seg') ? (tr.querySelector('.hist-seg').getAttribute('title') || '') : (tr.children[1].getAttribute('title') || ''),
+            date: val(tr.querySelector('.hist-date')) || tr.children[2].textContent.trim(),
+            diagnosis: val(tr.querySelector('.hist-diag')) || tr.children[3].textContent.trim(),
+            recovery: val(tr.querySelector('.hist-status, select'))
         }));
         const pv = Array.from(document.querySelectorAll('#fm-pv-table .pv-cell')).filter(c => c.getAttribute('data-grade')).map(c => ({
             segId: c.closest('tr').getAttribute('data-seg-id'), segment: val(c.closest('tr').querySelector('.pv-seg-name')),
@@ -8800,11 +8821,63 @@ setupSegmented('patient-progress');
 (function() {
 
     // -----------------------------------------
-    // 4. History Auto-Fill Sync (Sorted & Compact UI compatible)
+    // 4. History Auto-Fill Sync & Manual Override
     // -----------------------------------------
+    function createHistRowEl(type, segStr, region, dateFormatted, diag, status, isManual) {
+        let typeNorm = type === 'Injury' ? 'Trauma' : (type === 'Pain' ? 'Pa Prev' : type);
+        let tr = document.createElement('tr');
+        if (isManual) tr.setAttribute('data-manual', 'true');
+        tr.innerHTML = `
+            <td>
+                <select class="select-input hist-type" style="padding:4px 6px; font-size:11.5px; font-weight:600; width:100%;">
+                    <option value="Pa Prev" ${typeNorm === 'Pa Prev' ? 'selected' : ''}>Pa Prev</option>
+                    <option value="Trauma" ${typeNorm === 'Trauma' ? 'selected' : ''}>Trauma</option>
+                    <option value="Surgery" ${typeNorm === 'Surgery' ? 'selected' : ''}>Surgery</option>
+                    <option value="Other" ${typeNorm === 'Other' ? 'selected' : ''}>Other</option>
+                </select>
+            </td>
+            <td>
+                <input type="text" class="text-input hist-seg" list="fm-seg-codes" value="${segStr || ''}" placeholder="e.g. GE (rt)" style="width:100%; font-size:12px; font-weight:600; padding:4px 6px;" title="${region || ''}">
+            </td>
+            <td>
+                <input type="text" class="text-input hist-date" value="${dateFormatted || ''}" placeholder="e.g. 2022" style="width:100%; font-size:11.5px; padding:4px 6px;">
+            </td>
+            <td>
+                <input type="text" class="text-input hist-diag" value="${diag || ''}" placeholder="Diagnosis / notes" style="width:100%; font-size:11.5px; padding:4px 6px;">
+            </td>
+            <td>
+               <select class="select-input hist-status" style="padding:4px 6px; font-size:11px; width:100%;">
+                 <option ${status==='Full' ? 'selected' : ''}>Full</option>
+                 <option ${status==='Partial' ? 'selected' : ''}>Partial</option>
+                 <option ${status==='Ongoing' ? 'selected' : ''}>Ongoing</option>
+                 <option ${status==='Unknown' ? 'selected' : ''}>Unknown</option>
+               </select>
+            </td>
+            <td style="text-align:center;">
+                <button type="button" class="del-hist-btn" style="border:none; background:transparent; color:var(--ink-faint); cursor:pointer; font-size:16px; padding:2px 6px; line-height:1;" title="Remove event">×</button>
+            </td>
+        `;
+        tr.addEventListener('input', function() { tr.setAttribute('data-manual', 'true'); });
+        tr.addEventListener('change', function() { tr.setAttribute('data-manual', 'true'); });
+        return tr;
+    }
+
+    window.addManualHistRow = function(type, segStr, dateStr, diag, status) {
+        const histTableBody = document.querySelector('#fm-hist-table tbody');
+        if (!histTableBody) return;
+        const row = createHistRowEl(type || 'Pa Prev', segStr || '', '', dateStr || '', diag || '', status || 'Full', true);
+        histTableBody.appendChild(row);
+        const segInput = row.querySelector('.hist-seg');
+        if (segInput) segInput.focus();
+        return row;
+    };
+
     window.syncFmHistory = function() {
         const histTableBody = document.querySelector('#fm-hist-table tbody');
         if (!histTableBody) return;
+        
+        // Preserve manually added or manually edited rows
+        const manualRows = Array.from(histTableBody.querySelectorAll('tr[data-manual="true"]'));
         histTableBody.innerHTML = '';
         let allEvents = [];
         
@@ -8856,30 +8929,35 @@ setupSegmented('patient-progress');
                     dateFormatted = d.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' });
                 }
             }
-            let tr = document.createElement('tr');
-            // FM segment code (e.g. Knee -> GE); unmapped regions ('Other') show as typed.
             let segCode = (window.REGION_TO_FM_SEGMENT || {})[e.region];
             let segStr = segCode || e.region || '';
             if (e.side && e.side !== 'N/A' && e.side !== 'Select…') {
                 segStr += ` (${e.side.substring(0,2).toLowerCase()})`;
             }
-            tr.innerHTML = `
-                <td style="font-size:12px; font-weight:600;">${e.type}</td>
-                <td style="font-size:12px; font-weight:600;" title="${e.region}">${segStr}</td>
-                <td style="font-size:12px;">${dateFormatted || ''}</td>
-                <td style="font-size:12px;">${e.diag || ''}</td>
-                <td style="font-size:12px;">
-                   <select class="select-input" style="padding:2px 4px; font-size:11px;">
-                     <option ${e.status==='Full' ? 'selected' : ''}>Full</option>
-                     <option ${e.status==='Partial' ? 'selected' : ''}>Partial</option>
-                     <option ${e.status==='Ongoing' ? 'selected' : ''}>Ongoing</option>
-                     <option ${e.status==='Unknown' ? 'selected' : ''}>Unknown</option>
-                   </select>
-                </td>
-            `;
+            let tr = createHistRowEl(e.type, segStr, e.region, dateFormatted, e.diag, e.status, false);
             histTableBody.appendChild(tr);
         });
+
+        // Re-append manual rows at the bottom
+        manualRows.forEach(tr => histTableBody.appendChild(tr));
+    };
+
+    // Bind Add Event button
+    const addHistBtn = document.getElementById('fm-add-hist');
+    if (addHistBtn) {
+        addHistBtn.addEventListener('click', function() {
+            window.addManualHistRow('Pa Prev', '', '', '', 'Full');
+        });
     }
+
+    // Delete history event delegation
+    document.addEventListener('click', function(e) {
+        const delBtn = e.target.closest('.del-hist-btn');
+        if (delBtn) {
+            const tr = delBtn.closest('tr');
+            if (tr) tr.remove();
+        }
+    });
 
     const histObserver = new MutationObserver(window.syncFmHistory);
     ['surgical-history-rows', 'trauma-history-rows', 'pain-history-rows'].forEach(id => {

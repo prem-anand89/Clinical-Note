@@ -18,6 +18,7 @@ Fixed already, do not redo: `pv-layout-test` assertion; screenshots moved to `sc
 - Put the Core sections in `#view-core` and `#sec-fascial-manipulation` in `#view-fm`. Tab bar is sticky below the app header; check it does not cover the sticky PV columns or the lean section headers.
 - Capsule `#fm-capsule-card` is a **sibling placed directly after `#sec-objective`**, not inside it (the Objective body collapses). Shown only when FM is enabled. Do not use `btn btn-secondary` (not defined); reuse an existing button style. Use CSS classes and variables only.
 - Capsule empty text exactly: `Assessment initialized · 0 points treated`, with the open link. Active text lists today's treated points (`CX-AL R`), the derived diagonal, and Mo/Ve pre → post per segment. Status badge: `Evaluating` / `Graded & treated`.
+- CSS class names (use exactly these; do not invent variants): `.module-tab-bar`, `.module-tab` (+ `.active`, and `aria-selected` for state), `.module-tab-dot`, `.fm-capsule-card`, `.fm-capsule-row`, `.fm-capsule-badge`, `.fm-capsule-open` (the link, styled with the existing `.chip`). `#view-core` / `#view-fm` are the only view containers.
 - Use one set of IDs everywhere: `#module-tab-bar`, `#tab-btn-core`, `#tab-btn-fm`, `#view-core`, `#view-fm`, `#fm-capsule-card`, `#fm-capsule-badge`, `#fm-capsule-hyp`, `#fm-capsule-treated`, `#fm-capsule-move`.
 
 ## Task 2 — Switching (state, scroll, open vs show)
@@ -30,7 +31,7 @@ Fixed already, do not redo: `pv-layout-test` assertion; screenshots moved to `sc
 ## Task 3 — Capsule sync
 - `syncFmCapsule()` reads `getFmData()` but uses **today's rows only** (`!isPrior`), and treated = cells with `treated`. Call it when switching to Core, when the note preview opens, and on the existing FM change events. No MutationObservers.
 - Note preview and the sign check include a one-line FM summary when FM is enabled (reuse the capsule text).
-- After signing, the FM tab opens read-only: the sign lock currently disables inputs and chips but not `.pv-cell`, the grade picker or the Mo/Ve steppers. Make those inert when locked, and confirm the capsule link still opens FM for reading.
+- Signed notes: a click guard already exists (`body.note-locked`, capture-phase listener after the sign workflow; test `tests/signed-lock.mjs`). It blocks every click inside `<main>` except reading aids. **Add `.module-tab` and `.fm-capsule-open` to its allow-list** (the tab bar sits inside `<main>`, so without this a signed note could not switch tabs), then confirm the FM tab opens read-only and edits stay blocked.
 
 ## Task 4 — Other modules
 Keep FM as the only tabbed module in this pass, but drive the tab list from `window.MODULE_REGISTRY` entries (add an optional `tab: true` flag, set only on FM) so VM/CST/NKT/DNS can follow without copying code. Their inline behaviour must not change.

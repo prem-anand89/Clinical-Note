@@ -491,3 +491,8 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - **Test fix:** `pv-layout-test` now checks document order (picker after the segment table); the old selector broke when an empty-state block was added between them. (The earlier changelog line saying this suite passed was only true at the time.)
 - **Housekeeping:** screenshots moved to `screenshots/`; `body-chart.png` stays in the repo root because the note loads it.
 - Test: `tests/fm-review3.mjs`.
+
+## Signed-note lock fix
+- **Bug (reproduced):** after signing, only inputs, chips and segmented buttons were disabled. Clicking a ROM row's ×, a pin, Full / WNL, Pain, FM delete buttons, grid cells or Mo/Ve steppers still changed the signed note (a signed ROM row could be removed).
+- **Fix:** `body.note-locked` plus a capture-phase click guard that blocks every click inside `<main>` once signed, except reading aids: note preview, section collapse, and the PV side / layout / visit filters (those chips were being disabled too, which stopped a signer from viewing the left side).
+- Test: `tests/signed-lock.mjs`.

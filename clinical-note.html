@@ -10828,7 +10828,9 @@ window.hideAdvancedModule = function(key) {
         el.disabled = true;
         el.style.opacity = '0.7';
       });
+      document.body.classList.add('note-locked');
       document.querySelectorAll('.chip, .segmented button, .icon-btn, .kebab').forEach(el => {
+        if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle')) return; // viewing controls stay usable
         el.style.pointerEvents = 'none';
         if(!el.classList.contains('selected')) {
            el.style.opacity = '0.4';
@@ -10888,6 +10890,18 @@ window.hideAdvancedModule = function(key) {
   }
 })();
 
+
+// ---- Signed-note guard ----
+// Disabling inputs is not enough: remove (×), pin, WNL, grade cells, steppers and similar controls are buttons or
+// divs. Once signed, block every click inside the note except reading aids (preview, section collapse, PV view filters).
+document.addEventListener('click', function(e){
+  if(!document.body.classList.contains('note-locked')) return;
+  var t = e.target;
+  if(!t.closest || !t.closest('main')) return;
+  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle')) return;
+  if(t.closest('.lean-head') && !t.closest('button')) return;
+  e.preventDefault(); e.stopPropagation();
+}, true);
 
 // ---- VM & CST LOGIC ----
 (function(){

@@ -63,6 +63,10 @@ const moveSeg = await page.getAttribute('#fm-move-table tbody tr', 'data-seg');
 const moveSide = await page.getAttribute('#fm-move-table tbody tr', 'data-side');
 ok('Mo/Ve table receives movement verification row GE R', moveRows >= 1 && moveSeg === 'GE' && moveSide === 'rt', { moveRows, moveSeg, moveSide });
 
+// Switch to Core tab to add secondary complaints and medical history
+await page.click('#tab-btn-core');
+await page.waitForTimeout(150);
+
 // Step 2: Show Secondary Complaints & Past History cards
 await page.evaluate(() => {
     document.querySelectorAll('#card-secondary, #card-past').forEach(el => el.classList.add('lean-shown'));
@@ -132,6 +136,10 @@ await page.waitForTimeout(400);
 
 const histCount2 = await page.locator('#fm-hist-table tbody tr').count();
 ok('Trauma history routes to FM History table (now 2 rows)', histCount2 >= 2, histCount2);
+
+// Switch back to FM tab to interact with Card 3 PV grid
+await page.click('#tab-btn-fm');
+await page.waitForTimeout(150);
 
 // Step 5: Therapist independently adds segments to PV table via Card 3 PV Grid Picker
 // Add Hip (CX) from Lower limb

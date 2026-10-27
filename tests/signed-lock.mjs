@@ -20,6 +20,7 @@ await page.waitForTimeout(200);
 const cell = page.locator('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell').first();
 await cell.scrollIntoViewIfNeeded(); await cell.click(); await page.waitForTimeout(150);
 await page.locator('#pv-picker button[data-grade="3"]').click();
+if (await page.locator('#tab-btn-core').count()) await page.click('#tab-btn-core');
 await page.locator('#rom-rows .obj-row .deg-input').first().fill('90');
 await page.click('#lean-no-redflags');
 await page.evaluate(() => document.getElementById('sign-note-btn').click());
@@ -31,6 +32,12 @@ ok('note is signed (frozen banner)', await page.locator('#frozen-banner').count(
 const snap = () => page.evaluate(() => JSON.stringify({ fm: window.getFmData(), pins: window.getPinnedFindings(), hep: window.getHepRows(), notes: window.getAssessmentNotes() }));
 const before = await snap();
 
+// test that capsule link opens FM tab even when note is signed
+if (await page.locator('.fm-capsule-open').count()) {
+  await page.click('.fm-capsule-open');
+  await page.waitForTimeout(200);
+}
+
 // every kind of edit a person could still attempt (real clicks, so handlers run if nothing blocks them)
 const attempt = async (sel, label) => { const l = page.locator(sel).first(); if (await l.count()) { try { await l.scrollIntoViewIfNeeded({ timeout: 2000 }); await l.click({ timeout: 2000 }); } catch (e) {} await page.waitForTimeout(80); } };
 await attempt('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell', 'pv cell');
@@ -39,19 +46,29 @@ ok('grade picker does not open on a signed note', await page.locator('#pv-picker
 await attempt('#fm-move-table .mv-b', 'mo/ve stepper');
 await attempt('#fm-seg-table .del-seg-btn', 'delete segment');
 await attempt('#fm-pv-table .del-pv-seg-btn', 'delete pv segment');
+
+// switch to Core tab to test Core inputs are locked
+if (await page.locator('#tab-btn-core').count()) await page.click('#tab-btn-core');
 await attempt('#rom-rows .pin-btn', 'pin');
 await attempt('#rom-rows .wnl-toggle', 'wnl');
 await attempt('#rom-rows .pain-toggle', 'pain');
 await attempt('#rom-rows .remove-x', 'remove row');
+
+// switch to FM tab to test FM buttons
+if (await page.locator('#tab-btn-fm').count()) await page.click('#tab-btn-fm');
 await attempt('#fm-apply-to-seq', 'apply to sequence');
 await attempt('#fm-grid-missing-chips .chip', 'grid strip');
+
+// switch to Core tab for gate button
+if (await page.locator('#tab-btn-core').count()) await page.click('#tab-btn-core');
 await attempt('#lean-no-redflags', 'gate button');
 const after = await snap();
 ok('FM, pins, HEP and notes are unchanged by those attempts', before === after, { before: before.length, after: after.length });
 ok('ROM row still there', await page.locator('#rom-rows .obj-row').count() === 1);
 ok('ROM value intact', (await page.locator('#rom-rows .deg-input').first().inputValue()) === '90');
 
-// read-only viewing still works
+// read-only viewing still works: switch to FM and test side toggle
+if (await page.locator('#tab-btn-fm').count()) await page.click('#tab-btn-fm');
 await page.click('#pv-side-toggle [data-pv-side="all"]');
 ok('view controls still work (side filter)', (await page.getAttribute('.pv-container', 'data-side-view')) !== 'rt');
 await page.click('#preview-open');

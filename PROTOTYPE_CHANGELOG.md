@@ -496,3 +496,45 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - **Bug (reproduced):** after signing, only inputs, chips and segmented buttons were disabled. Clicking a ROM row's ×, a pin, Full / WNL, Pain, FM delete buttons, grid cells or Mo/Ve steppers still changed the signed note (a signed ROM row could be removed).
 - **Fix:** `body.note-locked` plus a capture-phase click guard that blocks every click inside `<main>` once signed, except reading aids: note preview, section collapse, and the PV side / layout / visit filters (those chips were being disabled too, which stopped a signer from viewing the left side).
 - Test: `tests/signed-lock.mjs`.
+
+## FM Tabbed Workspace Architecture & Core Living Capsule
+- **Tab Bar & View Separation:**
+  - Sticky `.module-tab-bar` (`id="module-tab-bar"`, `role="tablist"`) positioned below `.note-head` housing `#tab-btn-core` and `#tab-btn-fm` (`role="tab"`, `aria-selected`, `aria-controls`).
+  - Split views: `#view-core` (`role="tabpanel"`) wraps all primary SOAP/Core evaluation sections; `#view-fm` (`role="tabpanel"`) isolates all five Fascial Manipulation cards.
+  - Zero form destruction: Both panels persist in the DOM, toggled cleanly via `display: block` / `display: none`.
+- **Core Living Capsule (`#fm-capsule-card`):**
+  - Positioned as a direct sibling immediately following `#sec-objective` inside `#view-core`.
+  - Hidden by default when FM is disabled; reactively updates when FM is enabled (`getFmData().enabled === true`).
+  - Empty text: `Assessment initialized · 0 points treated`, with `.fm-capsule-open` ("Open FM workspace →") linking directly to the FM tab.
+  - Active summary: Status badge (`Evaluating` vs `Graded & treated`), lists today's treated points using short plane codes (`CX-AL R`), derived diagonal (`AL diagonal`), and Mo/Ve pre/post outcomes (`CX pre: 3 → post: 0`).
+  - Note Preview integration: Renders FM summary line under Objective assessment when enabled.
+- **Scroll Position & Navigation:**
+  - `window.switchModuleTab(key)`: Remembers and restores `scrollY` coordinates per tab so switching back and forth preserves exact scroll offset without jumpiness.
+  - Sidebar outline integration: Desktop left sidebar (`.outline`) is cleanly hidden on the FM tab (`body.fm-tab-active .outline:not(.drawer-open)`) to dedicate maximum horizontal width to wide PV palpation matrices. Clicking an outline section from the FM tab automatically transitions back to Core view and scrolls smoothly to the section.
+  - Keyboard navigation: Left/Right/Home/End arrow keys on the tab bar move focus and switch tabs with `aria-selected` following.
+- **API Backwards Compatibility & Signed Note Guard:**
+  - `openAdvancedModule(key, { switch: false })`: Accepts optional `switch: false` flag for background/programmatic initialization while keeping default 1-arg calls switching to FM workspace.
+  - `hideAdvancedModule(key)`: Hides FM tab & capsule, reverts to Core view, clears `cn.fm` mirror in `localStorage`, and sets `enabled: false`.
+  - Signed note guard: Added `.module-tab` and `.fm-capsule-open` to the `completeSign()` allow-list, enabling therapists to view the FM workspace and capsule in read-only mode after signing without unlocking edits or pickers.
+  - `window.MODULE_REGISTRY`: Added `tab: true` to the Fascial Manipulation entry.
+- **Verification & Testing:**
+  - New test suite: `tests/fm-workspace-tabs.mjs` verifying all 11 requirements (default load, switch:false, capsule states, state/scroll persistence, outline navigation, cleanup, note preview & cn.fm mirror, keyboard navigation, viewports 390px/820px/1280px, screenshots).
+  - Screenshots generated: `screenshots/fm-workspace-tabs-1024px.png` and `screenshots/fm-workspace-tabs-390px.png`.
+  - All 17 test suites passing cleanly with zero errors:
+    - `tests/fm-chips.mjs`: ALL PASS
+    - `tests/fm-comprehensive-audit.mjs`: ALL 28 CHECKS PASSED
+    - `tests/fm-density.mjs`: ALL PASS
+    - `tests/fm-review2.mjs`: ALL PASS
+    - `tests/fm-review3.mjs`: ALL PASS
+    - `tests/fm-section4-hybrid1.mjs`: ALL 41 CHECKS PASSED
+    - `tests/fm-section5-recheck-test.mjs`: ALL PASS
+    - `tests/fm-wiring-test.mjs`: ALL PASS
+    - `tests/fm-workspace-tabs.mjs`: ALL 11 CHECKS PASSED
+    - `tests/hep-share.mjs`: ALL PASS
+    - `tests/pins.mjs`: ALL PASS
+    - `tests/preview.mjs`: ALL PASS
+    - `tests/pv-layout-test.mjs`: ALL PASS
+    - `tests/session-pins.mjs`: ALL PASS
+    - `tests/session-step2.mjs`: ALL PASS
+    - `tests/signed-lock.mjs`: ALL PASS
+    - `tests/step3.mjs`: ALL PASS

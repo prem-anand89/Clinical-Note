@@ -556,6 +556,107 @@
     .card{ padding:20px 22px; }
   }
 
+  /* ================= MODULE TABS & WORKSPACE ================= */
+  .module-tab-bar {
+    position: sticky;
+    top: 56px;
+    z-index: 25;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg);
+    padding: 8px 0;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+    box-sizing: border-box;
+    scrollbar-width: none;
+  }
+  .module-tab-bar::-webkit-scrollbar { display: none; }
+  .module-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid var(--line);
+    background: var(--card);
+    color: var(--ink-soft);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all .15s ease;
+  }
+  .module-tab:hover {
+    color: var(--ink);
+    border-color: var(--ink-faint);
+  }
+  .module-tab.active,
+  .module-tab[aria-selected="true"] {
+    background: var(--clinical-dim);
+    color: var(--clinical);
+    border-color: var(--clinical);
+    box-shadow: 0 1px 3px rgba(15,118,110,.12);
+  }
+  .module-tab-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--clinical);
+    display: inline-block;
+  }
+  body.fm-tab-active .outline:not(.drawer-open) {
+    display: none !important;
+  }
+
+  /* ================= FM CAPSULE CARD ================= */
+  .fm-capsule-card {
+    border-left: 3px solid var(--clinical);
+    background: var(--card);
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-card);
+  }
+  .fm-capsule-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .fm-capsule-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    background: var(--clinical-dim);
+    color: var(--clinical);
+  }
+  .fm-capsule-badge.treated {
+    background: var(--clinical-dim);
+    color: var(--clinical);
+    border: 1px solid var(--clinical);
+  }
+  .fm-capsule-open {
+    cursor: pointer;
+    font-weight: 600;
+  }
+  body.note-locked .module-tab,
+  body.note-locked .fm-capsule-open {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+  }
+
   /* ================= FASCIAL MANIPULATION (FM) ================= */
   .fm-t { width:100%; border-collapse:collapse; font-size:11.5px; }
   .fm-t th { padding:6px 7px; background:var(--surface); font-size:9.5px; font-weight:700; color:var(--ink-faint); letter-spacing:.04em; text-transform:uppercase; border:1px solid var(--line); text-align:left; }
@@ -1140,6 +1241,15 @@
       <p>Priya Reddy · Patient ID: 00214 · First visit for this episode</p>
       <button type="button" class="preview-open" id="preview-open">👁 Preview note</button>
     </div>
+
+    <!-- ================= MODULE TAB BAR ================= -->
+    <nav class="module-tab-bar" id="module-tab-bar" role="tablist" aria-label="Assessment views">
+      <button type="button" class="module-tab active" id="tab-btn-core" role="tab" aria-selected="true" aria-controls="view-core">Core Assessment</button>
+      <button type="button" class="module-tab" id="tab-btn-fm" role="tab" aria-selected="false" aria-controls="view-fm" style="display:none;"><span class="module-tab-dot"></span>Fascial Manipulation (FM)</button>
+    </nav>
+
+    <!-- ================= VIEW: CORE ASSESSMENT ================= -->
+    <div id="view-core" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-core">
 
     <div class="build-note">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B5762B" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -2377,6 +2487,25 @@
     </section>
 
     <!-- =========================================================
+         FM CAPSULE (Executive living card in Core Assessment)
+    ========================================================== -->
+    <div class="card fm-capsule-card" id="fm-capsule-card" style="display:none; margin-bottom:16px;">
+      <div class="fm-capsule-row" style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="font-weight:700; font-size:13.5px; color:var(--ink);">Fascial Manipulation</span>
+          <span class="fm-capsule-badge" id="fm-capsule-badge">Evaluating</span>
+        </div>
+        <button type="button" class="chip fm-capsule-open" id="fm-capsule-open-btn" style="margin:0;">Open FM Workspace ›</button>
+      </div>
+      <div id="fm-capsule-content">
+        <div class="fm-capsule-row" id="fm-capsule-empty" style="color:var(--ink-soft); font-size:13px;">Assessment initialized · 0 points treated</div>
+        <div class="fm-capsule-row" id="fm-capsule-treated" style="display:none; font-size:13px; margin-top:4px;"></div>
+        <div class="fm-capsule-row" id="fm-capsule-hyp" style="display:none; font-size:13px; margin-top:4px;"></div>
+        <div class="fm-capsule-row" id="fm-capsule-move" style="display:none; font-size:13px; margin-top:4px;"></div>
+      </div>
+    </div>
+
+    <!-- =========================================================
          GROUP A — NEURO ASSESSMENT (Advanced Module, Clinic tier)
          Appears as a note section (not a separate tab), per §8.4's
          corrected trigger paths. Auto-suggested via the Chief
@@ -2401,383 +2530,6 @@
       <div class="card" id="group-a-body"></div>
     </section>
 
-
-    <!-- =========================================================
-         FASCIAL MANIPULATION (Advanced Module)
-    ========================================================== -->
-    <section class="section" id="sec-fascial-manipulation" style="display:none;">
-      <div class="section-title">
-        <h2 style="font-size:15px;">Fascial Manipulation (FM)</h2>
-        <span class="tier-tag" style="background:var(--context-dim); color:var(--context);">Advanced Module · Specialty tier</span>
-        <button type="button" id="fm-hide" style="margin-left:auto; background:none; border:none; color:var(--ink-faint); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Remove
-        </button>
-      </div>
-      <div id="fm-trigger-reason" class="field-note" style="display:none; margin:-6px 0 14px; padding:8px 12px; background:var(--context-dim); color:var(--context); border-radius:var(--radius-sm); font-weight:600;"></div>
-
-      <!-- Internal Dysfunction — Stecco's Apparatus/Tensile Structure framework,
-           not part of FM's numbered flow (same as VM's own Internal Dysfunctions
-           card). Apparatus is auto-flagged from Subjective data, never
-           auto-selected — the therapist confirms or picks manually. Hidden
-           unless a Systemic Symptom is actually active in Subjective, since
-           most FM visits (chronic pain / surgical history triggers) have
-           nothing here; therapist can still reveal it manually. -->
-      <button type="button" class="add-link" id="fm-internal-dysf-reveal" style="margin:-6px 0 14px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Internal Dysfunction
-      </button>
-      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px; display:none;">
-        <div class="card-heading">Internal Dysfunction</div>
-        <div class="field">
-          <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
-        </div>
-        <div class="field">
-          <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
-          <div class="chip-row" id="fm-apparatus-chips">
-            <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
-            <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
-            <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
-            <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
-            <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
-            <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
-            <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
-          </div>
-        </div>
-        <div class="field">
-          <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
-          <div class="chip-row" id="fm-tensile-chips">
-            <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
-            <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
-            <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
-            <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
-            <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
-          </div>
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>Apparatus-fascial sequence / catenary</label>
-          <input type="text" class="text-input" placeholder="therapist's clinical/palpatory finding">
-        </div>
-      </div>
-
-      <!-- 1. Segment Assessment -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>1. Segment Assessment</span>
-        </div>
-        <datalist id="fm-seg-codes"></datalist>
-        <div id="fm-seg-wrap" style="overflow-x:auto;">
-          <table class="fm-t" id="fm-seg-table">
-            <thead>
-              <tr>
-                <th style="width:80px;">Segment</th>
-                <th style="width:70px;">Side</th>
-                <th style="width:100px;">Duration</th>
-                <th style="width:75px;">Onset</th>
-                <th style="width:64px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
-                <th style="min-width:150px;">Painful Movements</th>
-                <th style="width:30px;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- JS populates this -->
-            </tbody>
-          </table>
-        </div>
-        <div id="fm-seg-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:8px;">
-          No segments added yet. Choose a region below (e.g. <b>Lower limb ▾</b>) or record a Chief Complaint in Core Assessment.
-        </div>
-
-        <!-- Segments recorded above but not yet in the palpation grid -->
-        <div id="fm-grid-missing" style="display:none; margin-top:12px; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Not in the palpation grid:</span>
-          <span id="fm-grid-missing-chips" class="chip-row"></span>
-        </div>
-
-        <!-- Below-the-table Region Disclosure Picker -->
-        <div id="fm-seg-picker" style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);">
-          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment:</span>
-            <div class="chip-row" id="fm-region-tabs">
-              <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
-              <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
-              <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
-              <button type="button" class="chip" id="fm-add-seg" title="Add a blank row for a custom segment">＋ Other</button>
-            </div>
-          </div>
-          <!-- Disclosed segment drawer -->
-          <div id="fm-region-drawer" style="margin-top:10px; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
-            <div id="fm-region-chips" class="chip-row" style="gap:6px;"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. History -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>2. FM History (Pa Prev · Trauma · Surgery)</span>
-          <button type="button" class="chip" id="fm-add-hist" style="font-size:11px; padding:3px 10px;">＋ Add Event</button>
-        </div>
-        <div class="field-note" style="margin-top:-6px; margin-bottom:12px;">Auto-pulled from general assessment history cards, or add/override manually below.</div>
-        <div id="fm-hist-wrap" style="overflow-x:auto;">
-          <table class="fm-t" id="fm-hist-table">
-            <thead>
-              <tr>
-                <th style="width:110px">Type</th>
-                <th style="width:110px">Segment</th>
-                <th style="width:90px">Date</th>
-                <th style="min-width:140px">Diagnosis</th>
-                <th style="width:105px">Recovery</th>
-                <th style="width:30px"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- JS populates this -->
-            </tbody>
-          </table>
-        </div>
-        <div id="fm-hist-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:4px;">
-          No prior surgeries, injuries, or past pain episodes recorded. Click <b>＋ Add Event</b> or record history in Core Assessment.
-        </div>
-      </div>
-
-      <!-- 3. PV Grid -->
-      <div class="card" style="margin-bottom:14px; padding-left:0; padding-right:0;">
-        <div class="card-heading" style="padding:0 28px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <span>3. Palpatory Verification (PV) — CC (Coordination) &amp; CF (Fusion)</span>
-        </div>
-        <div class="field-note" id="pv-mode-hint" style="padding:0 28px; margin-top:0; margin-bottom:0;">
-          Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it. <b>CC</b> = Center of Coordination · <b>CF</b> = Center of Fusion.
-        </div>
-        
-        <!-- Toolbar: Side Filter, Visit Filter & Layout Switcher -->
-        <div style="padding:0 28px; margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Side:</span>
-            <div class="chip-row" id="pv-side-toggle">
-              <button type="button" class="chip selected" data-pv-side="rt" title="Right side">R</button>
-              <button type="button" class="chip" data-pv-side="lt" title="Left side">L</button>
-              <button type="button" class="chip" data-pv-side="all" title="Both sides">Both</button>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px;" id="pv-visit-controls">
-            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Visit:</span>
-            <div class="chip-row" id="pv-visit-toggle" style="align-items:center; gap:6px;">
-              <button type="button" class="chip selected" data-pv-visit="all" title="Show all visits in timeline">All</button>
-              <button type="button" class="chip" data-pv-visit="today" title="Show only today's assessment">Today</button>
-              <select id="pv-prior-visit-select" class="select-pill" style="display:none;" title="Filter by specific prior visit">
-                <!-- Dynamically populated -->
-              </select>
-            </div>
-          </div>
-
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Layout:</span>
-            <div class="chip-row" id="pv-layout-toggle">
-              <button type="button" class="chip selected" data-pv-layout="cf-cc" title="CF diagonals first, then CC coordination planes">CF · CC</button>
-              <button type="button" class="chip" data-pv-layout="ante-retro" title="Ante planes, then Retro planes">Ante · Retro</button>
-              <button type="button" class="chip" data-pv-layout="cc-only" title="Hide CF diagonals (Level 1 focus)">CCs only</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Desktop Sticky Table -->
-        <div class="pv-container" data-side-view="rt" data-layout-view="cf-cc" style="border-left:none; border-right:none; border-radius:0; margin-top:14px;">
-          <table class="pv-t" id="fm-pv-table">
-            <thead>
-              <tr>
-                <th rowspan="3" class="sticky-col pv-date-col" style="width:60px; left:0;">Date</th>
-                <th rowspan="3" class="sticky-col pv-seg-col" style="width:60px; left:60px;">Seg</th>
-                <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
-                <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
-              </tr>
-              <tr id="pv-head-groups"></tr>
-              <tr id="pv-head-planes"></tr>
-            </thead>
-            <tbody>
-              <!-- JS populates rows -->
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Add Segment Directly to PV Grid (Below Table) -->
-        <div id="pv-seg-picker" style="padding:12px 28px 0; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
-          <div class="chip-row" id="pv-add-region-tabs">
-            <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
-            <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
-            <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
-            <button type="button" class="chip" id="pv-add-seg-custom" title="Add custom segment row to grid">＋ Other</button>
-          </div>
-        </div>
-        <div id="pv-region-drawer" style="margin:10px 28px 0; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
-          <div id="pv-region-chips" class="chip-row" style="gap:6px;"></div>
-        </div>
-
-
-        <!-- Density Summary Strip -->
-        <div class="density-summary-card" style="margin:16px 28px 0; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); font-size:13px; display:flex; flex-direction:column; gap:10px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-            <div style="display:flex; align-items:center; gap:6px;">
-              <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--clinical-dim); color:var(--clinical); font-size:11px;">🔍</span>
-              <b style="color:var(--clinical); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;">Density &amp; Pattern Intelligence</b>
-            </div>
-            <button type="button" class="chip" id="fm-apply-to-seq" style="font-size:11.5px; padding:4px 10px; font-weight:700; color:var(--clinical); border-color:var(--clinical); background:var(--clinical-dim); display:none; cursor:pointer;" title="Add highest findings to Treatment Sequence">⚡ Apply to Sequence</button>
-          </div>
-          <div id="fm-density-summary" style="font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; color:var(--ink); line-height:1.45;">
-            <span style="color:var(--ink-faint); font-size:12.5px;">Palpate and grade points across segments. When ≥2 segments on a plane reach grade 2+, the dominant sequence or diagonal will synthesize here.</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Hypothesis & Sequence -->
-      <div class="card" style="margin-bottom:14px;">
-        <div class="card-heading">
-          <span>4. Hypothesis &amp; Treatment Sequence</span>
-          <span style="font-size:12px; font-weight:500; color:var(--ink-faint);">Clinical pattern synthesis</span>
-        </div>
-
-        <!-- 1. Sleek Diagnostic Hypothesis Banner -->
-        <div class="hyp-banner-hybrid" id="fm-hyp-banner">
-          <div class="hyp-info">
-            <span class="hyp-title">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-              <span id="fm-hyp-diag">None</span>
-            </span>
-            <span class="hyp-badge" id="fm-hyp-badge" style="display:none;"></span>
-            <span class="hyp-meta" id="fm-hyp-meta">Palpate and grade points in Card 3 to derive pattern</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="add-link" id="fm-re-derive-btn" style="padding:2px 6px; font-size:11.5px;" title="Re-scan grid findings">↻ Re-derive</button>
-          </div>
-        </div>
-
-        <!-- 2. Clean Planned Sequence -->
-        <div class="field" style="margin-bottom:8px;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-            <label style="margin-bottom:0;">Treatment Sequence <span class="hint">Treated in numerical order</span></label>
-            <span id="fm-seq-count" style="font-size:11px; color:var(--clinical); font-weight:600;">0 points planned</span>
-          </div>
-
-          <div class="seq-builder seq-pills-row" id="fm-seq-builder">
-            <button type="button" class="add-link" id="fm-seq-from-findings" title="Add highest graded findings from Card 3">＋ From findings</button>
-            <button type="button" class="add-link" id="fm-add-seq-step" title="Add another point to sequence">＋ Add point</button>
-          </div>
-        </div>
-
-        <!-- 3. Collapsed Clinical Reasoning -->
-        <details class="fm-collapse" id="fm-reasoning-collapse">
-          <summary>
-            <span>Optional: Clinical Reasoning &amp; Context</span>
-            <span style="font-size:10px; font-weight:400; opacity:0.8;">Tap to expand ▾</span>
-          </summary>
-          <div class="fm-collapse-body">
-            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
-              <span style="font-size:11px; color:var(--ink-faint); font-weight:700; text-transform:uppercase;">Quick Tags:</span>
-              <div class="chip-row" id="fm-reasoning-tags" style="display:inline-flex; gap:6px;">
-                <button type="button" class="chip" data-chip="Density chain">Density chain</button>
-                <button type="button" class="chip" data-chip="Referred pattern">Referred pattern</button>
-                <button type="button" class="chip" data-chip="Compensatory">Compensatory</button>
-              </div>
-            </div>
-            <textarea class="text-input" id="fm-seq-reasoning" rows="2" placeholder="Clinical reasoning for this sequence (e.g. chronic ankle sprain causing ascending tension along the lateral line to knee)..."></textarea>
-          </div>
-        </details>
-      </div>
-
-      <!-- 5. Movement Verification (Mo/Ve) & Palpatory Re-check -->
-      <div class="card">
-        <div class="card-heading">5. Movement Verification (Mo/Ve) &amp; Palpatory Re-check</div>
-        
-        <!-- Movement Verification Table -->
-        <div class="field" style="margin-bottom:16px;">
-          <label>Movement Verification (Mo/Ve) <span class="hint">Pain Rating (0–10 scale)</span></label>
-          <div style="overflow-x:auto;">
-            <table class="fm-t" id="fm-move-table">
-              <thead>
-                <tr>
-                  <th class="sticky-col" style="width:75px;">Segment</th>
-                  <th>Movement Tested <span class="hint">(tap to edit)</span></th>
-                  <th style="width:70px; text-align:center;" title="Pre-treatment VRS, from table 1">Pre</th>
-                  <th style="width:125px; text-align:center;" title="Post-treatment VRS">Post</th>
-                  <th style="width:130px; text-align:center;">Outcome</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- JS populated -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Palpatory Re-check Side-by-Side Matrix Table -->
-        <div class="field" style="margin-bottom:16px;" id="fm-recheck-field">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
-            <label style="margin-bottom:0;">Palpatory Re-check <span class="hint">Treated points matrix · tap cell to grade post-treatment</span></label>
-            <span id="fm-recheck-count" style="font-size:10.5px; color:var(--clinical); font-weight:600;">0 points treated</span>
-          </div>
-
-          <div class="recheck-container" id="fm-recheck-container" style="display:none;">
-            <table class="pv-t" id="fm-recheck-table">
-              <thead></thead>
-              <tbody></tbody>
-            </table>
-          </div>
-
-          <div id="fm-recheck-empty" style="display:block; padding:14px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm);">
-            Mark points treated (✓) in Card 3 to populate palpatory re-check.
-          </div>
-
-          <div class="diff-legend" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:11px; color:var(--ink-faint);">
-            <div style="display:flex; align-items:center; gap:16px;">
-              <span style="display:inline-flex; align-items:center; gap:5px;">
-                <span class="pre-badge pre-3" style="width:20px; height:18px; font-size:9px;">3</span>
-                <b style="color:var(--ink-soft);">Pre</b> = Prefilled baseline
-              </span>
-              <span style="display:inline-flex; align-items:center; gap:5px;">
-                <span class="post-btn post-unrated" style="width:20px; height:18px; font-size:9px;">?</span>
-                <b style="color:var(--clinical);">Post</b> = Tap cell to grade
-              </span>
-            </div>
-            <div>
-              <span style="font-weight:600; color:#2E7D32;">0</span> = Abolished · 
-              <span style="font-weight:600; color:#0D766E;">1</span> = Minimal · 
-              <span style="font-weight:600; color:#B45309;">2 / 2+</span> = Reduced
-            </div>
-          </div>
-        </div>
-        
-        <!-- Overall Session Response -->
-        <div class="field" style="margin-bottom:16px;">
-          <label>Session Response</label>
-          <div class="chip-row" id="fm-session-response">
-            <button type="button" class="chip" data-chip="Immediate relief">Immediate relief</button>
-            <button type="button" class="chip" data-chip="Gradual improvement">Gradual improvement</button>
-            <button type="button" class="chip" data-chip="Pain reduced, still stiff">Pain reduced, still stiff</button>
-            <button type="button" class="chip" data-chip="No change">No change</button>
-            <button type="button" class="chip" data-chip="Increased pain">Increased pain</button>
-          </div>
-        </div>
-        
-        <!-- Treatment Notes & Guidance (Collapsed by default) -->
-        <details class="fm-collapse" id="fm-notes-collapse">
-          <summary>
-            <span>▸ Treatment Notes &amp; Stecco Guidance <span class="hint" style="font-weight:400; text-transform:none;">(optional)</span></span>
-            <span style="color:var(--clinical); font-size:11px; text-transform:none; font-weight:600;">＋ Add Notes</span>
-          </summary>
-          <div class="fm-collapse-body">
-            <div class="chip-row" style="margin-bottom:8px;">
-              <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;">Quick Add:</span>
-              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('24-48h post-friction soreness explained.')">24–48h soreness explained</button>
-              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Apply heat to treated areas; avoid ice.')">Heat, avoid ice</button>
-              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Avoid heavy exertion for 48h.')">Avoid heavy exertion</button>
-            </div>
-            <textarea id="fm-rx-notes" class="text-input" rows="2" placeholder="Response to specific points, patient sensations during friction, or home exercise guidance..."></textarea>
-          </div>
-        </details>
-      </div>
-    </section>
 
     <!-- ==========================================
          VISCERAL MANIPULATION (VM) SECTION
@@ -3823,6 +3575,390 @@
         </div>
       </div>
     </section>
+
+    </div><!-- /#view-core -->
+
+    <!-- ================= VIEW: FASCIAL MANIPULATION ================= -->
+    <div id="view-fm" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-fm" style="display:none;">
+
+    <!-- =========================================================
+         FASCIAL MANIPULATION (Advanced Module)
+    ========================================================== -->
+    <section class="section" id="sec-fascial-manipulation" style="display:none;">
+      <div class="section-title">
+        <h2 style="font-size:15px;">Fascial Manipulation (FM)</h2>
+        <span class="tier-tag" style="background:var(--context-dim); color:var(--context);">Advanced Module · Specialty tier</span>
+        <button type="button" id="fm-hide" style="margin-left:auto; background:none; border:none; color:var(--ink-faint); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Remove
+        </button>
+      </div>
+      <div id="fm-trigger-reason" class="field-note" style="display:none; margin:-6px 0 14px; padding:8px 12px; background:var(--context-dim); color:var(--context); border-radius:var(--radius-sm); font-weight:600;"></div>
+
+      <!-- Internal Dysfunction — Stecco's Apparatus/Tensile Structure framework,
+           not part of FM's numbered flow (same as VM's own Internal Dysfunctions
+           card). Apparatus is auto-flagged from Subjective data, never
+           auto-selected — the therapist confirms or picks manually. Hidden
+           unless a Systemic Symptom is actually active in Subjective, since
+           most FM visits (chronic pain / surgical history triggers) have
+           nothing here; therapist can still reveal it manually. -->
+      <button type="button" class="add-link" id="fm-internal-dysf-reveal" style="margin:-6px 0 14px;">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Internal Dysfunction
+      </button>
+      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px; display:none;">
+        <div class="card-heading">Internal Dysfunction</div>
+        <div class="field">
+          <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
+        </div>
+        <div class="field">
+          <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
+          <div class="chip-row" id="fm-apparatus-chips">
+            <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
+            <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
+            <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
+            <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
+            <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
+            <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
+            <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
+          <div class="chip-row" id="fm-tensile-chips">
+            <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
+            <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
+            <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
+            <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
+            <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Apparatus-fascial sequence / catenary</label>
+          <input type="text" class="text-input" placeholder="therapist's clinical/palpatory finding">
+        </div>
+      </div>
+
+      <!-- 1. Segment Assessment -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>1. Segment Assessment</span>
+        </div>
+        <datalist id="fm-seg-codes"></datalist>
+        <div id="fm-seg-wrap" style="overflow-x:auto;">
+          <table class="fm-t" id="fm-seg-table">
+            <thead>
+              <tr>
+                <th style="width:80px;">Segment</th>
+                <th style="width:70px;">Side</th>
+                <th style="width:100px;">Duration</th>
+                <th style="width:75px;">Onset</th>
+                <th style="width:64px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
+                <th style="min-width:150px;">Painful Movements</th>
+                <th style="width:30px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS populates this -->
+            </tbody>
+          </table>
+        </div>
+        <div id="fm-seg-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:8px;">
+          No segments added yet. Choose a region below (e.g. <b>Lower limb ▾</b>) or record a Chief Complaint in Core Assessment.
+        </div>
+
+        <!-- Segments recorded above but not yet in the palpation grid -->
+        <div id="fm-grid-missing" style="display:none; margin-top:12px; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Not in the palpation grid:</span>
+          <span id="fm-grid-missing-chips" class="chip-row"></span>
+        </div>
+
+        <!-- Below-the-table Region Disclosure Picker -->
+        <div id="fm-seg-picker" style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);">
+          <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment:</span>
+            <div class="chip-row" id="fm-region-tabs">
+              <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
+              <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
+              <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
+              <button type="button" class="chip" id="fm-add-seg" title="Add a blank row for a custom segment">＋ Other</button>
+            </div>
+          </div>
+          <!-- Disclosed segment drawer -->
+          <div id="fm-region-drawer" style="margin-top:10px; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
+            <div id="fm-region-chips" class="chip-row" style="gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. History -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>2. FM History (Pa Prev · Trauma · Surgery)</span>
+          <button type="button" class="chip" id="fm-add-hist" style="font-size:11px; padding:3px 10px;">＋ Add Event</button>
+        </div>
+        <div class="field-note" style="margin-top:-6px; margin-bottom:12px;">Auto-pulled from general assessment history cards, or add/override manually below.</div>
+        <div id="fm-hist-wrap" style="overflow-x:auto;">
+          <table class="fm-t" id="fm-hist-table">
+            <thead>
+              <tr>
+                <th style="width:110px">Type</th>
+                <th style="width:110px">Segment</th>
+                <th style="width:90px">Date</th>
+                <th style="min-width:140px">Diagnosis</th>
+                <th style="width:105px">Recovery</th>
+                <th style="width:30px"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS populates this -->
+            </tbody>
+          </table>
+        </div>
+        <div id="fm-hist-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:4px;">
+          No prior surgeries, injuries, or past pain episodes recorded. Click <b>＋ Add Event</b> or record history in Core Assessment.
+        </div>
+      </div>
+
+      <!-- 3. PV Grid -->
+      <div class="card" style="margin-bottom:14px; padding-left:0; padding-right:0;">
+        <div class="card-heading" style="padding:0 28px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span>3. Palpatory Verification (PV) — CC (Coordination) &amp; CF (Fusion)</span>
+        </div>
+        <div class="field-note" id="pv-mode-hint" style="padding:0 28px; margin-top:0; margin-bottom:0;">
+          Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it. <b>CC</b> = Center of Coordination · <b>CF</b> = Center of Fusion.
+        </div>
+        
+        <!-- Toolbar: Side Filter, Visit Filter & Layout Switcher -->
+        <div style="padding:0 28px; margin-top:12px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px 18px;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Side:</span>
+            <div class="chip-row" id="pv-side-toggle">
+              <button type="button" class="chip selected" data-pv-side="rt" title="Right side">R</button>
+              <button type="button" class="chip" data-pv-side="lt" title="Left side">L</button>
+              <button type="button" class="chip" data-pv-side="all" title="Both sides">Both</button>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px;" id="pv-visit-controls">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Visit:</span>
+            <div class="chip-row" id="pv-visit-toggle" style="align-items:center; gap:6px;">
+              <button type="button" class="chip selected" data-pv-visit="all" title="Show all visits in timeline">All</button>
+              <button type="button" class="chip" data-pv-visit="today" title="Show only today's assessment">Today</button>
+              <select id="pv-prior-visit-select" class="select-pill" style="display:none;" title="Filter by specific prior visit">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Layout:</span>
+            <div class="chip-row" id="pv-layout-toggle">
+              <button type="button" class="chip selected" data-pv-layout="cf-cc" title="CF diagonals first, then CC coordination planes">CF · CC</button>
+              <button type="button" class="chip" data-pv-layout="ante-retro" title="Ante planes, then Retro planes">Ante · Retro</button>
+              <button type="button" class="chip" data-pv-layout="cc-only" title="Hide CF diagonals (Level 1 focus)">CCs only</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Desktop Sticky Table -->
+        <div class="pv-container" data-side-view="rt" data-layout-view="cf-cc" style="border-left:none; border-right:none; border-radius:0; margin-top:14px;">
+          <table class="pv-t" id="fm-pv-table">
+            <thead>
+              <tr>
+                <th rowspan="3" class="sticky-col pv-date-col" style="width:60px; left:0;">Date</th>
+                <th rowspan="3" class="sticky-col pv-seg-col" style="width:60px; left:60px;">Seg</th>
+                <th id="pv-head-rt" colspan="10" class="pv-col-rt" style="background:var(--clinical-dim); color:var(--clinical);">RIGHT</th>
+                <th id="pv-head-lt" colspan="10" class="pv-col-lt div-left" style="background:#FBF1E2; color:#B5762B;">LEFT</th>
+              </tr>
+              <tr id="pv-head-groups"></tr>
+              <tr id="pv-head-planes"></tr>
+            </thead>
+            <tbody>
+              <!-- JS populates rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add Segment Directly to PV Grid (Below Table) -->
+        <div id="pv-seg-picker" style="padding:12px 28px 0; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
+          <div class="chip-row" id="pv-add-region-tabs">
+            <button type="button" class="chip" data-region="Lower limb">Lower limb (4) ▾</button>
+            <button type="button" class="chip" data-region="Upper limb">Upper limb (5) ▾</button>
+            <button type="button" class="chip" data-region="Trunk">Trunk (7) ▾</button>
+            <button type="button" class="chip" id="pv-add-seg-custom" title="Add custom segment row to grid">＋ Other</button>
+          </div>
+        </div>
+        <div id="pv-region-drawer" style="margin:10px 28px 0; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
+          <div id="pv-region-chips" class="chip-row" style="gap:6px;"></div>
+        </div>
+
+
+        <!-- Density Summary Strip -->
+        <div class="density-summary-card" style="margin:16px 28px 0; padding:16px 18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-md); font-size:13px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--clinical-dim); color:var(--clinical); font-size:11px;">🔍</span>
+              <b style="color:var(--clinical); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;">Density &amp; Pattern Intelligence</b>
+            </div>
+            <button type="button" class="chip" id="fm-apply-to-seq" style="font-size:11.5px; padding:4px 10px; font-weight:700; color:var(--clinical); border-color:var(--clinical); background:var(--clinical-dim); display:none; cursor:pointer;" title="Add highest findings to Treatment Sequence">⚡ Apply to Sequence</button>
+          </div>
+          <div id="fm-density-summary" style="font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; color:var(--ink); line-height:1.45;">
+            <span style="color:var(--ink-faint); font-size:12.5px;">Palpate and grade points across segments. When ≥2 segments on a plane reach grade 2+, the dominant sequence or diagonal will synthesize here.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Hypothesis & Sequence -->
+      <div class="card" style="margin-bottom:14px;">
+        <div class="card-heading">
+          <span>4. Hypothesis &amp; Treatment Sequence</span>
+          <span style="font-size:12px; font-weight:500; color:var(--ink-faint);">Clinical pattern synthesis</span>
+        </div>
+
+        <!-- 1. Sleek Diagnostic Hypothesis Banner -->
+        <div class="hyp-banner-hybrid" id="fm-hyp-banner">
+          <div class="hyp-info">
+            <span class="hyp-title">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span id="fm-hyp-diag">None</span>
+            </span>
+            <span class="hyp-badge" id="fm-hyp-badge" style="display:none;"></span>
+            <span class="hyp-meta" id="fm-hyp-meta">Palpate and grade points in Card 3 to derive pattern</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="add-link" id="fm-re-derive-btn" style="padding:2px 6px; font-size:11.5px;" title="Re-scan grid findings">↻ Re-derive</button>
+          </div>
+        </div>
+
+        <!-- 2. Clean Planned Sequence -->
+        <div class="field" style="margin-bottom:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+            <label style="margin-bottom:0;">Treatment Sequence <span class="hint">Treated in numerical order</span></label>
+            <span id="fm-seq-count" style="font-size:11px; color:var(--clinical); font-weight:600;">0 points planned</span>
+          </div>
+
+          <div class="seq-builder seq-pills-row" id="fm-seq-builder">
+            <button type="button" class="add-link" id="fm-seq-from-findings" title="Add highest graded findings from Card 3">＋ From findings</button>
+            <button type="button" class="add-link" id="fm-add-seq-step" title="Add another point to sequence">＋ Add point</button>
+          </div>
+        </div>
+
+        <!-- 3. Collapsed Clinical Reasoning -->
+        <details class="fm-collapse" id="fm-reasoning-collapse">
+          <summary>
+            <span>Optional: Clinical Reasoning &amp; Context</span>
+            <span style="font-size:10px; font-weight:400; opacity:0.8;">Tap to expand ▾</span>
+          </summary>
+          <div class="fm-collapse-body">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+              <span style="font-size:11px; color:var(--ink-faint); font-weight:700; text-transform:uppercase;">Quick Tags:</span>
+              <div class="chip-row" id="fm-reasoning-tags" style="display:inline-flex; gap:6px;">
+                <button type="button" class="chip" data-chip="Density chain">Density chain</button>
+                <button type="button" class="chip" data-chip="Referred pattern">Referred pattern</button>
+                <button type="button" class="chip" data-chip="Compensatory">Compensatory</button>
+              </div>
+            </div>
+            <textarea class="text-input" id="fm-seq-reasoning" rows="2" placeholder="Clinical reasoning for this sequence (e.g. chronic ankle sprain causing ascending tension along the lateral line to knee)..."></textarea>
+          </div>
+        </details>
+      </div>
+
+      <!-- 5. Movement Verification (Mo/Ve) & Palpatory Re-check -->
+      <div class="card">
+        <div class="card-heading">5. Movement Verification (Mo/Ve) &amp; Palpatory Re-check</div>
+        
+        <!-- Movement Verification Table -->
+        <div class="field" style="margin-bottom:16px;">
+          <label>Movement Verification (Mo/Ve) <span class="hint">Pain Rating (0–10 scale)</span></label>
+          <div style="overflow-x:auto;">
+            <table class="fm-t" id="fm-move-table">
+              <thead>
+                <tr>
+                  <th class="sticky-col" style="width:75px;">Segment</th>
+                  <th>Movement Tested <span class="hint">(tap to edit)</span></th>
+                  <th style="width:70px; text-align:center;" title="Pre-treatment VRS, from table 1">Pre</th>
+                  <th style="width:125px; text-align:center;" title="Post-treatment VRS">Post</th>
+                  <th style="width:130px; text-align:center;">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- JS populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Palpatory Re-check Side-by-Side Matrix Table -->
+        <div class="field" style="margin-bottom:16px;" id="fm-recheck-field">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+            <label style="margin-bottom:0;">Palpatory Re-check <span class="hint">Treated points matrix · tap cell to grade post-treatment</span></label>
+            <span id="fm-recheck-count" style="font-size:10.5px; color:var(--clinical); font-weight:600;">0 points treated</span>
+          </div>
+
+          <div class="recheck-container" id="fm-recheck-container" style="display:none;">
+            <table class="pv-t" id="fm-recheck-table">
+              <thead></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <div id="fm-recheck-empty" style="display:block; padding:14px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm);">
+            Mark points treated (✓) in Card 3 to populate palpatory re-check.
+          </div>
+
+          <div class="diff-legend" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-top:8px; font-size:11px; color:var(--ink-faint);">
+            <div style="display:flex; align-items:center; gap:16px;">
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <span class="pre-badge pre-3" style="width:20px; height:18px; font-size:9px;">3</span>
+                <b style="color:var(--ink-soft);">Pre</b> = Prefilled baseline
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:5px;">
+                <span class="post-btn post-unrated" style="width:20px; height:18px; font-size:9px;">?</span>
+                <b style="color:var(--clinical);">Post</b> = Tap cell to grade
+              </span>
+            </div>
+            <div>
+              <span style="font-weight:600; color:#2E7D32;">0</span> = Abolished · 
+              <span style="font-weight:600; color:#0D766E;">1</span> = Minimal · 
+              <span style="font-weight:600; color:#B45309;">2 / 2+</span> = Reduced
+            </div>
+          </div>
+        </div>
+        
+        <!-- Overall Session Response -->
+        <div class="field" style="margin-bottom:16px;">
+          <label>Session Response</label>
+          <div class="chip-row" id="fm-session-response">
+            <button type="button" class="chip" data-chip="Immediate relief">Immediate relief</button>
+            <button type="button" class="chip" data-chip="Gradual improvement">Gradual improvement</button>
+            <button type="button" class="chip" data-chip="Pain reduced, still stiff">Pain reduced, still stiff</button>
+            <button type="button" class="chip" data-chip="No change">No change</button>
+            <button type="button" class="chip" data-chip="Increased pain">Increased pain</button>
+          </div>
+        </div>
+        
+        <!-- Treatment Notes & Guidance (Collapsed by default) -->
+        <details class="fm-collapse" id="fm-notes-collapse">
+          <summary>
+            <span>▸ Treatment Notes &amp; Stecco Guidance <span class="hint" style="font-weight:400; text-transform:none;">(optional)</span></span>
+            <span style="color:var(--clinical); font-size:11px; text-transform:none; font-weight:600;">＋ Add Notes</span>
+          </summary>
+          <div class="fm-collapse-body">
+            <div class="chip-row" style="margin-bottom:8px;">
+              <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase;">Quick Add:</span>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('24-48h post-friction soreness explained.')">24–48h soreness explained</button>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Apply heat to treated areas; avoid ice.')">Heat, avoid ice</button>
+              <button type="button" class="chip" style="font-size:11.5px; padding:3px 9px;" onclick="addFmAftercareNote('Avoid heavy exertion for 48h.')">Avoid heavy exertion</button>
+            </div>
+            <textarea id="fm-rx-notes" class="text-input" rows="2" placeholder="Response to specific points, patient sensations during friction, or home exercise guidance..."></textarea>
+          </div>
+        </details>
+      </div>
+    </section>
+
+    </div><!-- /#view-fm -->
 
   </main>
 </div>
@@ -10136,7 +10272,8 @@ setupSegmented('patient-progress');
         });
         const palpatoryRecheck = typeof getPalpatoryRecheckData === 'function' ? getPalpatoryRecheckData() : [];
         const fmSec = document.getElementById('sec-fascial-manipulation');
-        const enabled = !!(fmSec && fmSec.style.display !== 'none');
+        const fmTab = document.getElementById('tab-btn-fm');
+        const enabled = !!(fmSec && fmSec.style.display !== 'none' && (!fmTab || fmTab.style.display !== 'none'));
         return {
             enabled, segments, history, pv, hypothesis, moVe, palpatoryRecheck,
             sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
@@ -10151,7 +10288,13 @@ setupSegmented('patient-progress');
       } catch(e) {}
     }
     var fmPersistTimer = null;
-    document.addEventListener('click', function(){ clearTimeout(fmPersistTimer); fmPersistTimer = setTimeout(persistFmPoints, 150); });
+    document.addEventListener('click', function(){
+      clearTimeout(fmPersistTimer);
+      fmPersistTimer = setTimeout(function(){
+        persistFmPoints();
+        if (typeof window.syncFmCapsule === 'function') window.syncFmCapsule();
+      }, 150);
+    });
 
     window.addFmSegment = addFmSegment;
 
@@ -10610,12 +10753,224 @@ window.openTier2Module = function(key) {
   }
 };
 
-window.openAdvancedModule = function(key) {
+// ---- MODULE TABS & CAPSULE WORKSPACE LOGIC ----
+(function(){
+  var currentTab = 'core';
+  var scrollPositions = { core: 0, fm: 0 };
+
+  window.getActiveModuleTab = function() {
+    return currentTab;
+  };
+
+  window.switchModuleTab = function(key) {
+    if (!key) return;
+    if (key === currentTab) return;
+
+    // 1. Save scroll position of current tab
+    scrollPositions[currentTab] = window.scrollY || window.pageYOffset || 0;
+
+    // 2. Switch tab state
+    currentTab = key;
+    var tabCore = document.getElementById('tab-btn-core');
+    var tabFm = document.getElementById('tab-btn-fm');
+    var viewCore = document.getElementById('view-core');
+    var viewFm = document.getElementById('view-fm');
+    var fmSec = document.getElementById('sec-fascial-manipulation');
+
+    if (key === 'fm') {
+      if (tabCore) { tabCore.classList.remove('active'); tabCore.setAttribute('aria-selected', 'false'); }
+      if (tabFm) { tabFm.classList.add('active'); tabFm.setAttribute('aria-selected', 'true'); }
+      if (viewCore) viewCore.style.display = 'none';
+      if (viewFm) viewFm.style.display = 'block';
+      if (fmSec) fmSec.style.display = 'block';
+      document.body.classList.add('fm-tab-active');
+
+      // Close mobile drawer if open
+      var outline = document.querySelector('.outline');
+      if (outline && outline.classList.contains('drawer-open')) {
+        outline.classList.remove('drawer-open', 'in');
+        var bd = document.getElementById('nav-backdrop');
+        if (bd) bd.classList.remove('open');
+      }
+
+      window.scrollTo(0, scrollPositions.fm || 0);
+    } else {
+      if (tabFm) { tabFm.classList.remove('active'); tabFm.setAttribute('aria-selected', 'false'); }
+      if (tabCore) { tabCore.classList.add('active'); tabCore.setAttribute('aria-selected', 'true'); }
+      if (viewFm) viewFm.style.display = 'none';
+      if (viewCore) viewCore.style.display = 'block';
+      document.body.classList.remove('fm-tab-active');
+
+      if (window.syncFmCapsule) window.syncFmCapsule();
+      window.scrollTo(0, scrollPositions.core || 0);
+    }
+  };
+
+  // Wire tab clicks
+  var tabCore = document.getElementById('tab-btn-core');
+  if (tabCore) {
+    tabCore.addEventListener('click', function(){ window.switchModuleTab('core'); });
+  }
+  var tabFm = document.getElementById('tab-btn-fm');
+  if (tabFm) {
+    tabFm.addEventListener('click', function(){ window.switchModuleTab('fm'); });
+  }
+
+  // Capsule open button click
+  var capOpenBtn = document.getElementById('fm-capsule-open-btn');
+  if (capOpenBtn) {
+    capOpenBtn.addEventListener('click', function(){ window.switchModuleTab('fm'); });
+  }
+
+  // Keyboard navigation for tab bar
+  var tabBar = document.getElementById('module-tab-bar');
+  if (tabBar) {
+    tabBar.addEventListener('keydown', function(e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft' && e.key !== 'Home' && e.key !== 'End') return;
+      var tabs = Array.from(tabBar.querySelectorAll('[role="tab"]')).filter(function(t){
+        return t.style.display !== 'none' && t.offsetParent !== null;
+      });
+      if (!tabs.length) return;
+      var current = document.activeElement;
+      var idx = tabs.indexOf(current);
+      if (idx === -1) return;
+      e.preventDefault();
+      var nextIdx = idx;
+      if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') nextIdx = 0;
+      else if (e.key === 'End') nextIdx = tabs.length - 1;
+      var targetTab = tabs[nextIdx];
+      targetTab.focus();
+      targetTab.click();
+    });
+  }
+
+  // Sync FM Capsule
+  window.syncFmCapsule = function() {
+    var cap = document.getElementById('fm-capsule-card');
+    if (!cap) return;
+    var fmd = typeof window.getFmData === 'function' ? window.getFmData() : { enabled: false, pv: [], hypothesis: null, moVe: [] };
+    if (!fmd.enabled) {
+      cap.style.display = 'none';
+      return;
+    }
+    cap.style.display = 'block';
+
+    var todayTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; });
+    var badge = document.getElementById('fm-capsule-badge');
+    var emptyRow = document.getElementById('fm-capsule-empty');
+    var treatedRow = document.getElementById('fm-capsule-treated');
+    var hypRow = document.getElementById('fm-capsule-hyp');
+    var moveRow = document.getElementById('fm-capsule-move');
+
+    if (todayTreated.length === 0) {
+      if (badge) { badge.textContent = 'Evaluating'; badge.className = 'fm-capsule-badge'; }
+      if (emptyRow) { emptyRow.textContent = 'Assessment initialized · 0 points treated'; emptyRow.style.display = 'flex'; }
+      if (treatedRow) treatedRow.style.display = 'none';
+      if (hypRow) hypRow.style.display = 'none';
+      if (moveRow) moveRow.style.display = 'none';
+    } else {
+      if (badge) { badge.textContent = 'Graded & treated'; badge.className = 'fm-capsule-badge treated'; }
+      if (emptyRow) emptyRow.style.display = 'none';
+
+      var pts = todayTreated.map(function(p){
+        var seg = p.segment || '';
+        var colDef = (window.PV_COLUMNS || []).find(function(c){ return c.plane === p.plane; });
+        var pl = colDef ? colDef.code : (p.plane || '');
+        var s = (p.side || '').toUpperCase();
+        if (s === 'RT') s = 'R';
+        else if (s === 'LT') s = 'L';
+        return (seg + '-' + pl + ' ' + s).trim();
+      });
+      if (treatedRow) {
+        treatedRow.innerHTML = '<b>Treated:</b> ' + pts.join(', ');
+        treatedRow.style.display = 'flex';
+      }
+
+      var derived = (fmd.hypothesis && fmd.hypothesis.derived && fmd.hypothesis.derived !== 'None') ? fmd.hypothesis.derived : '';
+      if (hypRow) {
+        if (derived) {
+          hypRow.innerHTML = '<b>Diagonal:</b> ' + derived;
+          hypRow.style.display = 'flex';
+        } else {
+          hypRow.style.display = 'none';
+        }
+      }
+
+      var moVeLines = (fmd.moVe || [])
+        .filter(function(m){ return m.segment && (m.pre !== null || m.post !== null); })
+        .map(function(m){ return m.segment + ' pre: ' + (m.pre !== null ? m.pre : '—') + ' → post: ' + (m.post !== null ? m.post : '—'); });
+      if (moveRow) {
+        if (moVeLines.length) {
+          moveRow.innerHTML = '<b>Mo/Ve:</b> ' + moVeLines.join('; ');
+          moveRow.style.display = 'flex';
+        } else {
+          moveRow.style.display = 'none';
+        }
+      }
+    }
+  };
+
+  window.getFmSummaryLine = function() {
+    var fmd = typeof window.getFmData === 'function' ? window.getFmData() : null;
+    if (!fmd || !fmd.enabled) return '';
+    var todayTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; });
+    if (todayTreated.length === 0) {
+      return 'Assessment initialized · 0 points treated';
+    }
+    var pts = todayTreated.map(function(p){
+      var colDef = (window.PV_COLUMNS || []).find(function(c){ return c.plane === p.plane; });
+      var pl = colDef ? colDef.code : (p.plane || '');
+      var s = (p.side || '').toUpperCase();
+      if (s === 'RT') s = 'R';
+      else if (s === 'LT') s = 'L';
+      return (p.segment + '-' + pl + ' ' + s).trim();
+    }).join(', ');
+    var derived = (fmd.hypothesis && fmd.hypothesis.derived && fmd.hypothesis.derived !== 'None') ? fmd.hypothesis.derived : '';
+    var moVeLines = (fmd.moVe || [])
+      .filter(function(m){ return m.segment && (m.pre !== null || m.post !== null); })
+      .map(function(m){ return m.segment + ' pre: ' + (m.pre !== null ? m.pre : '—') + ' → post: ' + (m.post !== null ? m.post : '—'); })
+      .join('; ');
+    return ['Treated: ' + pts, derived ? 'Diagonal: ' + derived : '', moVeLines ? 'Mo/Ve: ' + moVeLines : ''].filter(Boolean).join(' · ');
+  };
+})();
+
+window.openAdvancedModule = function(key, opts) {
+  opts = opts || {};
+  var doSwitch = opts.switch !== false;
   if (key === 'fascial-manipulation') {
     if (window.routePrimaryComplaintToFm) window.routePrimaryComplaintToFm();
     if (window.syncFmHistory) window.syncFmHistory();
     if (window.applySmartPvSideView) window.applySmartPvSideView();
     if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
+
+    var sec = document.getElementById('sec-fascial-manipulation');
+    if (sec) sec.style.display = 'block';
+
+    var tabBtn = document.getElementById('tab-btn-fm');
+    if (tabBtn) tabBtn.style.display = '';
+
+    var cap = document.getElementById('fm-capsule-card');
+    if (cap) cap.style.display = 'block';
+    if (window.syncFmCapsule) window.syncFmCapsule();
+
+    var nav = document.getElementById('nav-fm');
+    if(nav) {
+      var badge = nav.querySelector('.add-badge');
+      if(badge) badge.remove();
+      if(!nav.querySelector('.num')) {
+         nav.insertAdjacentHTML('afterbegin', '<span class="num" style="background:var(--clinical); color:#fff; border-color:var(--clinical);">✓</span>');
+      }
+      nav.setAttribute('data-target', 'sec-fascial-manipulation');
+      nav.classList.remove('stub');
+      nav.classList.add('done');
+    }
+
+    if (doSwitch) {
+      window.switchModuleTab('fm');
+    }
+    return;
   }
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));
@@ -10637,6 +10992,35 @@ window.openAdvancedModule = function(key) {
   }
 };
 window.hideAdvancedModule = function(key) {
+  if (key === 'fascial-manipulation') {
+    var sec = document.getElementById('sec-fascial-manipulation');
+    if (sec) sec.style.display = 'none';
+
+    var tabBtn = document.getElementById('tab-btn-fm');
+    if (tabBtn) tabBtn.style.display = 'none';
+
+    var cap = document.getElementById('fm-capsule-card');
+    if (cap) cap.style.display = 'none';
+
+    if (window.getActiveModuleTab && window.getActiveModuleTab() === 'fm') {
+      window.switchModuleTab('core');
+    }
+
+    var nav = document.getElementById('nav-fm');
+    if(nav) {
+      var num = nav.querySelector('.num');
+      if(num) num.remove();
+      if(!nav.querySelector('.add-badge')) {
+         nav.insertAdjacentHTML('beforeend', '<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span>');
+      }
+      nav.removeAttribute('data-target');
+      nav.classList.remove('done');
+      nav.classList.add('stub');
+    }
+    if (typeof clearSuggestion === 'function') clearSuggestion('trigger-fascial-manipulation');
+    try { localStorage.setItem('cn.fm', JSON.stringify([])); } catch(e) {}
+    return;
+  }
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));
   if(sec) sec.style.display = 'none';
@@ -10702,6 +11086,9 @@ window.hideAdvancedModule = function(key) {
     if (item.hasAttribute('onclick')) return; // Let inline onclick (Advanced/Tier2) handle their own scroll
     const targetId = item.getAttribute('data-target');
     if (!targetId) return;
+    if (window.getActiveModuleTab && window.getActiveModuleTab() !== 'core') {
+      window.switchModuleTab('core');
+    }
     const targetSec = document.getElementById(targetId);
     if (targetSec) {
       if (targetSec.classList.contains('collapsible-card') && !targetSec.classList.contains('open')) {
@@ -10716,6 +11103,7 @@ window.hideAdvancedModule = function(key) {
   // 2. Dynamic Scroll spy using IntersectionObserver
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
+      if (entry.target.offsetParent === null) return;
       if(entry.isIntersecting){
         // query live nav items (the one sidebar, shared by desktop column and mobile drawer)
         const liveNavs = document.querySelectorAll('.outline-item[data-target]');
@@ -10830,7 +11218,7 @@ window.hideAdvancedModule = function(key) {
       });
       document.body.classList.add('note-locked');
       document.querySelectorAll('.chip, .segmented button, .icon-btn, .kebab').forEach(el => {
-        if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle')) return; // viewing controls stay usable
+        if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open')) return; // viewing controls stay usable
         el.style.pointerEvents = 'none';
         if(!el.classList.contains('selected')) {
            el.style.opacity = '0.4';
@@ -10898,7 +11286,7 @@ document.addEventListener('click', function(e){
   if(!document.body.classList.contains('note-locked')) return;
   var t = e.target;
   if(!t.closest || !t.closest('main')) return;
-  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle')) return;
+  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open')) return;
   if(t.closest('.lean-head') && !t.closest('button')) return;
   e.preventDefault(); e.stopPropagation();
 }, true);
@@ -11807,7 +12195,7 @@ document.addEventListener('click', function(e){
     { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy' },
     { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular' },
     { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic' },
-    { group: 'Manual & movement frameworks', label: 'Fascial Manipulation (FM)', fn: 'openAdvancedModule', arg: 'fascial-manipulation' },
+    { group: 'Manual & movement frameworks', label: 'Fascial Manipulation (FM)', fn: 'openAdvancedModule', arg: 'fascial-manipulation', tab: true },
     { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm' },
     { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst' },
     { group: 'Manual & movement frameworks', label: 'NeuroKinetic Therapy (NKT)', fn: 'openAdvancedModule', arg: 'nkt' },
@@ -12077,6 +12465,10 @@ document.addEventListener('click', function(e){
       if(id === 'sec-history' && F.noRelevantHistory) extra.push({ label: 'History', text: 'No relevant history (confirmed)' });
       if(id === 'sec-objective' && F.screenedNoOtherDeficits) extra.push({ label: 'Screening', text: 'Screened, no other deficits' });
       if(id === 'sec-objective' && window.getPinnedFindings){ const p = window.getPinnedFindings(); if(p.length) extra.push({ label: 'Pinned for follow-up', text: p.map(x => x.region + ' ' + x.name).join('; ') }); }
+      if(id === 'sec-objective' && window.getFmData && window.getFmData().enabled){
+        const fmSummary = window.getFmSummaryLine ? window.getFmSummaryLine() : 'Assessment initialized · 0 points treated';
+        extra.push({ label: 'Fascial Manipulation', text: fmSummary });
+      }
       if(id === 'sec-plan-goals' && window.getHepRows){
         window.getHepRows().filter(r => r.name).forEach(r => extra.push({ label: 'HEP', text: [r.name, [r.sets, r.reps].filter(Boolean).join('×'), r.hold && r.hold + ' s hold', r.frequency, r.cue].filter(Boolean).join(' · ') }));
       }

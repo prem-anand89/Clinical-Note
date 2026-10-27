@@ -566,6 +566,16 @@
   .move-post { display:flex; align-items:center; justify-content:center; gap:4px; }
   #fm-move-table .move-delta { white-space:nowrap; min-width:44px; }
   .move-post .mv-b { width:38px; height:38px; border:1px solid var(--line); border-radius:var(--radius-sm); background:#fff; font-size:18px; font-weight:700; color:var(--clinical); cursor:pointer; }
+  @media (max-width:743px){
+    #fm-move-table th, #fm-move-table td { padding:4px 3px; font-size:11px; }
+    #fm-move-table .move-post .mv-b { width:30px; height:30px; font-size:15px; }
+    #fm-move-table .move-post { white-space:nowrap; }
+    #fm-move-table .move-delta { min-width:0; }
+    #fm-move-table th { font-size:9px; letter-spacing:0; }
+    #fm-move-table th span { display:none; }
+    #fm-move-table .move-post .mv-b { width:28px; height:28px; }
+    #fm-move-table .move-post .mv-val { min-width:16px; }
+  }
   .move-post .mv-val { min-width:26px; text-align:center; font-size:15px; font-weight:700; }
   .fm-t td input, .fm-t td select { border:none; background:transparent; font-size:12px; padding:6px; color:var(--ink); font-family:inherit; width:100%; border-radius:4px; }
   .fm-t td input:focus, .fm-t td select:focus { background:var(--surface); outline:none; }
@@ -2476,6 +2486,12 @@
         </div>
         <div id="fm-seg-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:8px;">
           No segments added yet. Choose a region below (e.g. <b>Lower limb ▾</b>) or record a Chief Complaint in Core Assessment.
+        </div>
+
+        <!-- Segments recorded above but not yet in the palpation grid -->
+        <div id="fm-grid-missing" style="display:none; margin-top:12px; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Not in the palpation grid:</span>
+          <span id="fm-grid-missing-chips" class="chip-row"></span>
         </div>
 
         <!-- Below-the-table Region Disclosure Picker -->
@@ -8925,6 +8941,31 @@ setupSegmented('patient-progress');
     window.updateSegEmpty = updateSegEmpty;
     setTimeout(updateSegEmpty, 300);
 
+    // Segments auto-routed from Chief Complaint land in Card 1 only. Show them here so adding one to the
+    // grid is a single tap instead of picking the same segment again in Card 3.
+    function refreshGridMissing() {
+        const wrap = document.getElementById('fm-grid-missing'), chips = document.getElementById('fm-grid-missing-chips');
+        if (!wrap || !chips || !segTableBody || !pvTableBody) return;
+        const inGrid = new Set(Array.from(pvTableBody.querySelectorAll('tr:not(.fm-prior-row)')).map(tr => String(tr.getAttribute('data-seg') || (tr.querySelector('.pv-seg-name') || {}).value || '').trim().toUpperCase()));
+        const missing = [];
+        segTableBody.querySelectorAll('tr').forEach(tr => {
+            const v = String((tr.querySelector('.seg-name') || {}).value || '').trim().toUpperCase();
+            if (v && !inGrid.has(v) && missing.indexOf(v) === -1) missing.push(v);
+        });
+        wrap.style.display = missing.length ? 'flex' : 'none';
+        chips.innerHTML = '';
+        missing.forEach(code => {
+            const b = document.createElement('button');
+            b.type = 'button'; b.className = 'chip'; b.textContent = '＋ ' + code;
+            b.title = 'Add ' + code + ' to the palpation grid';
+            b.addEventListener('click', () => { addFmSegment('today', code, true, false); refreshGridMissing(); });
+            chips.appendChild(b);
+        });
+    }
+    window.refreshFmGridMissing = refreshGridMissing;
+    let gridMissingTimer = null;
+    ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(gridMissingTimer); gridMissingTimer = setTimeout(refreshGridMissing, 120); }));
+
     function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
@@ -10094,8 +10135,10 @@ setupSegmented('patient-progress');
                      pre: pre === '' || pre === null ? null : Number(pre), post: tr.dataset.post === undefined || tr.dataset.post === '' ? null : Number(tr.dataset.post) };
         });
         const palpatoryRecheck = typeof getPalpatoryRecheckData === 'function' ? getPalpatoryRecheckData() : [];
+        const fmSec = document.getElementById('sec-fascial-manipulation');
+        const enabled = !!(fmSec && fmSec.style.display !== 'none');
         return {
-            segments, history, pv, hypothesis, moVe, palpatoryRecheck,
+            enabled, segments, history, pv, hypothesis, moVe, palpatoryRecheck,
             sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
             treatmentNotes: val(document.getElementById('fm-rx-notes')) || (moveCard ? val(moveCard.querySelector('textarea')) : '')
         };
@@ -10103,7 +10146,7 @@ setupSegmented('patient-progress');
     // Prototype bridge to session-note.html: the graded points (compact list), mirrored to localStorage.
     function persistFmPoints(){
       try {
-        var pts = window.getFmData().pv.filter(function(c){ return !c.isPrior; }).map(function(c){ return { segment: c.segment, side: c.side, plane: c.plane, kind: c.kind, grade: c.grade }; });
+        var fmd = window.getFmData(); var pts = (fmd.enabled ? fmd.pv : []).filter(function(c){ return !c.isPrior; }).map(function(c){ return { segment: c.segment, side: c.side, plane: c.plane, kind: c.kind, grade: c.grade }; });
         localStorage.setItem('cn.fm', JSON.stringify(pts));
       } catch(e) {}
     }

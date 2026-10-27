@@ -473,3 +473,21 @@ The target of ~2 screens was not reached; the biggest remaining blocks are Chief
 
 
 
+
+## FM work after the first handoff (26–27 Oct; documented retroactively)
+Written from the commit messages plus a hands-on check (every suite run, page probed at 390 / 1024 px). Not a line-by-line audit.
+- **Palpatory Verification grid:** date cells grouped by visit with an inverted timeline and a Visit filter (All / Today); the segment picker for the grid sits below it; complaints autofill is decoupled from the PV grid (see the grid-strip fix below); session banner as a compact side heading; Date and Seg columns restored.
+- **Section 5:** side-by-side Palpatory Re-check matrix next to Mo/Ve, pain-scale outcome, collapsed notes; reactive re-check sync on deletions; sticky-column positioning fixed.
+- **Section 4:** hybrid synthesis banner (derived diagonal / suggestion, ↻ Re-derive), planned-sequence pills, collapsed reasoning with quick tags. The derived text is rule-based; nothing is written into the reasoning field.
+- **Card 1 and 2:** onset column and empty states, prior-pain handling and silent status, Card 3/5 headers.
+- **Header wording:** "MRN" became "Patient ID" (also in the note preview). Outside the FM module, but it matches TheraNet's own wording (patient service messages say "Patient ID"), so it stays.
+- **Chief Complaint → FM routing** now also runs on region / laterality / onset / aggravating clicks.
+- Tests added by Gemini: `fm-review2`, `fm-wiring-test`, `fm-comprehensive-audit`, `fm-section4-hybrid1`, `fm-section5-recheck-test`.
+
+## FM review clean-up (follow-up to the above)
+- **`getFmData().enabled`** (true once the FM module is opened, false after Remove). The auto-routed Chief Complaint row still exists in memory, but the `cn.fm` mirror used by the session note is empty unless FM is enabled. Consumers (export, preview) should treat `enabled: false` as "no FM data".
+- **"Not in the palpation grid" strip** under Card 1: segments auto-routed from Chief Complaint now offer a one-tap `＋ GE` chip that adds the segment to the grid (no second picking, no duplicate row in Card 1).
+- **Mo/Ve on phones:** the table now fits at 390 px (smaller padding, header hints hidden below 744 px) instead of cropping Outcome.
+- **Test fix:** `pv-layout-test` now checks document order (picker after the segment table); the old selector broke when an empty-state block was added between them. (The earlier changelog line saying this suite passed was only true at the time.)
+- **Housekeeping:** screenshots moved to `screenshots/`; `body-chart.png` stays in the repo root because the note loads it.
+- Test: `tests/fm-review3.mjs`.

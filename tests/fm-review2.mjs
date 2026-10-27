@@ -147,8 +147,8 @@ try {
     ok('Task 3: getFmData().moVe has no duplicate keys', geKeys.length === 1, geKeys);
 
     // Save 1024px screenshot
-    await page1.screenshot({ path: path.join(dir, '..', 'fm-review2-1024px.png'), fullPage: false });
-    console.log('Saved 1024px screenshot to fm-review2-1024px.png');
+    await page1.screenshot({ path: path.join(dir, '..', 'screenshots', 'fm-review2-1024px.png'), fullPage: false });
+    console.log('Saved 1024px screenshot to screenshots/fm-review2-1024px.png');
 
     // -------------------------------------------------------------
     // TEST 4: Task 4 - Phone layout table-to-cards (< 744px)
@@ -190,8 +190,8 @@ try {
 
     // Save 390px screenshot of the segment card area
     const segCardWrapper = page2.locator('#fm-seg-table').locator('xpath=ancestor::div[contains(@class, "card")]');
-    await segCardWrapper.screenshot({ path: path.join(dir, '..', 'fm-review2-390px.png') });
-    console.log('Saved 390px screenshot to fm-review2-390px.png');
+    await segCardWrapper.screenshot({ path: path.join(dir, '..', 'screenshots', 'fm-review2-390px.png') });
+    console.log('Saved 390px screenshot to screenshots/fm-review2-390px.png');
 
     // -------------------------------------------------------------
     // TEST 5: Task 5 - Smart side view on module open

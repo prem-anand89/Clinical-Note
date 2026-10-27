@@ -10,13 +10,8 @@ Give Fascial Manipulation (FM) its own tab so the wide grids get room, and show 
 - Every `<button>` has `type="button"`. No new dependencies. Use existing CSS variables (no inline hex).
 - Run every `tests/*.mjs` before each commit; each must end with `ALL PASS` / `ALL ... CHECKS PASSED`. Do not claim a pass you did not run. One commit per task.
 
-## Task 0 — Clean-up first (found in review of the 26–27 Oct commits)
-1. `tests/pv-layout-test.mjs` fails: "segment picker is located below segment table". The picker moved below the PV grid in a later commit; update the assertion to the new location. The changelog currently says this suite passes; correct it.
-2. 14 loose screenshots sit in the repo root (`desktop_*.png`, `mobile_*.png`, `pv_session_mockup.png`, …) and `fm-review2-*.png` are modified. Move them to `screenshots/` (or delete) and keep them out of commits.
-3. `PROTOTYPE_CHANGELOG.md` only documents tasks 1 to 5 of the first FM handoff. Add entries for the later commits: grouped date cells + Visit filter (All / Today), Palpatory Re-check matrix, Section 4 hybrid synthesis, Card 1 onset and empty states, session banner, and the header change "MRN" → "Patient ID" (also in the note preview). That header change is outside the FM module; say in the entry that it was out of scope and needs the owner's OK, or revert it.
-4. Hidden FM data for non-FM patients: choosing a region in Chief Complaint already creates a hidden FM segment row (`routeFmSegment`, now triggered by a document click listener). With FM never opened, `getFmData().segments` is `["GE/rt"]`. Fix: add `enabled: boolean` to `getFmData()` (true once the module was opened/enrolled) and make the note preview, `cn.fm` mirror and any export ignore FM data when it is false. Do not delete the auto-row.
-5. Question to answer in the changelog, not code: segments auto-routed from Chief Complaint appear in Card 1 but not in the PV grid, so the therapist adds the same segment twice. Either confirm this is intended or add a one-tap "Add GE to grid" on that row. Do not change it silently.
-6. On a 390 px phone the Mo/Ve table crops the Outcome column. Make it scroll with a visible edge or stack it.
+## Task 0 — Clean-up: DONE (Claude, commit following 1675cd2)
+Fixed already, do not redo: `pv-layout-test` assertion; screenshots moved to `screenshots/` (`body-chart.png` must stay in the root); changelog entries for the later FM commits; `getFmData().enabled` and an empty `cn.fm` when FM is off; a "Not in the palpation grid" one-tap strip for auto-routed segments; Mo/Ve fits at 390 px. "Patient ID" stays (matches TheraNet wording). See `PROTOTYPE_CHANGELOG.md` and `tests/fm-review3.mjs`. Use `getFmData().enabled` in the capsule and preview.
 
 ## Task 1 — Tab bar, views, capsule markup
 - Tab bar under `.note-head` with `role="tablist"`, tabs `role="tab"` + `aria-selected`, Left/Right arrow keys move focus, `aria-controls` on each panel (`role="tabpanel"`). It scrolls horizontally inside itself on phones (`overflow-x:auto`); the page must not get a horizontal scrollbar (`document.documentElement.scrollWidth === clientWidth` at 390 px).

@@ -35,8 +35,11 @@ const pvContainerLayout = await page.getAttribute('.pv-container', 'data-layout-
 ok('default layout is CF · CC (cf-cc)', pvContainerLayout === 'cf-cc', pvContainerLayout);
 
 // 3. Verify segment picker below table & region tabs
-const pickerBelowTable = await page.$('#fm-seg-table + #fm-seg-picker, #fm-seg-table ~ #fm-seg-picker, div:has(> #fm-seg-table) + #fm-seg-picker');
-ok('segment picker is located below segment table', !!pickerBelowTable);
+const pickerBelowTable = await page.evaluate(() => {
+    const t = document.getElementById('fm-seg-table'), pk = document.getElementById('fm-seg-picker');
+    return !!(t && pk && (t.compareDocumentPosition(pk) & Node.DOCUMENT_POSITION_FOLLOWING));
+});
+ok('segment picker is located below segment table', pickerBelowTable);
 
 // 4. Test Region Disclosure Drawer and Anatomical Names (e.g. GE – Knee)
 await page.click('#fm-region-tabs button[data-region="Lower limb"]');

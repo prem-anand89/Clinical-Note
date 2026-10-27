@@ -898,7 +898,7 @@
     #fm-seg-table td:nth-child(1)::before { content: 'Seg'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(3)::before { content: 'Dur'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(4)::before { content: 'Trauma'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(4)::before { content: 'Onset'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(5)::before { content: 'VRS'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(7)::before { content: '' !important; display: none !important; }
@@ -1127,7 +1127,7 @@
     <div class="note-head">
       <div class="eyebrow">Core Assessment · Prototype</div>
       <h1>New Visit</h1>
-      <p>Priya Reddy · MRN 00214 · First visit for this episode</p>
+      <p>Priya Reddy · Patient ID: 00214 · First visit for this episode</p>
       <button type="button" class="preview-open" id="preview-open">👁 Preview note</button>
     </div>
 
@@ -2463,7 +2463,7 @@
                 <th style="width:80px;">Segment</th>
                 <th style="width:70px;">Side</th>
                 <th style="width:100px;">Duration</th>
-                <th style="width:70px;">Trauma?</th>
+                <th style="width:75px;">Onset</th>
                 <th style="width:64px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
                 <th style="min-width:150px;">Painful Movements</th>
                 <th style="width:30px;"></th>
@@ -2473,6 +2473,9 @@
               <!-- JS populates this -->
             </tbody>
           </table>
+        </div>
+        <div id="fm-seg-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:8px;">
+          No segments added yet. Choose a region below (e.g. <b>Lower limb ▾</b>) or record a Chief Complaint in Core Assessment.
         </div>
 
         <!-- Below-the-table Region Disclosure Picker -->
@@ -2500,7 +2503,7 @@
           <button type="button" class="chip" id="fm-add-hist" style="font-size:11px; padding:3px 10px;">＋ Add Event</button>
         </div>
         <div class="field-note" style="margin-top:-6px; margin-bottom:12px;">Auto-pulled from general assessment history cards, or add/override manually below.</div>
-        <div style="overflow-x:auto;">
+        <div id="fm-hist-wrap" style="overflow-x:auto;">
           <table class="fm-t" id="fm-hist-table">
             <thead>
               <tr>
@@ -2517,12 +2520,15 @@
             </tbody>
           </table>
         </div>
+        <div id="fm-hist-empty" style="display:none; padding:14px 16px; text-align:center; color:var(--ink-faint); font-size:12px; background:var(--surface); border:1px dashed var(--line); border-radius:var(--radius-sm); margin-top:4px;">
+          No prior surgeries, injuries, or past pain episodes recorded. Click <b>＋ Add Event</b> or record history in Core Assessment.
+        </div>
       </div>
 
       <!-- 3. PV Grid -->
       <div class="card" style="margin-bottom:14px; padding-left:0; padding-right:0;">
         <div class="card-heading" style="padding:0 28px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-          <span>3. Palpation Verification — CC (Coordination) &amp; CF (Fusion)</span>
+          <span>3. Palpatory Verification (PV) — CC (Coordination) &amp; CF (Fusion)</span>
         </div>
         <div class="field-note" id="pv-mode-hint" style="padding:0 28px; margin-top:0; margin-bottom:0;">
           Tap a box, then pick its grade. <b>✓</b> marks it treated today · <b>⌫</b> clears it. <b>CC</b> = Center of Coordination · <b>CF</b> = Center of Fusion.
@@ -2664,13 +2670,13 @@
         </details>
       </div>
 
-      <!-- 5. Mo/Ve & Session -->
+      <!-- 5. Movement Verification (Mo/Ve) & Palpatory Re-check -->
       <div class="card">
-        <div class="card-heading">5. Mo/Ve &amp; Session Verification</div>
+        <div class="card-heading">5. Movement Verification (Mo/Ve) &amp; Palpatory Re-check</div>
         
-        <!-- Motor Verification Table -->
+        <!-- Movement Verification Table -->
         <div class="field" style="margin-bottom:16px;">
-          <label>Motor Verification (Mo/Ve) <span class="hint">Pain Rating (0–10 scale)</span></label>
+          <label>Movement Verification (Mo/Ve) <span class="hint">Pain Rating (0–10 scale)</span></label>
           <div style="overflow-x:auto;">
             <table class="fm-t" id="fm-move-table">
               <thead>
@@ -8903,6 +8909,22 @@ setupSegmented('patient-progress');
         updatePvVisitDropdown();
     })();
 
+    function updateSegEmpty() {
+        const emptyEl = document.getElementById('fm-seg-empty');
+        const wrapEl = document.getElementById('fm-seg-wrap');
+        const rows = segTableBody ? segTableBody.querySelectorAll('tr') : [];
+        if (!emptyEl || !wrapEl) return;
+        if (rows.length === 0) {
+            emptyEl.style.display = 'block';
+            wrapEl.style.display = 'none';
+        } else {
+            emptyEl.style.display = 'none';
+            wrapEl.style.display = 'block';
+        }
+    }
+    window.updateSegEmpty = updateSegEmpty;
+    setTimeout(updateSegEmpty, 300);
+
     function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
@@ -8916,13 +8938,14 @@ setupSegmented('patient-progress');
             trSeg.innerHTML = `
                 <td><input type="text" value="${segStr}" class="text-input seg-name" list="fm-seg-codes" placeholder="e.g. GE" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">R</option><option value="lt">L</option><option value="bil">Bil</option><option value="N/A">N/A</option></select></td>
-                <td><input type="text" class="text-input" style="width:100%; font-size:12px; padding:4px;"></td>
-                <td><select class="select-input" style="padding:4px; font-size:12px;"><option>N</option><option>Y</option></select></td>
+                <td><input type="text" class="text-input" placeholder="e.g. 3w, 2m" style="width:100%; font-size:12px; padding:4px;"></td>
+                <td><select class="select-input seg-onset" style="padding:4px; font-size:12px;"><option value="N">Gradual (No)</option><option value="Y">Trauma (Yes)</option></select></td>
                 <td><input type="number" class="text-input seg-vrs" min="0" max="10" inputmode="numeric" placeholder="0–10" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><input type="text" class="text-input seg-painful" placeholder="e.g. Squat" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><button type="button" class="del-seg-btn" style="border:none; background:transparent; color:var(--ink-faint); cursor:pointer;">×</button></td>
             `;
             segTableBody.appendChild(trSeg);
+            updateSegEmpty();
         }
 
         // --- 2. Add to PV Grid in active layout order ---
@@ -9625,6 +9648,7 @@ setupSegmented('patient-progress');
             }
             
             tr.remove();
+            if (window.updateSegEmpty) window.updateSegEmpty();
             let pvRow = document.querySelector(`#fm-pv-table tr[data-seg-id="${id}"]`);
             if (pvRow) pvRow.remove();
             syncMoveTable();
@@ -9986,7 +10010,10 @@ setupSegmented('patient-progress');
         var dismissed = (window.__fmDismissedSources || {})[sourceKey];
         if(!existing && dismissed !== undefined && dismissed === segStr) return;
         if(!segStr){
-            if(existing) existing.remove();
+            if(existing) {
+                existing.remove();
+                if (window.updateSegEmpty) window.updateSegEmpty();
+            }
             return;
         }
         if(!existing){
@@ -10169,6 +10196,22 @@ setupSegmented('patient-progress');
     // -----------------------------------------
     // 4. History Auto-Fill Sync & Manual Override
     // -----------------------------------------
+    function updateHistEmpty() {
+        const emptyEl = document.getElementById('fm-hist-empty');
+        const wrapEl = document.getElementById('fm-hist-wrap');
+        const histTableBody = document.querySelector('#fm-hist-table tbody');
+        const rows = histTableBody ? histTableBody.querySelectorAll('tr') : [];
+        if (!emptyEl || !wrapEl) return;
+        if (rows.length === 0) {
+            emptyEl.style.display = 'block';
+            wrapEl.style.display = 'none';
+        } else {
+            emptyEl.style.display = 'none';
+            wrapEl.style.display = 'block';
+        }
+    }
+    window.updateHistEmpty = updateHistEmpty;
+
     function createHistRowEl(type, segStr, region, dateFormatted, diag, status, isManual) {
         let typeNorm = type === 'Injury' ? 'Trauma' : (type === 'Pain' ? 'Pa Prev' : type);
         let tr = document.createElement('tr');
@@ -10176,7 +10219,7 @@ setupSegmented('patient-progress');
         tr.innerHTML = `
             <td>
                 <select class="select-input hist-type" style="padding:4px 6px; font-size:11.5px; font-weight:600; width:100%;">
-                    <option value="Pa Prev" ${typeNorm === 'Pa Prev' ? 'selected' : ''}>Pa Prev</option>
+                    <option value="Pa Prev" ${typeNorm === 'Pa Prev' ? 'selected' : ''}>Prior Pain (Pa Prev)</option>
                     <option value="Trauma" ${typeNorm === 'Trauma' ? 'selected' : ''}>Trauma</option>
                     <option value="Surgery" ${typeNorm === 'Surgery' ? 'selected' : ''}>Surgery</option>
                     <option value="Other" ${typeNorm === 'Other' ? 'selected' : ''}>Other</option>
@@ -10194,6 +10237,7 @@ setupSegmented('patient-progress');
             <td>
                <select class="select-input hist-status" style="padding:4px 6px; font-size:11px; width:100%;">
                  <option ${status==='Full' ? 'selected' : ''}>Full</option>
+                 <option ${status==='Silent (Compensated)' ? 'selected' : ''}>Silent (Compensated)</option>
                  <option ${status==='Partial' ? 'selected' : ''}>Partial</option>
                  <option ${status==='Ongoing' ? 'selected' : ''}>Ongoing</option>
                  <option ${status==='Unknown' ? 'selected' : ''}>Unknown</option>
@@ -10213,6 +10257,7 @@ setupSegmented('patient-progress');
         if (!histTableBody) return;
         const row = createHistRowEl(type || 'Pa Prev', segStr || '', '', dateStr || '', diag || '', status || 'Full', true);
         histTableBody.appendChild(row);
+        updateHistEmpty();
         const segInput = row.querySelector('.hist-seg');
         if (segInput) segInput.focus();
         return row;
@@ -10286,6 +10331,7 @@ setupSegmented('patient-progress');
 
         // Re-append manual rows at the bottom
         manualRows.forEach(tr => histTableBody.appendChild(tr));
+        updateHistEmpty();
     };
 
     // Bind Add Event button
@@ -10301,7 +10347,10 @@ setupSegmented('patient-progress');
         const delBtn = e.target.closest('.del-hist-btn');
         if (delBtn) {
             const tr = delBtn.closest('tr');
-            if (tr) tr.remove();
+            if (tr) {
+                tr.remove();
+                updateHistEmpty();
+            }
         }
     });
 
@@ -11960,7 +12009,7 @@ window.hideAdvancedModule = function(key) {
   function render(){
     const F = window.getAssessmentFlags ? window.getAssessmentFlags() : {};
     const get = id => (document.getElementById(id) || {}).value || '';
-    let h = '<h2>Core Assessment</h2><div class="np-meta">Priya Reddy · MRN 00214 · Draft preview — not a signed record</div>';
+    let h = '<h2>Core Assessment</h2><div class="np-meta">Priya Reddy · Patient ID: 00214 · Draft preview — not a signed record</div>';
     const act = window.activeSuggestions && window.activeSuggestions['ortho-template'];
     if(act) h += '<div class="np-line"><b>Condition template:</b> ' + esc(act.label.replace('Template: ', '')) + (act.source === 'manual' ? ' (manually selected)' : ' (suggested, accepted)') + '</div>';
     SECTIONS.forEach(id => {

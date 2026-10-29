@@ -77,7 +77,8 @@ async function grade(page, rowIdx, colIdx, g, treated) {
   const html = await page.evaluate(() => { document.querySelector('.preview-open').click(); return document.getElementById('np-body').innerHTML; });
   const text = await page.evaluate(() => document.getElementById('np-body').textContent.replace(/\s+/g, ' '));
   ok('3b: the preview has a Fascial Manipulation chart with the segment table', /Fascial Manipulation/.test(text) && /<table class="np-table">/.test(html) && /SiPa/.test(text), text.slice(0, 400));
-  ok('3b: the table shows side, Trauma? and VRS for the routed row', /GE\s*SiPa\s*R\s*Yes\s*7/.test(text.replace(/\s+/g, ' ')) || (/SiPa/.test(text) && /Yes/.test(text) && /\b7\b/.test(text)), text);
+  const cells = await page.evaluate(() => Array.from(document.querySelectorAll('#np-body .np-table tbody tr:first-child td')).map(td => td.textContent.trim()));
+  ok('3b: the table row is GE / SiPa / R / (no duration) / Yes / 7 / Flexion…', cells[0] === 'GE' && cells[1] === 'SiPa' && cells[2] === 'R' && cells[3] === '' && cells[4] === 'Yes' && cells[5] === '7', cells);
   ok('3b: FM history appears', /FM history:.*TA/.test(text), text);
   ok('3b: only graded points are listed, with the treated tick', /Palpatory verification:.*GE-AL R 3 ✓/.test(text), text);
   await page.close();

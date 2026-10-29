@@ -155,7 +155,7 @@ const segRows = page => page.evaluate(() => Array.from(document.querySelectorAll
   await page.close();
 }
 
-// ---- 1e FM chip + cross-refs
+// ---- 1e FM chip + cross-refs (uses the real grade picker, including its treated tick)
 {
   const page = await fresh();
   await page.evaluate(() => window.openAdvancedModule('fascial-manipulation'));
@@ -164,34 +164,32 @@ const segRows = page => page.evaluate(() => Array.from(document.querySelectorAll
   await page.waitForTimeout(200);
   const cell = page.locator('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)').first().locator('.pv-cell').first();
   await cell.scrollIntoViewIfNeeded();
-  await cell.click(); await page.waitForTimeout(150);
-  await page.locator('#pv-picker [data-grade="3"]').first().click().catch(() => {});
-  await page.waitForTimeout(150);
-  // mark treated directly (the picker's treated toggle) via the cell state used by the capsule
-  await page.evaluate(() => { const c = document.querySelector('#fm-pv-table .pv-cell[data-grade]:not([data-grade=""])'); if (c) c.setAttribute('data-treated', 'true'); });
-  await page.evaluate(() => document.body.click());
-  await page.waitForTimeout(400);
+  const openPicker = async () => { await cell.click(); await page.waitForTimeout(120); };
+  const setTreated = async () => { await openPicker(); await page.locator('#pv-picker [data-act="treated"]').click(); await page.waitForTimeout(500); };
+  await openPicker(); await page.locator('#pv-picker button[data-grade="3"]').click(); await page.waitForTimeout(300);
   const chip = '#manual-therapy-chips [data-chip="Fascial Manipulation (FM)"]';
-  ok('1e: treating a point selects the FM Intervention chip', await page.evaluate(c => document.querySelector(c).classList.contains('selected'), chip));
-  await page.evaluate(() => window.syncFmCapsule());
+  const isOn = () => page.evaluate(c => document.querySelector(c).classList.contains('selected'), chip);
+  ok('1e: grading without treating does not select the FM chip', !(await isOn()));
+  await setTreated();
+  ok('1e: treating a point selects the FM Intervention chip', await isOn());
   const refs = await page.evaluate(() => document.getElementById('ci-cross-refs').textContent.replace(/\s+/g, ' ').trim());
   ok('1e: Clinical Impression cross-refs mention FM and the treated count', /FM:/.test(refs) && /1 point treated/.test(refs), refs);
-  await page.evaluate(() => { document.querySelectorAll('#fm-pv-table .pv-cell[data-treated="true"]').forEach(c => c.setAttribute('data-treated', 'false')); document.body.click(); });
-  await page.waitForTimeout(400);
-  ok('1e: un-treating clears the auto-selected chip', !(await page.evaluate(c => document.querySelector(c).classList.contains('selected'), chip)));
-  // manual tap makes it the therapist's
-  await page.evaluate(() => document.querySelectorAll('#fm-pv-table .pv-cell[data-grade]:not([data-grade=""])').forEach(c => c.setAttribute('data-treated', 'true')));
-  await page.evaluate(() => document.body.click()); await page.waitForTimeout(400);
+  await setTreated(); // toggle treated off
+  ok('1e: un-treating clears the auto-selected chip', !(await isOn()));
+  await setTreated(); // treated again -> auto on
   await page.evaluate(() => document.getElementById('tab-btn-core').click());
   await page.waitForTimeout(200);
   const quick = '#lean-quick-tx [data-quick-tx="Fascial Manipulation (FM)"]';
   ok('1e: the quick treatment row shows an FM chip once FM is in the note', await page.locator(quick).isVisible());
   ok('1e: the quick FM chip reflects the auto selection', await page.evaluate(q => document.querySelector(q).classList.contains('selected'), quick));
-  await page.locator(quick).click(); await page.waitForTimeout(100); // off
-  await page.locator(quick).click(); await page.waitForTimeout(100); // on, now the therapist's
-  await page.evaluate(() => { document.querySelectorAll('#fm-pv-table .pv-cell').forEach(c => c.setAttribute('data-treated', 'false')); document.body.click(); });
-  await page.waitForTimeout(400);
-  ok('1e: a chip the therapist re-ticked is not auto-cleared', await page.evaluate(c => document.querySelector(c).classList.contains('selected'), chip));
+  await page.locator(quick).click(); await page.waitForTimeout(400); // therapist unticks while a point is still treated
+  ok('1e: an untick by the therapist sticks while points stay treated', !(await isOn()));
+  await page.locator(quick).click(); await page.waitForTimeout(100); // re-ticks: now the therapist's
+  await page.evaluate(() => document.getElementById('tab-btn-fm').click());
+  await page.waitForTimeout(150);
+  await cell.scrollIntoViewIfNeeded();
+  await setTreated(); // untreat via the picker
+  ok('1e: a chip the therapist re-ticked is not auto-cleared', await isOn());
   await page.close();
 }
 

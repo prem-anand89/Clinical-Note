@@ -321,7 +321,9 @@ generated clinical text).
 | 2.4 one-way session-response mapping | Replaced by 2c (one field). |
 | 4.2 movement → Stecco plane map | Clinically wrong: planes are segment-specific (knee flexion = RE-GE, hip flexion = AN-CX), and "Squat"/"Stairs" are activities, not planes. Needs an FM clinician first. |
 | 4.3 full segment taxonomy | Already present (14 segments + CP1–CP3). |
-| 4.5 catenary pills | Pairings like "AN-ME = Visceral/Endocrine" couldn't be sourced. Keep free text until an FM-trained therapist provides the list. |
+| 4.5 catenary pills | Owner decision 29 Oct: **do not add catenary pills.** Keep the free-text catenary field. |
+| Card 1 plane pills (AN RE LA ME IR ER) in Painful Movements, plus Card 3 column highlight / per-plane Card 5 | Owner decision 29 Oct: **skip.** Painful Movements stays free text. |
+| Card 1 deficit-type, 24h-rhythm and chronology columns; per-row "+ Grid" button; merged 6-column layout; auto-written hypothesis note | Reviewed 29 Oct and not built: Core already holds these at complaint level, and the rest duplicates or is unsourced. |
 
 ## When done
 

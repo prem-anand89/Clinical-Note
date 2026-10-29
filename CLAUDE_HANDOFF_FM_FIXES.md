@@ -1,5 +1,7 @@
 # Handoff: FM section fixes and refinements (Argon 4 review, triaged)
 
+> **Status: DONE (29 Oct 2026).** Step 0 `500906f`, Step 1 `41cea30` (plus Card 1 item 1f), Step 2 `b250de1`, Step 3 `3945ca7`. Details are in `PROTOTYPE_CHANGELOG.md`. Kept for reference; delete once the FM work moves to the React port.
+
 **For:** a Claude Sonnet session implementing this in `/home/theranet/Clinical-Note/`.
 **Source:** Argon 4's "FM End-to-End Refactoring" handoff, checked claim-by-claim
 against the code on 2026-10-29. Only the verified, accepted items are below.

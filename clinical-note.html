@@ -1005,6 +1005,10 @@
     margin-left: 2px; padding: 0 2px;
   }
   .point-del:hover { color: var(--rust, #b3261e); }
+  .fm-role-badge { display:inline-block; margin-top:3px; padding:0 6px; border-radius:var(--radius-pill); font-size:9.5px; font-weight:700; letter-spacing:.03em; line-height:16px; align-self:flex-start; background:var(--clinical-dim); color:var(--clinical); }
+  .fm-role-badge[data-role="PaConc"] { background:var(--context-dim); color:var(--context); }
+  .fm-role-badge[data-role="Int"] { background:var(--amber-dim); color:var(--amber); }
+  .pv-seg-col .fm-role-badge { position:absolute; left:0; top:0; margin:0; padding:0 4px; font-size:8px; line-height:12px; pointer-events:none; }
   .fm-ctx-pill { display:inline-block; padding:3px 10px; border-radius:var(--radius-pill); background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); font-size:12px; font-weight:600; }
 
   #fm-seq-picker {
@@ -1210,6 +1214,9 @@
   #note-preview h4{ font-size:13.5px; margin:12px 0 4px; }
   #note-preview .np-line{ margin:2px 0; } #note-preview .np-line b{ font-weight:600; }
   #note-preview .np-empty{ color:#999; font-style:italic; }
+  #note-preview .np-table{ width:100%; border-collapse:collapse; margin:4px 0 8px; font-size:12.5px; }
+  #note-preview .np-table th, #note-preview .np-table td{ border:1px solid #ddd; padding:3px 7px; text-align:left; vertical-align:top; }
+  #note-preview .np-table th{ background:#f3f3f1; font-weight:600; }
   @media print{ body > *:not(#note-preview){ display:none !important; } #note-preview{ position:static; background:none; padding:0; } #note-preview .np-sheet{ box-shadow:none; max-width:none; } #note-preview .np-bar{ display:none; } }
 </style>
 <style id="lean-css">
@@ -3977,6 +3984,7 @@
             <span id="fm-seq-count" style="font-size:11px; color:var(--clinical); font-weight:600;">0 points planned</span>
           </div>
 
+          <div id="fm-seq-hint" style="display:none; margin-bottom:6px; font-size:12px; color:var(--ink-faint);"></div>
           <div class="seq-builder seq-pills-row" id="fm-seq-builder">
             <button type="button" class="add-link" id="fm-seq-from-findings" style="font-weight:700; color:var(--clinical);" title="Add the highest graded findings from Card 3 to the sequence (needs a point graded 2 or higher)" disabled>⚡ Apply top findings</button>
             <button type="button" class="add-link" id="fm-add-seq-step" title="Add another point to sequence">＋ Add point</button>
@@ -8809,7 +8817,37 @@ setupSegmented('patient-progress');
             footerHtml += `<div style="margin-top:8px; padding:6px 10px; background:#FEF3C7; border:1px solid #FDE68A; border-radius:6px; font-size:11.5px; color:#92400E; font-weight:600;">⚠️ ${cfGradedCount} graded CF diagonal finding${cfGradedCount!==1?'s are':' is'} hidden in CCs-only mode. Switch layout to "CF · CC" to view.</div>`;
         }
 
-        summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml;
+        // Quiet, non-blocking prompts. They describe what the grid shows; they never write a hypothesis.
+        const hints = [];
+        const denseCc = {}; const denseSegs = new Set();
+        cells.forEach(cell => {
+            const g = cell.getAttribute('data-grade');
+            if (!g || grades.indexOf(g) < 2) return;
+            const seg = String((cell.closest('tr').querySelector('.pv-seg-name') || {}).value || '').trim().toUpperCase();
+            if (!seg) return;
+            denseSegs.add(seg);
+            if (cell.getAttribute('data-kind') === 'cc') {
+                const k = seg + '|' + cell.getAttribute('data-side');
+                (denseCc[k] = denseCc[k] || new Set()).add(cell.getAttribute('data-plane'));
+            }
+        });
+        Object.keys(denseCc).forEach(k => {
+            const [seg, side] = k.split('|');
+            [['An', 'Re'], ['La', 'Me'], ['Ir', 'Er']].forEach(pair => {
+                if (denseCc[k].has(pair[0]) && denseCc[k].has(pair[1])) hints.push(`${planeCode(pair[0])} and ${planeCode(pair[1])} both densified on ${seg} ${sideLetter(side)}`);
+            });
+        });
+        const histBySeg = {};
+        document.querySelectorAll('#fm-hist-table tbody tr').forEach(tr => {
+            const code = String((tr.querySelector('.hist-seg') || {}).value || '').trim().split(/[\s(]/)[0].toUpperCase();
+            if (!code) return;
+            const bits = [(tr.querySelector('.hist-type') || {}).value, (tr.querySelector('.hist-date') || {}).value].filter(Boolean).join(', ');
+            (histBySeg[code] = histBySeg[code] || []).push(bits);
+        });
+        denseSegs.forEach(seg => { if (histBySeg[seg]) hints.push(`${seg} is also in FM History (${histBySeg[seg][0] || 'previous event'})`); });
+        const hintsHtml = hints.length ? `<div id="fm-density-hints" style="margin-top:8px; font-size:12px; color:var(--ink-faint); line-height:1.5;">${hints.map(t => '· ' + t).join('<br>')}</div>` : '';
+
+        summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml + hintsHtml;
     }
 
     window.updateDensitySummary = updateDensitySummary;
@@ -9314,8 +9352,43 @@ setupSegmented('patient-progress');
         });
     }
     window.refreshFmGridMissing = refreshGridMissing;
+
+    // Stecco role of a Card 1 row, from where it was routed: SiPa (site of pain, Chief Complaint),
+    // PaConc (concomitant pain, Secondary Complaint), Int (internal, systemic/tensile). Manual rows: none.
+    const FM_ROLE_TITLES = { SiPa: 'Site of pain (from Chief Complaint)', PaConc: 'Concomitant pain (from a Secondary Complaint)', Int: 'Internal (from systemic symptoms / tensile structure)' };
+    const FM_ROLE_RANK = { SiPa: 0, PaConc: 1, Int: 2 };
+    window.fmRoleOfSource = function(src) {
+        src = src || '';
+        if (src === 'primary-complaint') return 'SiPa';
+        if (src.indexOf('secondary-') === 0) return 'PaConc';
+        if (src.indexOf('systemic-') === 0 || src.indexOf('tensile-') === 0) return 'Int';
+        return '';
+    };
+    function setRoleBadge(host, role) {
+        let b = host.querySelector(':scope > .fm-role-badge');
+        if (!role) { if (b) b.remove(); return; }
+        if (!b) { b = document.createElement('span'); b.className = 'fm-role-badge'; host.appendChild(b); }
+        b.textContent = role; b.dataset.role = role; b.title = FM_ROLE_TITLES[role];
+    }
+    function refreshRoleBadges() {
+        if (!segTableBody || !pvTableBody) return;
+        const byCode = {};
+        segTableBody.querySelectorAll('tr').forEach(tr => {
+            const role = window.fmRoleOfSource(tr.getAttribute('data-fm-source'));
+            setRoleBadge(tr.children[0], role);
+            const code = String((tr.querySelector('.seg-name') || {}).value || '').trim().toUpperCase();
+            if (role && code && (!(code in byCode) || FM_ROLE_RANK[role] < FM_ROLE_RANK[byCode[code]])) byCode[code] = role;
+        });
+        pvTableBody.querySelectorAll('tr:not(.fm-prior-row)').forEach(tr => {
+            const host = tr.querySelector('.pv-seg-col > div');
+            if (!host) return;
+            const code = String(tr.getAttribute('data-seg') || (tr.querySelector('.pv-seg-name') || {}).value || '').trim().toUpperCase();
+            setRoleBadge(host, byCode[code] || '');
+        });
+    }
+    window.refreshFmRoleBadges = refreshRoleBadges;
     let gridMissingTimer = null;
-    ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(gridMissingTimer); gridMissingTimer = setTimeout(refreshGridMissing, 120); }));
+    ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(gridMissingTimer); gridMissingTimer = setTimeout(() => { refreshGridMissing(); refreshRoleBadges(); }, 120); }));
 
     function addFmSegment(dateStr, segStr, addToPv = false, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
@@ -9420,6 +9493,7 @@ setupSegmented('patient-progress');
         if (!isPrior && addToSeg) {
             syncMoveTable();
         }
+        if (window.refreshFmRoleBadges) window.refreshFmRoleBadges();
     }
 
     // Segment details with Stecco codes and anatomical names
@@ -10108,6 +10182,15 @@ setupSegmented('patient-progress');
         
         reindexSeqSteps();
 
+        // Non-blocking hint: every planned point on one segment
+        const seqHint = document.getElementById('fm-seq-hint');
+        if (seqHint) {
+            const segsInSeq = steps.map(st => String(st.dataset.segment || (st.querySelectorAll('select')[1] || {}).value || '').toUpperCase());
+            const oneSeg = steps.length >= 2 && segsInSeq[0] && segsInSeq.every(x => x === segsInSeq[0]);
+            seqHint.style.display = oneSeg ? 'block' : 'none';
+            if (oneSeg) seqHint.textContent = `All planned points are on ${segsInSeq[0]}. Consider points along the sequence.`;
+        }
+
         if (steps.length === 0) {
             const patterns = window.__fmDetectedPatterns || [];
             if (patterns.length > 0) {
@@ -10446,6 +10529,7 @@ setupSegmented('patient-progress');
         var vrsInp = existing.querySelector('.seg-vrs');
         if(vrsInp && vrsVal !== undefined) vrsInp.value = vrsVal === null ? '' : vrsVal;
         syncMoveTable();
+        if(window.refreshFmRoleBadges) window.refreshFmRoleBadges();
     };
 
     // Structured FM export for the port (Phase 2) — mirrors what the UI collects.
@@ -10455,7 +10539,8 @@ setupSegmented('patient-progress');
             id: tr.getAttribute('data-seg-id'), segment: val(tr.querySelector('.seg-name')).trim(), side: val(tr.querySelector('.seg-side')),
             duration: val(tr.children[2] && tr.children[2].querySelector('input')), trauma: val(tr.children[3] && tr.children[3].querySelector('select')),
             vrs: val(tr.querySelector('.seg-vrs')) === '' ? null : Number(val(tr.querySelector('.seg-vrs'))),
-            painfulMovements: val(tr.querySelector('.seg-painful')).trim(), autoFilled: tr.classList.contains('fm-auto-row')
+            painfulMovements: val(tr.querySelector('.seg-painful')).trim(), autoFilled: tr.classList.contains('fm-auto-row'),
+            role: (window.fmRoleOfSource ? window.fmRoleOfSource(tr.getAttribute('data-fm-source')) : '') || null
         }));
         const history = Array.from(document.querySelectorAll('#fm-hist-table tbody tr')).map(tr => ({
             type: val(tr.querySelector('.hist-type')) || tr.children[0].textContent.trim(),
@@ -12879,6 +12964,32 @@ document.addEventListener('click', function(e){
     });
     return lines;
   }
+  // Fascial Manipulation as a compact chart: assessment table, history, graded/treated points and hypothesis, outcome.
+  function fmBlock(){
+    const d = window.getFmData();
+    const sideL = s => ({ rt: 'R', lt: 'L', bil: 'Bil' })[s] || s || '';
+    const code = p => ((window.PV_COLUMNS || []).filter(c => c.plane === p)[0] || {}).code || p;
+    const row = (cells, tag) => '<tr>' + cells.map(c => '<' + (tag || 'td') + '>' + esc(c) + '</' + (tag || 'td') + '>').join('') + '</tr>';
+    const line = (label, text) => '<div class="np-line"><b>' + esc(label) + ':</b> ' + esc(text) + '</div>';
+    let h = '<h4>Fascial Manipulation</h4>';
+    const segs = d.segments.filter(x => x.segment);
+    if(segs.length) h += '<table class="np-table"><thead>' + row(['Segment', 'Role', 'Side', 'Duration', 'Trauma?', 'VRS', 'Painful movements'], 'th') + '</thead><tbody>' +
+      segs.map(x => row([x.segment, x.role || '', sideL(x.side), x.duration, x.trauma === 'Y' ? 'Yes' : (x.trauma === 'N' ? 'No' : ''), x.vrs === null ? '' : String(x.vrs), x.painfulMovements])).join('') + '</tbody></table>';
+    const hist = d.history.filter(x => x.segment || x.diagnosis);
+    if(hist.length) h += line('FM history', hist.map(x => [x.type, x.segment, x.date, x.diagnosis].filter(Boolean).join(' ')).join('; '));
+    const pts = d.pv.filter(c => !c.isPrior && c.grade && c.grade !== '0');
+    if(pts.length) h += line('Palpatory verification', pts.map(c => c.segment + '-' + code(c.plane) + ' ' + sideL(c.side) + ' ' + c.grade + (c.treated ? ' ✓' : '')).join(', '));
+    const derived = d.hypothesis && d.hypothesis.derived && d.hypothesis.derived !== 'None' ? d.hypothesis.derived : '';
+    if(derived) h += line('Hypothesis', derived + (d.hypothesis.reasoning ? ' — ' + d.hypothesis.reasoning : ''));
+    const seq = d.hypothesis ? d.hypothesis.steps.filter(x => x.segment) : [];
+    if(seq.length) h += line('Treatment sequence', seq.map((x, i) => (i + 1) + '. ' + x.segment + '-' + code(x.plane) + ' ' + sideL(x.side)).join(', '));
+    const mv = d.moVe.filter(m => m.segment && (m.pre !== null || m.post !== null));
+    if(mv.length) h += line('Mo/Ve (VRS pre → post)', mv.map(m => m.segment + ' ' + sideL(m.side) + (m.movement ? ' (' + m.movement + ')' : '') + ': ' + (m.pre === null ? '—' : m.pre) + ' → ' + (m.post === null ? '—' : m.post) + (m.pre !== null && m.post !== null ? ' (' + (m.post - m.pre > 0 ? '+' : '') + (m.post - m.pre) + ')' : '')).join('; '));
+    const rc = d.palpatoryRecheck.filter(r => r.postGrade);
+    if(rc.length) h += line('Palpatory re-check (pre → post)', rc.map(r => r.segment + '-' + code(r.plane) + ' ' + sideL(r.side) + ' ' + r.preGrade + ' → ' + r.postGrade).join(', '));
+    if(d.treatmentNotes) h += line('Treatment notes', d.treatmentNotes);
+    return h;
+  }
   function render(){
     const F = window.getAssessmentFlags ? window.getAssessmentFlags() : {};
     const get = id => (document.getElementById(id) || {}).value || '';
@@ -12893,17 +13004,14 @@ document.addEventListener('click', function(e){
       if(id === 'sec-history' && F.noRelevantHistory) extra.push({ label: 'History', text: 'No relevant history (confirmed)' });
       if(id === 'sec-objective' && F.screenedNoOtherDeficits) extra.push({ label: 'Screening', text: 'Screened, no other deficits' });
       if(id === 'sec-objective' && window.getPinnedFindings){ const p = window.getPinnedFindings(); if(p.length) extra.push({ label: 'Pinned for follow-up', text: p.map(x => x.region + ' ' + x.name).join('; ') }); }
-      if(id === 'sec-objective' && window.getFmData && window.getFmData().enabled){
-        const fmSummary = window.getFmSummaryLine ? window.getFmSummaryLine() : 'Assessment initialized · 0 points treated';
-        extra.push({ label: 'Fascial Manipulation', text: fmSummary });
-      }
+      if(id === 'sec-objective' && window.getFmData && window.getFmData().enabled) extra.push({ html: fmBlock() });
       if(id === 'sec-plan-goals' && window.getHepRows){
         window.getHepRows().filter(r => r.name).forEach(r => extra.push({ label: 'HEP', text: [r.name, [r.sets, r.reps].filter(Boolean).join('×'), r.hold && r.hold + ' s hold', r.frequency, r.cue].filter(Boolean).join(' · ') }));
       }
       const all = lines.concat(extra);
       h += '<h3>' + esc(title.replace(/^\d+\.\s*/, '')) + '</h3>';
       if(!all.length){ h += '<div class="np-empty">Nothing recorded</div>'; return; }
-      all.forEach(l => { h += l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>'; });
+      all.forEach(l => { h += l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>'; });
     });
     return h;
   }

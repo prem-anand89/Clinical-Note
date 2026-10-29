@@ -71,6 +71,11 @@ objectiveMethod?: Record<'rom'|'mmt', { position?: string; symptomResponse?: str
 
 ## Modules (from the handoff, shapes still to be fixed in Phase 2)
 - `fmSegments`, `fmMoVe`, `fmHistory` per handoff §4.
+- **FM details (prototype `getFmData()`, 29 Oct):**
+  - `segments[]`: `{ segment, side, duration, trauma, vrs, painfulMovements, autoFilled, role }`. `side` is `'rt' | 'lt' | 'bil' | 'N/A' | ''` and `trauma` is `'Y' | 'N' | ''` — **blank means "not assessed", never a silent default** (a routed Chief Complaint can fill them; a manual row starts blank). `vrs` is `number | null`. `role` is `'SiPa' | 'PaConc' | 'Int' | null` (site of pain / concomitant pain / internal / manual), derived from where the row was routed.
+  - `sessionResponse` is `[]` or `[value]` and is **the same field as Core Intervention's `response-to-treatment`** (`Improved | Unchanged | Worse | Unclear`); store it once, in Intervention, and let FM read it.
+  - `history[]` may include an **index surgery** row (from a Post-Surgical Chief Complaint), detail tagged "(index)"; index injuries are not duplicated there (Card 1's `trauma` records them).
+  - `internalDysfunction.notes` holds only the therapist's FM notes; the Core systemic symptoms and their detail are displayed from Core (not copied).
 - **Group A:** ISNCSCI inputs only — sensory `{level: {rLT, rPP, lLT, lPP}}` over C2…S4-5 (`0|1|2|NT`), key muscles `{C5…S1: {r,l}}` (`0–5|NT`), `vac`, `dap` (`Yes|No|NT`). Other tools: Fugl-Meyer subtotals, Hoehn & Yahr stage, MS dermatomal grid, etc. Needs its own table per delta spec §30.3 (not `neuro_spinal_assessments`).
 - **Specialty modules** (Facial Palsy, Vestibular, Cardiothoracic) are Patient-Profile modules, not note payload — separate tables (`facial_palsy_assessments` exists/dormant; vestibular and cardiothoracic to create).
 - Questionnaires: `responses` jsonb per instrument + accepted/skipped state; scores computed, not stored.

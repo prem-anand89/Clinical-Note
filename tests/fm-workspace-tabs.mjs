@@ -360,7 +360,7 @@ console.log('--- 9. Note Preview & cn.fm Mirror ---');
 await page.click('#preview-open');
 await page.waitForTimeout(200);
 const prevDisabledText = await page.locator('#np-body').textContent();
-ok('Note preview does not show FM when disabled', !prevDisabledText.includes('Fascial Manipulation:'));
+ok('Note preview does not show FM when disabled', !(await page.locator('#np-body h4', { hasText: 'Fascial Manipulation' }).count()));
 await page.click('#np-close');
 
 const cnFmMirrorEmpty = await page.evaluate(() => JSON.parse(localStorage.getItem('cn.fm') || '[]').length === 0);
@@ -372,7 +372,7 @@ await page.waitForTimeout(200);
 await page.click('#preview-open');
 await page.waitForTimeout(200);
 const prevEnabledText = await page.locator('#np-body').textContent();
-ok('Note preview includes FM summary line when enabled', prevEnabledText.includes('Fascial Manipulation:'));
+ok('Note preview includes the FM chart when enabled', (await page.locator('#np-body h4', { hasText: 'Fascial Manipulation' }).count()) === 1);
 await page.click('#np-close');
 
 console.log('--- 10. Keyboard Arrow Navigation Between Tabs ---');

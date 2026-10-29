@@ -1217,7 +1217,25 @@
   #note-preview .np-table{ width:100%; border-collapse:collapse; margin:4px 0 8px; font-size:12.5px; }
   #note-preview .np-table th, #note-preview .np-table td{ border:1px solid #ddd; padding:3px 7px; text-align:left; vertical-align:top; }
   #note-preview .np-table th{ background:#f3f3f1; font-weight:600; }
-  @media print{ body > *:not(#note-preview){ display:none !important; } #note-preview{ position:static; background:none; padding:0; } #note-preview .np-sheet{ box-shadow:none; max-width:none; } #note-preview .np-bar{ display:none; } }
+  /* ---- print / Save as PDF: A4, running header, page numbers, no orphaned headings or split rows ---- */
+  @page{ size:A4; margin:22mm 14mm 16mm;
+    @top-left{ content:var(--np-head-l, ""); font:8.5pt 'IBM Plex Sans', system-ui, sans-serif; color:#555; vertical-align:bottom; padding-bottom:2mm; }
+    @top-right{ content:var(--np-head-r, ""); font:8.5pt 'IBM Plex Sans', system-ui, sans-serif; color:#555; vertical-align:bottom; padding-bottom:2mm; }
+    @bottom-center{ content:"Page " counter(page) " of " counter(pages); font:8.5pt 'IBM Plex Sans', system-ui, sans-serif; color:#777; } }
+  @media print{
+    html, body{ background:#fff !important; }
+    body > *:not(#note-preview){ display:none !important; }
+    #note-preview{ position:static; background:none; padding:0; overflow:visible; }
+    #note-preview .np-bar{ display:none; }
+    #note-preview .np-sheet{ box-shadow:none; max-width:none; padding:0; border-radius:0; font-size:10.5pt; line-height:1.45; }
+    #note-preview h2{ font-size:16pt; }
+    #note-preview h3{ break-after:avoid; margin-top:14px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    #note-preview h4{ break-after:avoid; }
+    #note-preview .np-line, #note-preview .np-table tr{ break-inside:avoid; }
+    #note-preview .np-table{ font-size:9.5pt; }
+    #note-preview .np-table thead{ display:table-header-group; }
+    #note-preview .np-table th{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
 </style>
 <style id="lean-css">
   /* ================= LEAN ASSESSMENT LAYER =================
@@ -11598,6 +11616,7 @@ window.hideAdvancedModule = function(key) {
         el.style.opacity = '0.7';
       });
       document.body.classList.add('note-locked');
+      window.__noteSignedAt = Date.now();
       document.querySelectorAll('.chip, .segmented button, .icon-btn, .kebab').forEach(el => {
         if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open, #fm-internal-dysf-toggle')) return; // viewing controls stay usable
         el.style.pointerEvents = 'none';
@@ -12905,6 +12924,8 @@ document.addEventListener('click', function(e){
   const esc = t => String(t).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const clean = t => String(t || '').replace(/[✓☑☐★☆⚡]/g, '').replace(/\s+/g, ' ').trim();
   const short = t => clean(t).split(/ — | · | drives | \(/)[0].replace(/standard 5\/5.*$/i, '').trim();
+  // Label/heading text without its hint spans, icons and toggle buttons ("Primary hypothesis", not "Primary hypothesis deliberate exception…").
+  const plainText = el => { const c = el.cloneNode(true); c.querySelectorAll('.hint, button, svg, .tier-tag, .field-note').forEach(x => x.remove()); return c.textContent; };
   function live(el, root){
     for(let n = el; n && n !== root.parentNode; n = n.parentNode){
       if(n.nodeType !== 1) continue;
@@ -12917,9 +12938,9 @@ document.addEventListener('click', function(e){
   function labelFor(el, root){
     for(let n = el, d = 0; n && n !== root && d < 5; n = n.parentNode, d++){
       let l = n.querySelector && n.querySelector(':scope > label, :scope > .field-label, :scope > .lbl');
-      if(l && !l.contains(el)) return short(l.textContent);
+      if(l && !l.contains(el)) return short(plainText(l));
       for(let p = n.previousElementSibling, k = 0; p && k < 2; p = p.previousElementSibling, k++){
-        if(p.matches && p.matches('label, .field-label, .lbl, .field-note, .card-heading')) return short(p.textContent);
+        if(p.matches && p.matches('label, .field-label, .lbl, .field-note, .card-heading')) return short(plainText(p));
       }
     }
     return clean(el.getAttribute('placeholder') || el.getAttribute('aria-label') || '');
@@ -12943,7 +12964,7 @@ document.addEventListener('click', function(e){
   }
   function collect(sec){
     const lines = [], done = new Set(); let group = '';
-    const heading = el => { const c = el.closest('.card, .repeatable-card'); const h = c && c.querySelector(':scope > .card-heading, :scope > .section-title, :scope > h3, :scope > .rc-head'); return h ? short(h.textContent) : ''; };
+    const heading = el => { const c = el.closest('.card, .repeatable-card'); const h = c && c.querySelector(':scope > .card-heading:not(#known-condition-toggle-row), :scope > .section-title, :scope > h3, :scope > .rc-head'); return h ? short(plainText(h)) : ''; };
     const push = (el, label, text) => { if(!text) return; const g = heading(el); if(g !== group){ group = g; if(g) lines.push({ h: g }); } lines.push({ label, text }); };
     sec.querySelectorAll('.obj-row, input, textarea, select, .chip-row, .segmented, .chips').forEach(el => {
       if(done.has(el) || !live(el, sec)) return;
@@ -12993,7 +13014,15 @@ document.addEventListener('click', function(e){
   function render(){
     const F = window.getAssessmentFlags ? window.getAssessmentFlags() : {};
     const get = id => (document.getElementById(id) || {}).value || '';
-    let h = '<h2>Core Assessment</h2><div class="np-meta">Priya Reddy · Patient ID: 00214 · Draft preview — not a signed record</div>';
+    const PATIENT = 'Priya Reddy', PID = '00214';
+    const stamp = d => d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const signed = document.body.classList.contains('note-locked');
+    const status = signed ? 'Completed' + (window.__noteSignedAt ? ' ' + stamp(new Date(window.__noteSignedAt)) : '') + ' — read-only record' : 'Draft preview — not a signed record';
+    // Running page header: CSS margin boxes read these (one patient/status line on every printed page).
+    const cssStr = t => '"' + String(t).replace(/["\\]/g, '') + '"';
+    document.documentElement.style.setProperty('--np-head-l', cssStr(PATIENT + ' · Patient ID ' + PID));
+    document.documentElement.style.setProperty('--np-head-r', cssStr((signed ? 'Completed note' : 'DRAFT') + ' · Printed ' + stamp(new Date())));
+    let h = '<h2>Core Assessment</h2><div class="np-meta">' + esc(PATIENT) + ' · Patient ID: ' + esc(PID) + ' · ' + esc(status) + '</div>';
     const act = window.activeSuggestions && window.activeSuggestions['ortho-template'];
     if(act) h += '<div class="np-line"><b>Condition template:</b> ' + esc(act.label.replace('Template: ', '')) + (act.source === 'manual' ? ' (manually selected)' : ' (suggested, accepted)') + '</div>';
     SECTIONS.forEach(id => {
@@ -13022,6 +13051,18 @@ document.addEventListener('click', function(e){
   document.querySelectorAll('.preview-open').forEach(b => b.addEventListener('click', open));
   document.getElementById('np-close').addEventListener('click', () => host.classList.remove('open'));
   document.getElementById('np-print').addEventListener('click', () => window.print());
+  // Ctrl/Cmd+P or the browser menu must print the note too, not a blank page: open the preview for the print only.
+  // The document title becomes the default PDF file name.
+  let autoOpened = false, prevTitle = '';
+  window.addEventListener('beforeprint', () => {
+    if(!host.classList.contains('open')){ document.getElementById('np-body').innerHTML = render(); host.classList.add('open'); autoOpened = true; }
+    if(!prevTitle) prevTitle = document.title;   // beforeprint can fire twice; keep the real title
+    document.title = 'Core Assessment - Priya Reddy - ' + new Date().toISOString().slice(0, 10);
+  });
+  window.addEventListener('afterprint', () => {
+    if(prevTitle){ document.title = prevTitle; prevTitle = ''; }
+    if(autoOpened){ host.classList.remove('open'); autoOpened = false; }
+  });
   host.addEventListener('click', e => { if(e.target === host) host.classList.remove('open'); });
   window.renderNotePreview = render;
 })();

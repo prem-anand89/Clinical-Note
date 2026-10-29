@@ -21,6 +21,10 @@
     --clinical-dim:  #e4edec;
     --clinical-ring: #2c5f6333;
 
+    --rust:      #b3261e;
+    --rust-dim:  #fdecec;
+    --moss:      #3f7d4e;
+
     --context:       #a6552f;
     --context-dim:   #f3e4dd;
 
@@ -564,7 +568,7 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    background: var(--bg);
+    background: var(--surface);
     padding: 8px 0;
     margin-bottom: 16px;
     border-bottom: 1px solid var(--line);
@@ -1071,10 +1075,11 @@
     }
     #fm-seg-table tbody tr {
       display: grid !important;
-      grid-template-columns: 1.1fr 1fr 1.2fr 0.9fr 1.1fr auto !important;
+      grid-template-columns: 1fr 1fr 1fr !important;
       grid-template-areas:
-        "seg side dur traum vrs del"
-        "pain pain pain pain pain pain" !important;
+        "seg side dur"
+        "traum vrs del"
+        "pain pain pain" !important;
       gap: 8px 6px !important;
       padding: 10px 12px !important;
       background: #fff !important;
@@ -1133,7 +1138,7 @@
     #fm-seg-table td:nth-child(1)::before { content: 'Seg'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(2)::before { content: 'Side'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(3)::before { content: 'Dur'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
-    #fm-seg-table td:nth-child(4)::before { content: 'Onset'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
+    #fm-seg-table td:nth-child(4)::before { content: 'Trauma?'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(5)::before { content: 'VRS'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(6)::before { content: 'Painful Movements'; font-size: 9.5px; font-weight: 700; color: var(--ink-faint); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.03em; }
     #fm-seg-table td:nth-child(7)::before { content: '' !important; display: none !important; }
@@ -3727,9 +3732,9 @@
               <tr>
                 <th style="width:80px;">Segment</th>
                 <th style="width:70px;">Side</th>
-                <th style="width:100px;">Duration</th>
-                <th style="width:75px;">Onset</th>
-                <th style="width:64px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
+                <th style="width:110px;">Duration</th>
+                <th style="width:78px;">Trauma?</th>
+                <th style="width:72px;">VRS <span style="text-transform:none;font-weight:500;">0–10</span></th>
                 <th style="min-width:150px;">Painful Movements</th>
                 <th style="width:30px;"></th>
               </tr>
@@ -4322,10 +4327,19 @@
     if(yellowHits.length > 0){
       lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--context);font-weight:600;margin-top:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Psychosocial (yellow) flags noted: ' + yellowHits.join(', ') + '</div>');
     }
+    var fmd = typeof window.getFmData === 'function' ? window.getFmData() : null;
+    if(fmd && fmd.enabled){
+      var hypEl = document.getElementById('fm-hyp-diag');
+      var hypTxt = hypEl ? hypEl.textContent.trim() : '';
+      var nTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; }).length;
+      lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--clinical);font-weight:600;margin-top:6px;">FM: ' +
+        (hypTxt && hypTxt !== 'None' ? hypTxt : 'no pattern yet') + ' · ' + nTreated + ' point' + (nTreated === 1 ? '' : 's') + ' treated</div>');
+    }
     if(lines.length === 0){ el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = 'block';
     el.innerHTML = '<div style="background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:10px 14px;">' + lines.join('') + '</div>';
   }
+  window.updateClinicalImpressionCrossRefs = updateClinicalImpressionCrossRefs;
   function setSuggestion(key, label, sub, onAccept){ activeSuggestions[key] = {label: label, sub: sub, onAccept: onAccept}; renderSuggestions(); }
   function clearSuggestion(key){ delete activeSuggestions[key]; renderSuggestions(); }
 
@@ -4561,10 +4575,17 @@
       var latBtn = card.querySelector('#' + idBase + '-lat button.selected');
       var side = latBtn ? ((window.LATERALITY_TO_SIDE || {})[latBtn.getAttribute('data-val')] || '') : '';
       var onsetBtn = card.querySelector('#' + idBase + '-onset button.selected');
-      var duration = onsetBtn ? onsetBtn.getAttribute('data-val') : '';
+      var onsetData = onsetBtn ? onsetBtn.getAttribute('data-val') : '';
+      // Card 1 "Trauma?" is a yes/no: Sudden = yes, Insidious = no, Chronic says nothing about trauma.
+      var traumaVal = onsetData === 'Sudden' ? 'Y' : (onsetData === 'Insidious' ? 'N' : '');
+      var duration = onsetData === 'Chronic' ? 'Chronic' : '';
       var aggChips = Array.prototype.slice.call(card.querySelectorAll('.sec-agg-chips .chip.selected')).map(function(c){ return c.textContent.trim(); });
-      window.routeFmSegment(fmSourceKey, seg, side, duration, aggChips.join(', '));
+      var otherInp = card.querySelector('input[placeholder="Other unlisted factors"]');
+      if(otherInp && otherInp.value.trim()) aggChips.push(otherInp.value.trim());
+      window.routeFmSegment(fmSourceKey, seg, side, duration, aggChips.join(', '), traumaVal);
     }
+    var secOtherInp = card.querySelector('input[placeholder="Other unlisted factors"]');
+    if(secOtherInp) secOtherInp.addEventListener('input', function(){ setTimeout(routeSecondaryToFm, 30); });
     card.addEventListener('click', function(e){
       if(e.target.closest('.sec-region-chips') || e.target.closest('#' + idBase + '-lat') || e.target.closest('#' + idBase + '-onset') || e.target.closest('.sec-agg-chips')){
         setTimeout(routeSecondaryToFm, 30);
@@ -4591,11 +4612,18 @@
     var aggChips = Array.prototype.slice.call(document.querySelectorAll('#aggravating-chips .chip.selected')).map(function(c){ return c.textContent.trim(); });
     var aggOther = document.getElementById('aggravating-other');
     if(aggOther && aggOther.value) aggChips.push(aggOther.value);
-    window.routeFmSegment('primary-complaint', seg, side, duration, aggChips.join(', '));
+    // Card 1 "Trauma?" is a yes/no. Post-Surgical counts as yes (owner to confirm); no onset chosen stays blank.
+    var mechBtn = document.querySelector('#onset-mechanism button.selected');
+    var mech = mechBtn ? mechBtn.getAttribute('data-val') : '';
+    var traumaVal = (mech === 'Sudden' || mech === 'Post-Surgical') ? 'Y' : (mech ? 'N' : '');
+    // Today's pain (NRS) is only a suggested VRS — the therapist edits it in Card 1.
+    var nrsBtn = document.querySelector('#nrs-current button.selected');
+    var vrsVal = nrsBtn ? Number(nrsBtn.getAttribute('data-val')) : null;
+    window.routeFmSegment('primary-complaint', seg, side, duration, aggChips.join(', '), traumaVal, vrsVal);
   }
   window.routePrimaryComplaintToFm = routePrimaryComplaintToFm;
   document.addEventListener('click', function(e){
-    if(e.target.closest('#region-chips') || e.target.closest('#laterality') || e.target.closest('#onset-timeline-chips') || e.target.closest('#aggravating-chips')){
+    if(e.target.closest('#region-chips') || e.target.closest('#laterality') || e.target.closest('#onset-timeline-chips') || e.target.closest('#aggravating-chips') || e.target.closest('#onset-mechanism') || e.target.closest('#nrs-current')){
       setTimeout(routePrimaryComplaintToFm, 30);
     }
   });
@@ -4884,9 +4912,12 @@
     
     var fieldsHtml = fields.map(function(f){
       var w = f.width ? 'width:'+f.width+';' : 'flex:1; min-width:100px;';
+      // Named fields so FM History sync doesn't depend on DOM position.
+      var hf = ({ 'Date':'date', 'Region':'region', 'Side':'side', 'Procedure':'detail', 'Injury type':'detail', 'Recovery':'recovery', 'Status':'recovery' })[f.label];
+      var hfAttr = hf ? ' data-hist-field="' + hf + '"' : '';
       var inner = f.type === 'select'
-        ? '<select class="select-input" style="padding:4px 8px; font-size:12px; height:28px;">' + '<option value="" disabled selected>' + f.label + '</option>' + f.options.map(function(o){ return '<option>' + o + '</option>'; }).join('') + '</select>'
-        : '<input type="' + (f.type || 'text') + '" class="text-input" placeholder="' + (f.placeholder || f.label) + '" style="padding:4px 8px; font-size:12px; height:28px;">';
+        ? '<select class="select-input"' + hfAttr + ' style="padding:4px 8px; font-size:12px; height:28px;">' + '<option value="" disabled selected>' + f.label + '</option>' + f.options.map(function(o){ return '<option>' + o + '</option>'; }).join('') + '</select>'
+        : '<input type="' + (f.type || 'text') + '" class="text-input"' + hfAttr + ' placeholder="' + (f.placeholder || f.label) + '" style="padding:4px 8px; font-size:12px; height:28px;">';
       return '<div style="' + w + '">' + inner + '</div>';
     }).join('');
     
@@ -9289,9 +9320,9 @@ setupSegmented('patient-progress');
             trSeg.setAttribute('data-seg-id', uniqueId);
             trSeg.innerHTML = `
                 <td><input type="text" value="${segStr}" class="text-input seg-name" list="fm-seg-codes" placeholder="e.g. GE" style="width:100%; font-size:12px; padding:4px;"></td>
-                <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="rt">R</option><option value="lt">L</option><option value="bil">Bil</option><option value="N/A">N/A</option></select></td>
+                <td><select class="select-input seg-side" style="padding:4px; font-size:12px;"><option value="">—</option><option value="rt">R</option><option value="lt">L</option><option value="bil">Bil</option><option value="N/A">N/A</option></select></td>
                 <td><input type="text" class="text-input" placeholder="e.g. 3w, 2m" style="width:100%; font-size:12px; padding:4px;"></td>
-                <td><select class="select-input seg-onset" style="padding:4px; font-size:12px;"><option value="N">Gradual (No)</option><option value="Y">Trauma (Yes)</option></select></td>
+                <td><select class="select-input seg-onset" style="padding:4px; font-size:12px;"><option value="">—</option><option value="N">No</option><option value="Y">Yes</option></select></td>
                 <td><input type="number" class="text-input seg-vrs" min="0" max="10" inputmode="numeric" placeholder="0–10" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><input type="text" class="text-input seg-painful" placeholder="e.g. Squat" style="width:100%; font-size:12px; padding:4px;"></td>
                 <td><button type="button" class="del-seg-btn" style="border:none; background:transparent; color:var(--ink-faint); cursor:pointer;">×</button></td>
@@ -10355,7 +10386,21 @@ setupSegmented('patient-progress');
     // the therapist edits it directly — the first manual edit "adopts" the row
     // and this stops touching it, same guard used elsewhere (VM/FM's
     // "User manually modified" textareas) so auto-fill never clobbers exam findings.
-    window.routeFmSegment = function(sourceKey, segStr, sideVal, durationStr, noteStr){
+    // Card 1 row order: site of pain first, then concomitant, then internal, then manual rows.
+    function fmSegRank(tr){
+        var src = tr.getAttribute('data-fm-source') || '';
+        if(src === 'primary-complaint') return 0;
+        if(src.indexOf('secondary-') === 0) return 1;
+        return src ? 2 : 3;
+    }
+    function sortFmSegRows(){
+        if(!segTableBody) return;
+        Array.from(segTableBody.children).map(function(tr, i){ return { tr: tr, i: i, r: fmSegRank(tr) }; })
+            .sort(function(x, y){ return x.r - y.r || x.i - y.i; })
+            .forEach(function(o){ segTableBody.appendChild(o.tr); });
+    }
+    // onsetVal ('' | 'N' | 'Y') and vrsVal (number | '') are optional: undefined leaves the cell alone.
+    window.routeFmSegment = function(sourceKey, segStr, sideVal, durationStr, noteStr, onsetVal, vrsVal){
         if(!segTableBody) return;
         var existing = segTableBody.querySelector('tr[data-fm-source="' + sourceKey + '"]');
         if(existing && existing.dataset.touched) return;
@@ -10381,6 +10426,7 @@ setupSegmented('patient-progress');
             existing = segTableBody.lastElementChild;
             existing.setAttribute('data-fm-source', sourceKey);
             existing.classList.add('fm-auto-row');
+            sortFmSegRows();
             existing.querySelectorAll('input, select').forEach(function(el){
                 el.addEventListener('input', function(){
                     existing.dataset.touched = '1';
@@ -10398,6 +10444,11 @@ setupSegmented('patient-progress');
         if(durationInput) durationInput.value = durationStr || '';
         var noteInput = existing.children[5] ? existing.children[5].querySelector('input') : null;
         if(noteInput && noteStr) noteInput.value = noteStr;
+        var onsetSel = existing.querySelector('.seg-onset');
+        if(onsetSel && onsetVal !== undefined) onsetSel.value = onsetVal;
+        var vrsInp = existing.querySelector('.seg-vrs');
+        if(vrsInp && vrsVal !== undefined) vrsInp.value = vrsVal === null ? '' : vrsVal;
+        syncMoveTable();
     };
 
     // Structured FM export for the port (Phase 2) — mirrors what the UI collects.
@@ -10651,7 +10702,12 @@ setupSegmented('patient-progress');
                 let region = inputs[1] ? inputs[1].value : '';
                 let side = ''; let diag = ''; let status = '';
                 
-                if (typeLabel === 'Surgery') {
+                const named = f => { const el = row.querySelector('[data-hist-field="' + f + '"]'); return el ? el.value : ''; };
+                if (row.querySelector('[data-hist-field]')) {
+                    dateStr = named('date'); region = named('region'); side = named('side');
+                    diag = typeLabel === 'Pain' ? 'Pain episode' : named('detail');
+                    status = named('recovery');
+                } else if (typeLabel === 'Surgery') {
                     diag = inputs[2] ? inputs[2].value : '';
                     status = inputs[3] ? inputs[3].value : '';
                 } else if (typeLabel === 'Injury') {
@@ -10673,6 +10729,23 @@ setupSegmented('patient-progress');
         extractRows('surgical-history-rows', 'Surgery');
         extractRows('trauma-history-rows', 'Injury');
         extractRows('pain-history-rows', 'Pain');
+
+        // Index surgery from Chief Complaint (Post-Surgical onset): FM History is for previous events,
+        // so the surgery that brought the patient in belongs here too. The index injury does not
+        // (Card 1's Trauma? already records it).
+        const mechBtn = document.querySelector('#onset-mechanism button.selected');
+        if (mechBtn && mechBtn.getAttribute('data-val') === 'Post-Surgical') {
+            const catChip = document.querySelector('#surg-category-chips .chip.selected');
+            const cat = catChip ? catChip.getAttribute('data-chip') : '';
+            if (cat) {
+                const regionByCat = { 'Knee': 'Knee', 'Hip': 'Hip', 'Shoulder': 'Shoulder', 'Spine': 'Lumbar Spine', 'Ankle/Foot': 'Ankle', 'Other': '' };
+                const procEl = document.getElementById('surgery-type');
+                const dateEl = document.getElementById('surgery-date');
+                const proc = procEl && procEl.value ? procEl.value : '';
+                allEvents.push({ type: 'Surgery', region: regionByCat[cat] || '', side: '', dateStr: dateEl ? dateEl.value : '',
+                    diag: (proc ? proc : 'Surgery') + ' (index)', status: 'Ongoing' });
+            }
+        }
         
         allEvents.sort((a, b) => {
             if (!a.dateStr) return 1;
@@ -10732,6 +10805,12 @@ setupSegmented('patient-progress');
         }
     });
     setTimeout(window.syncFmHistory, 500);
+    // Index surgery (Chief Complaint) feeds FM History: re-sync when its controls change.
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#onset-mechanism, #surg-category-chips, #surg-specific-chips')) setTimeout(window.syncFmHistory, 40);
+    });
+    const surgDateEl = document.getElementById('surgery-date');
+    if (surgDateEl) ['input', 'change'].forEach(ev => surgDateEl.addEventListener(ev, window.syncFmHistory));
 
     // Phase 5 JS logic for Chief Complaint UI
     
@@ -11032,17 +11111,42 @@ window.openTier2Module = function(key) {
   }
 
   // Sync FM Capsule
+  // Treating a point in FM ticks "Fascial Manipulation (FM)" under Intervention (marked data-auto so it can
+  // be un-ticked again if the points are cleared). A manual tap on the chip makes it the therapist's.
+  function syncFmInterventionChip(treatedCount) {
+    var chip = document.querySelector('#manual-therapy-chips .chip[data-chip="Fascial Manipulation (FM)"]');
+    if (!chip || document.body.classList.contains('note-locked')) return;
+    if (!chip.dataset.autoWired) {
+      chip.dataset.autoWired = '1';
+      // A real tap makes the chip the therapist's: no more auto-clearing, and an untick is respected.
+      chip.addEventListener('click', function(e) {
+        if (!e.isTrusted) return;
+        chip.removeAttribute('data-auto');
+        if (chip.classList.contains('selected')) chip.removeAttribute('data-manual-off'); else chip.setAttribute('data-manual-off', '1');
+      });
+    }
+    var on = chip.classList.contains('selected');
+    if (treatedCount === 0) chip.removeAttribute('data-manual-off');
+    if (treatedCount > 0 && !on && !chip.hasAttribute('data-manual-off')) { chip.classList.add('selected'); chip.setAttribute('data-auto', 'fm'); }
+    else if (treatedCount === 0 && on && chip.getAttribute('data-auto') === 'fm') { chip.classList.remove('selected'); chip.removeAttribute('data-auto'); }
+    else return;
+    if (window.Lean && window.Lean.refresh) window.Lean.refresh();
+  }
+
   window.syncFmCapsule = function() {
     var cap = document.getElementById('fm-capsule-card');
     if (!cap) return;
     var fmd = typeof window.getFmData === 'function' ? window.getFmData() : { enabled: false, pv: [], hypothesis: null, moVe: [] };
+    if (typeof window.updateClinicalImpressionCrossRefs === 'function') window.updateClinicalImpressionCrossRefs();
     if (!fmd.enabled) {
+      syncFmInterventionChip(0);
       cap.style.display = 'none';
       return;
     }
     cap.style.display = 'block';
 
     var todayTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; });
+    syncFmInterventionChip(todayTreated.length);
     var badge = document.getElementById('fm-capsule-badge');
     var emptyRow = document.getElementById('fm-capsule-empty');
     var treatedRow = document.getElementById('fm-capsule-treated');
@@ -12565,6 +12669,7 @@ document.addEventListener('click', function(e){
   // the taping caution, the dosage record and the summary all keep working through their existing code.
   const QUICK_TX = [
     ['Joint mobilisation', '#manual-therapy-chips'], ['MFR', '#manual-therapy-chips'], ['Taping/KT', '#manual-therapy-chips'], ['Dry needling', '#manual-therapy-chips'],
+    ['Fascial Manipulation (FM)', '#manual-therapy-chips'],
     ['TENS', '#modalities-chips'], ['Heat/ice', '#modalities-chips'], ['Ultrasound', '#modalities-chips'],
     ['Strengthening (general)', '#body-therapeutic-exercise .te-chip-row'], ['ROM exercises', '#body-therapeutic-exercise .te-chip-row'], ['Proprioception/balance training', '#body-therapeutic-exercise .te-chip-row']
   ];
@@ -12574,12 +12679,16 @@ document.addEventListener('click', function(e){
     QUICK_TX.forEach(([name, root]) => {
       const b = document.createElement('button');
       b.type = 'button'; b.className = 'chip'; b.textContent = name; b.dataset.quickTx = name;
-      b.addEventListener('click', () => { const real = realChip(name, root); if(real) real.click(); refresh(); });
+      b.addEventListener('click', () => { const real = realChip(name, root); if(real){ real.removeAttribute('data-auto'); real.click(); if(name.indexOf('Fascial Manipulation') === 0){ if(real.classList.contains('selected')) real.removeAttribute('data-manual-off'); else real.setAttribute('data-manual-off', '1'); } } refresh(); });
       host.appendChild(b);
     });
     L.hooks.push(() => QUICK_TX.forEach(([name, root]) => {
       const real = realChip(name, root), q = $('[data-quick-tx="' + name.replace(/"/g, '\\"') + '"]', host);
-      if(real && q) q.classList.toggle('selected', real.classList.contains('selected'));
+      if(real && q){
+        q.classList.toggle('selected', real.classList.contains('selected'));
+        // FM only earns a quick chip once the FM module is in the note (or the chip is already on)
+        if(name.indexOf('Fascial Manipulation') === 0) q.style.display = (real.classList.contains('selected') || (window.getFmData && window.getFmData().enabled)) ? '' : 'none';
+      }
     }));
   })();
   const openBody = (card, bodyId) => () => { const b = document.getElementById(bodyId), t = $(card + ' .subsection-toggle'); if(b && b.style.display === 'none' && t) t.click(); };

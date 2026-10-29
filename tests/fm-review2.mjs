@@ -59,6 +59,7 @@ try {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
         window.addFmSegment(today, 'GE', true, true);
         window.addFmSegment(today, 'HU', true, true);
+        document.querySelectorAll('#fm-seg-table .seg-side').forEach(s => { if (!s.value) { s.value = 'rt'; s.dispatchEvent(new Event('change', { bubbles: true })); } });
     });
     await page1.waitForTimeout(100);
 
@@ -119,6 +120,7 @@ try {
     await page1.evaluate(() => {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
         window.addFmSegment(today, 'GE');
+        document.querySelectorAll('#fm-seg-table .seg-side').forEach(s => { if (!s.value) { s.value = 'rt'; s.dispatchEvent(new Event('change', { bubbles: true })); } });
     });
     await page1.waitForTimeout(100);
 
@@ -172,7 +174,7 @@ try {
     ok('Task 4: No horizontal scroll in segment area at 390px', overflowCheck.scrollWidth <= overflowCheck.clientWidth, overflowCheck);
 
     const sideOptionLabels = await page2.locator('#fm-seg-table .seg-side option').allTextContents();
-    ok('Task 4: Side dropdown shows R/L/Bil labels', sideOptionLabels.slice(0, 3).join('/') === 'R/L/Bil', sideOptionLabels);
+    ok('Task 4: Side dropdown shows a blank default then R/L/Bil labels', sideOptionLabels.slice(1, 4).join('/') === 'R/L/Bil' && sideOptionLabels[0] === '—', sideOptionLabels);
 
     // Edit field inside phone card
     const phoneCard = page2.locator('#fm-seg-table tbody tr').first();

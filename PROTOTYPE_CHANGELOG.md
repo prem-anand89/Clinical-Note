@@ -538,3 +538,29 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
     - `tests/session-step2.mjs`: ALL PASS
     - `tests/signed-lock.mjs`: ALL PASS
     - `tests/step3.mjs`: ALL PASS
+
+## FM UX Refinements: Module Removal & Collapsible Internal Dysfunction Drawer
+- **Module Removal UX (Option B Tab Close + Workspace Footer):**
+  - Removed ambiguous inline `✕ Remove` button from the section title header line (`#sec-fascial-manipulation > .section-title`).
+  - Added inline tab close button `<span class="module-tab-close" id="fm-tab-close">×</span>` on `#tab-btn-fm` with stop-propagation and keyboard accessibility (`Enter` / `Space`).
+  - Added quiet workspace footer action `<div class="fm-workspace-footer"><button type="button" class="fm-remove-link" id="fm-hide">` at the bottom of the FM workspace.
+  - Centralized remove flow via `requestRemoveFmModule()`: prompts `window.confirm` if any clinical data has been recorded in FM (graded PV cells, hypothesis steps, Mo/Ve post scores, treatment notes, or internal dysfunction inputs), while providing instant, frictionless removal if opened accidentally without data.
+  - Signed-note lock protection: `.module-tab-close` and `.fm-workspace-footer` are hidden via CSS (`display: none !important`) and blocked by the capture-phase signed-note click guard when `body.note-locked` is active.
+- **Collapsible Level 3 Internal Dysfunction Drawer:**
+  - Converted `#fm-internal-dysf-card` into a clean, collapsible drawer immediately preceding Card 1, collapsed by default so Card 1 Segment Assessment sits directly at the top of the FM workspace.
+  - Header toggle `#fm-internal-dysf-toggle` with dynamic badge `#fm-internal-dysf-badge`:
+    - Surfaces Core systemic triggers (`💡 N systems flagged (...)`).
+    - Indicates manual apparatus / tensile selections (`✓ ADI · TLU, TPV`).
+    - Excluded from signed-note disabling so clinicians can expand and read recorded notes on signed records.
+  - Multi-select apparatus chips (`ADI`, `ARE`, `ACI`, `AUN`, `AEN`, `AHE`, `APR`) unioning tensile structure suggestions (`APPARATUS_TENSILE_STRUCTURES`).
+- **Strict Card 1 Routing (Card 3 Remains Deliberate Therapist Choice):**
+  - Added `#fm-tensile-routing-field` and `#fm-tensile-routing-chips` dynamically rendering one-tap routing pills for suggested/selected tensile structures (`TCP` → `CP1`, `CL`; `TCL` → `CL`; `TTH` → `TH`; `TLU` → `LU`; `TPV` → `PV`).
+  - Tapping a routing chip invokes `window.routeFmSegment(...)` with `addToPv = false, addToSeg = true`, populating Card 1 Segment Assessment and syncing the Mo/Ve row without adding any rows to Card 3 (Palpation Grid).
+  - Duplicate prevention: If a segment is already recorded in Card 1 (from Core auto-routing or manual entry), the chip renders as a confirmed badge (`✓ LU in Card 1`) instead of creating a duplicate row.
+  - Palpation strip sync: Card 3's `#fm-grid-missing` strip automatically offers one-tap addition (`Not in the palpation grid: [ ＋ LU ]`) if the therapist decides to palpate the segment.
+- **Data Export & State Reset:**
+  - `getFmData()` additively exports `internalDysfunction: { notes, apparatuses, tensileStructures, catenary }`.
+  - `hideAdvancedModule('fascial-manipulation')` collapses the drawer and resets state cleanly.
+- **Verification:**
+  - Updated `tests/fm-workspace-tabs.mjs` verifying default collapsed state, toggle expansion/collapse, ADI apparatus selection, one-tap routing to Card 1 only (confirming Card 3 PV grid remains at 0 rows), confirmed button state, safety confirmation dismiss and accept.
+  - All 17 test suites passing (100% pass rate).

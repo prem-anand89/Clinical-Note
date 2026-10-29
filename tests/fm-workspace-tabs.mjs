@@ -121,6 +121,66 @@ const fiveCards = await page.evaluate(() => {
 });
 ok('All five FM cards are present and loaded in view-fm', fiveCards);
 
+console.log('--- 4b. Internal Dysfunction Collapsible Drawer & Card 1 Routing ---');
+const drawerDefaultCollapsed = await page.evaluate(() => {
+  const body = document.getElementById('fm-internal-dysf-body');
+  const toggle = document.getElementById('fm-internal-dysf-toggle');
+  return body && body.style.display === 'none' && toggle.getAttribute('aria-expanded') === 'false';
+});
+ok('Internal Dysfunction drawer is collapsed by default', drawerDefaultCollapsed);
+
+// Toggle open drawer
+await page.click('#fm-internal-dysf-toggle');
+await page.waitForTimeout(100);
+const drawerOpened = await page.evaluate(() => {
+  const body = document.getElementById('fm-internal-dysf-body');
+  return body && body.style.display !== 'none';
+});
+ok('Tapping drawer toggle expands Internal Dysfunction body', drawerOpened);
+
+// Select Digestive (ADI) apparatus chip
+await page.click('#fm-apparatus-chips button[data-apparatus="Digestive (ADI)"]');
+await page.waitForTimeout(150);
+
+const apparatusSuggestedTensiles = await page.evaluate(() => {
+  const tluSuggested = document.querySelector('#fm-tensile-chips button[data-tensile="TLU"]').classList.contains('trigger-suggested');
+  const routingVisible = document.getElementById('fm-tensile-routing-field').style.display !== 'none';
+  const routingChips = Array.from(document.querySelectorAll('#fm-tensile-routing-chips .fm-routing-btn')).map(b => b.textContent.trim());
+  return { tluSuggested, routingVisible, routingChips };
+});
+ok('Selecting ADI highlights tensile structures and reveals Card 1 routing chips',
+  apparatusSuggestedTensiles.tluSuggested && apparatusSuggestedTensiles.routingVisible && apparatusSuggestedTensiles.routingChips.some(c => c.includes('LU')),
+  apparatusSuggestedTensiles
+);
+
+// Click "＋ Add LU to Card 1"
+const luBtn = page.locator('#fm-tensile-routing-chips button', { hasText: 'Add LU' }).first();
+await luBtn.click();
+await page.waitForTimeout(150);
+
+const routingVerification = await page.evaluate(() => {
+  const segRows = Array.from(document.querySelectorAll('#fm-seg-table tbody tr')).map(tr => tr.querySelector('.seg-name').value.trim());
+  const pvRows = document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row)').length;
+  const luBtnState = document.querySelector('#fm-tensile-routing-chips button[title*="already"]').textContent.trim();
+  const fmd = window.getFmData();
+  return {
+    segRows,
+    pvRows,
+    luBtnState,
+    exportedInternal: fmd.internalDysfunction
+  };
+});
+ok('One-tap routing adds LU to Card 1 Segment Assessment', routingVerification.segRows.includes('LU'), routingVerification.segRows);
+ok('CRITICAL: Card 3 PV grid remains completely untouched (0 rows)', routingVerification.pvRows === 0, routingVerification.pvRows);
+ok('Routing chip flips to confirmed state "✓ LU in Card 1"', routingVerification.luBtnState.includes('LU in Card 1'), routingVerification.luBtnState);
+ok('getFmData().internalDysfunction exports apparatuses & tensiles', routingVerification.exportedInternal && routingVerification.exportedInternal.apparatuses.includes('Digestive (ADI)'));
+
+// Close the drawer
+await page.click('#fm-internal-dysf-toggle');
+await page.waitForTimeout(100);
+const drawerClosed = await page.evaluate(() => document.getElementById('fm-internal-dysf-body').style.display === 'none');
+ok('Tapping drawer toggle collapses Internal Dysfunction body', drawerClosed);
+
 console.log('--- 5. Grade & Treat Point, Derive Diagonal, Mo/Ve & Capsule Sync ---');
 // Add CX segment to FM and grade/treat a point (CX-AL R)
 await page.evaluate(() => {
@@ -252,7 +312,21 @@ ok('Clicking Core sidebar item from FM tab switches back to Core tab',
 console.log('--- 8. Removing FM Cleans Up Tabs, Capsule, and Enabled Flag ---');
 await page.evaluate(() => window.switchModuleTab('fm'));
 await page.waitForTimeout(150);
+
+// Safety confirmation check: dismiss first
+page.once('dialog', async d => {
+  await d.dismiss();
+});
 await page.locator('#fm-hide').click();
+await page.waitForTimeout(150);
+const stillEnabled = await page.evaluate(() => window.getFmData().enabled);
+ok('Dismissing confirmation dialog keeps FM module active', stillEnabled === true);
+
+// Accept confirmation dialog via tab close button (#fm-tab-close)
+page.once('dialog', async d => {
+  await d.accept();
+});
+await page.locator('#fm-tab-close').click();
 await page.waitForTimeout(250);
 
 const removedFm = await page.evaluate(() => {

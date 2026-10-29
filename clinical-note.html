@@ -609,6 +609,126 @@
     background: var(--clinical);
     display: inline-block;
   }
+  .module-tab-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    margin-left: 2px;
+    margin-right: -4px;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--ink-faint);
+    transition: all .15s ease;
+    cursor: pointer;
+  }
+  .module-tab-close:hover {
+    background: rgba(0,0,0,0.08);
+    color: var(--rust);
+  }
+  .module-tab.active .module-tab-close {
+    color: var(--clinical);
+  }
+  .module-tab.active .module-tab-close:hover {
+    background: rgba(15,118,110,0.15);
+    color: var(--rust);
+  }
+  .fm-workspace-footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 24px 0 32px;
+    margin-top: 16px;
+    border-top: 1px dashed var(--line);
+  }
+  .fm-remove-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    transition: all .15s ease;
+  }
+  .fm-remove-link:hover {
+    color: var(--rust);
+    background: var(--rust-dim, rgba(190, 24, 93, 0.08));
+  }
+  .fm-drawer-toggle {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    gap: 8px;
+  }
+  .fm-drawer-arrow {
+    font-size: 11px;
+    color: var(--ink-faint);
+    transition: transform .15s ease;
+  }
+  .fm-drawer-toggle[aria-expanded="true"] .fm-drawer-arrow {
+    transform: rotate(90deg);
+  }
+  .fm-drawer-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+  .fm-drawer-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--context-dim, #FEF3C7);
+    color: var(--context, #92400E);
+    border: 1px solid rgba(217,119,6,.25);
+  }
+  .fm-drawer-badge.active-manual {
+    background: var(--clinical-dim);
+    color: var(--clinical);
+    border: 1px solid rgba(15,118,110,.25);
+  }
+  .fm-routing-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    font-size: 11.5px;
+    font-weight: 600;
+    border: 1px dashed var(--clinical);
+    background: var(--card);
+    color: var(--clinical);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s ease;
+  }
+  .fm-routing-btn:hover {
+    background: var(--clinical-dim);
+  }
+  .fm-routing-btn.routed {
+    border-style: solid;
+    border-color: var(--line);
+    background: var(--surface);
+    color: var(--ink-faint);
+    cursor: default;
+  }
   body.fm-tab-active .outline:not(.drawer-open) {
     display: none !important;
   }
@@ -655,6 +775,10 @@
   body.note-locked .fm-capsule-open {
     pointer-events: auto !important;
     opacity: 1 !important;
+  }
+  body.note-locked .module-tab-close,
+  body.note-locked .fm-workspace-footer {
+    display: none !important;
   }
 
   /* ================= FASCIAL MANIPULATION (FM) ================= */
@@ -1245,7 +1369,7 @@
     <!-- ================= MODULE TAB BAR ================= -->
     <nav class="module-tab-bar" id="module-tab-bar" role="tablist" aria-label="Assessment views">
       <button type="button" class="module-tab active" id="tab-btn-core" role="tab" aria-selected="true" aria-controls="view-core">Core Assessment</button>
-      <button type="button" class="module-tab" id="tab-btn-fm" role="tab" aria-selected="false" aria-controls="view-fm" style="display:none;"><span class="module-tab-dot"></span>Fascial Manipulation (FM)</button>
+      <button type="button" class="module-tab" id="tab-btn-fm" role="tab" aria-selected="false" aria-controls="view-fm" style="display:none;"><span class="module-tab-dot"></span><span>Fascial Manipulation (FM)</span><span class="module-tab-close" id="fm-tab-close" role="button" tabindex="0" title="Remove FM module" aria-label="Remove FM module">×</span></button>
     </nav>
 
     <!-- ================= VIEW: CORE ASSESSMENT ================= -->
@@ -3588,54 +3712,59 @@
       <div class="section-title">
         <h2 style="font-size:15px;">Fascial Manipulation (FM)</h2>
         <span class="tier-tag" style="background:var(--context-dim); color:var(--context);">Advanced Module · Specialty tier</span>
-        <button type="button" id="fm-hide" style="margin-left:auto; background:none; border:none; color:var(--ink-faint); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          Remove
-        </button>
       </div>
       <div id="fm-trigger-reason" class="field-note" style="display:none; margin:-6px 0 14px; padding:8px 12px; background:var(--context-dim); color:var(--context); border-radius:var(--radius-sm); font-weight:600;"></div>
 
-      <!-- Internal Dysfunction — Stecco's Apparatus/Tensile Structure framework,
-           not part of FM's numbered flow (same as VM's own Internal Dysfunctions
-           card). Apparatus is auto-flagged from Subjective data, never
-           auto-selected — the therapist confirms or picks manually. Hidden
-           unless a Systemic Symptom is actually active in Subjective, since
-           most FM visits (chronic pain / surgical history triggers) have
-           nothing here; therapist can still reveal it manually. -->
-      <button type="button" class="add-link" id="fm-internal-dysf-reveal" style="margin:-6px 0 14px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Add Internal Dysfunction
-      </button>
-      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px; display:none;">
-        <div class="card-heading">Internal Dysfunction</div>
-        <div class="field">
-          <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
-        </div>
-        <div class="field">
-          <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
-          <div class="chip-row" id="fm-apparatus-chips">
-            <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
-            <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
-            <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
-            <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
-            <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
-            <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
-            <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
+      <!-- Internal Dysfunction — Stecco's Level 3 Apparatus/Tensile Structure framework.
+           Collapsed by default to keep Card 1 Segment Assessment immediately reachable.
+           Dynamically indicates Core systemic triggers and allows manual Level 3 evaluation. -->
+      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px;">
+        <button type="button" class="fm-drawer-toggle" id="fm-internal-dysf-toggle" aria-expanded="false" aria-controls="fm-internal-dysf-body">
+          <span class="fm-drawer-arrow" id="fm-internal-dysf-arrow">▸</span>
+          <span class="fm-drawer-title" id="fm-internal-dysf-title">Viscerofascial &amp; Internal Dysfunction</span>
+          <span class="fm-drawer-badge" id="fm-internal-dysf-badge" style="display:none;"></span>
+          <span class="fm-drawer-action" id="fm-internal-dysf-action" style="margin-left:auto; color:var(--clinical); font-size:12px; font-weight:600;">Open ▾</span>
+        </button>
+        <div id="fm-internal-dysf-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);">
+          <div class="field">
+            <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
           </div>
-        </div>
-        <div class="field">
-          <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
-          <div class="chip-row" id="fm-tensile-chips">
-            <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
-            <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
-            <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
-            <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
-            <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
+          <div class="field">
+            <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
+            <div class="chip-row" id="fm-apparatus-chips">
+              <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
+              <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
+              <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
+              <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
+              <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
+              <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
+              <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
+            </div>
           </div>
-        </div>
-        <div class="field" style="margin-bottom:0;">
-          <label>Apparatus-fascial sequence / catenary</label>
-          <input type="text" class="text-input" placeholder="therapist's clinical/palpatory finding">
+          <div class="field">
+            <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
+            <div class="chip-row" id="fm-tensile-chips">
+              <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
+              <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
+              <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
+              <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
+              <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
+            </div>
+          </div>
+          <!-- One-tap routing into Card 1 Segment Assessment ONLY -->
+          <div class="field" id="fm-tensile-routing-field" style="display:none; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px;">
+            <div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">
+              Route to Segment Assessment (Card 1):
+            </div>
+            <div class="chip-row" id="fm-tensile-routing-chips"></div>
+            <div style="font-size:11px; color:var(--ink-faint); margin-top:4px;">
+              Adds row to Card 1 and Mo/Ve table. Card 3 Palpation Grid remains therapist's choice.
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Apparatus-fascial sequence / catenary</label>
+            <input type="text" id="fm-internal-dysf-catenary" class="text-input" placeholder="therapist's clinical/palpatory finding">
+          </div>
         </div>
       </div>
 
@@ -3955,6 +4084,14 @@
             <textarea id="fm-rx-notes" class="text-input" rows="2" placeholder="Response to specific points, patient sensations during friction, or home exercise guidance..."></textarea>
           </div>
         </details>
+      </div>
+
+      <!-- Workspace Footer: Remove Module -->
+      <div class="fm-workspace-footer">
+        <button type="button" class="fm-remove-link" id="fm-hide">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Remove Fascial Manipulation from this visit note
+        </button>
       </div>
     </section>
 
@@ -8668,9 +8805,47 @@ setupSegmented('patient-progress');
     // call so Remove correctly reverts the sidebar item back to a re-addable "+"
     // stub, instead of a bespoke handler that just hid the section and left the
     // nav badge permanently stuck on done/✓.
+    function requestRemoveFmModule(e) {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      if (document.body.classList.contains('note-locked')) return;
+
+      var fmd = typeof window.getFmData === 'function' ? window.getFmData() : null;
+      var hasData = false;
+      if (fmd) {
+        var hasPv = (fmd.pv || []).some(function(c){ return !c.isPrior && (c.grade || c.treated); });
+        var hasHyp = fmd.hypothesis && fmd.hypothesis.steps && fmd.hypothesis.steps.length > 0;
+        var hasMove = (fmd.moVe || []).some(function(m){ return m.post !== null; });
+        var hasNotes = !!(fmd.treatmentNotes && fmd.treatmentNotes.trim());
+        var hasIntern = false;
+        var intEl = document.getElementById('fm-internal-dysf');
+        if (intEl && intEl.value && !intEl.value.startsWith('Auto-populated')) hasIntern = true;
+        if (document.querySelectorAll('#fm-apparatus-chips .chip.selected, #fm-tensile-chips .chip.selected').length > 0) hasIntern = true;
+        hasData = hasPv || hasHyp || hasMove || hasNotes || hasIntern;
+      }
+
+      if (hasData) {
+        var confirmed = window.confirm('Remove Fascial Manipulation module from this visit note? Any recorded FM findings will be cleared.');
+        if (!confirmed) return;
+      }
+      window.hideAdvancedModule('fascial-manipulation');
+    }
+    window.requestRemoveFmModule = requestRemoveFmModule;
+
     var fmHide = document.getElementById('fm-hide');
     if(fmHide){
-      fmHide.addEventListener('click', function(){ window.hideAdvancedModule('fascial-manipulation'); });
+      fmHide.addEventListener('click', requestRemoveFmModule);
+    }
+    var fmTabClose = document.getElementById('fm-tab-close');
+    if(fmTabClose){
+      fmTabClose.addEventListener('click', requestRemoveFmModule);
+      fmTabClose.addEventListener('keydown', function(e){
+        if (e.key === 'Enter' || e.key === ' ') {
+          requestRemoveFmModule(e);
+        }
+      });
     }
 
 })();
@@ -10274,8 +10449,15 @@ setupSegmented('patient-progress');
         const fmSec = document.getElementById('sec-fascial-manipulation');
         const fmTab = document.getElementById('tab-btn-fm');
         const enabled = !!(fmSec && fmSec.style.display !== 'none' && (!fmTab || fmTab.style.display !== 'none'));
+        const intCard = document.getElementById('fm-internal-dysf-card');
+        const internalDysfunction = intCard ? {
+            notes: val(document.getElementById('fm-internal-dysf')),
+            apparatuses: Array.from(document.querySelectorAll('#fm-apparatus-chips .chip.selected')).map(c => c.getAttribute('data-apparatus')),
+            tensileStructures: Array.from(document.querySelectorAll('#fm-tensile-chips .chip.selected')).map(c => c.getAttribute('data-tensile')),
+            catenary: val(document.getElementById('fm-internal-dysf-catenary'))
+        } : null;
         return {
-            enabled, segments, history, pv, hypothesis, moVe, palpatoryRecheck,
+            enabled, segments, history, pv, hypothesis, moVe, palpatoryRecheck, internalDysfunction,
             sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
             treatmentNotes: val(document.getElementById('fm-rx-notes')) || (moveCard ? val(moveCard.querySelector('textarea')) : '')
         };
@@ -10813,7 +10995,10 @@ window.openTier2Module = function(key) {
   }
   var tabFm = document.getElementById('tab-btn-fm');
   if (tabFm) {
-    tabFm.addEventListener('click', function(){ window.switchModuleTab('fm'); });
+    tabFm.addEventListener('click', function(e){
+      if (e.target.closest('#fm-tab-close')) return;
+      window.switchModuleTab('fm');
+    });
   }
 
   // Capsule open button click
@@ -11018,6 +11203,16 @@ window.hideAdvancedModule = function(key) {
       nav.classList.add('stub');
     }
     if (typeof clearSuggestion === 'function') clearSuggestion('trigger-fascial-manipulation');
+    var intBody = document.getElementById('fm-internal-dysf-body');
+    var intToggle = document.getElementById('fm-internal-dysf-toggle');
+    if (intBody && intToggle) {
+      intBody.style.display = 'none';
+      intToggle.setAttribute('aria-expanded', 'false');
+      var arrow = document.getElementById('fm-internal-dysf-arrow');
+      if (arrow) arrow.textContent = '▸';
+      var act = document.getElementById('fm-internal-dysf-action');
+      if (act) act.textContent = 'Open ▾';
+    }
     try { localStorage.setItem('cn.fm', JSON.stringify([])); } catch(e) {}
     return;
   }
@@ -11218,7 +11413,7 @@ window.hideAdvancedModule = function(key) {
       });
       document.body.classList.add('note-locked');
       document.querySelectorAll('.chip, .segmented button, .icon-btn, .kebab').forEach(el => {
-        if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open')) return; // viewing controls stay usable
+        if(el.closest('#pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open, #fm-internal-dysf-toggle')) return; // viewing controls stay usable
         el.style.pointerEvents = 'none';
         if(!el.classList.contains('selected')) {
            el.style.opacity = '0.4';
@@ -11286,7 +11481,8 @@ document.addEventListener('click', function(e){
   if(!document.body.classList.contains('note-locked')) return;
   var t = e.target;
   if(!t.closest || !t.closest('main')) return;
-  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open')) return;
+  if(t.closest('.module-tab-close')) { e.preventDefault(); e.stopPropagation(); return; }
+  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open, #fm-internal-dysf-toggle')) return;
   if(t.closest('.lean-head') && !t.closest('button')) return;
   e.preventDefault(); e.stopPropagation();
 }, true);
@@ -11436,7 +11632,117 @@ document.addEventListener('click', function(e){
   };
   var fmInternalDysfEl = document.getElementById('fm-internal-dysf');
   var fmInternalDysfCard = document.getElementById('fm-internal-dysf-card');
-  var fmInternalDysfReveal = document.getElementById('fm-internal-dysf-reveal');
+  var fmInternalDysfToggle = document.getElementById('fm-internal-dysf-toggle');
+  var fmInternalDysfBody = document.getElementById('fm-internal-dysf-body');
+  var fmInternalDysfBadge = document.getElementById('fm-internal-dysf-badge');
+  var fmInternalDysfArrow = document.getElementById('fm-internal-dysf-arrow');
+  var fmInternalDysfAction = document.getElementById('fm-internal-dysf-action');
+
+  var TENSILE_TO_SEGMENTS = {
+    'TCP': ['CP1', 'CL'],
+    'TCL': ['CL'],
+    'TTH': ['TH'],
+    'TLU': ['LU'],
+    'TPV': ['PV']
+  };
+
+  function updateFmInternalDysfSummary() {
+    var activeCore = getActiveInternalDysfunctionSystems();
+    var selApparatuses = Array.from(document.querySelectorAll('#fm-apparatus-chips .chip.selected')).map(function(c){ return c.getAttribute('data-apparatus'); });
+    var selTensiles = Array.from(document.querySelectorAll('#fm-tensile-chips .chip.selected')).map(function(c){ return c.getAttribute('data-tensile'); });
+
+    if (fmInternalDysfBadge) {
+      if (activeCore.length > 0) {
+        fmInternalDysfBadge.textContent = '💡 ' + activeCore.length + ' system' + (activeCore.length > 1 ? 's' : '') + ' flagged (' + activeCore.join(', ') + ')';
+        fmInternalDysfBadge.className = 'fm-drawer-badge';
+        fmInternalDysfBadge.style.display = 'inline-flex';
+      } else if (selApparatuses.length > 0 || selTensiles.length > 0) {
+        var labels = [];
+        if (selApparatuses.length > 0) labels.push(selApparatuses.map(function(a){ return a.replace(/\s*\(.*?\)/, ''); }).join(', '));
+        if (selTensiles.length > 0) labels.push(selTensiles.join(', '));
+        fmInternalDysfBadge.textContent = '✓ ' + labels.join(' · ');
+        fmInternalDysfBadge.className = 'fm-drawer-badge active-manual';
+        fmInternalDysfBadge.style.display = 'inline-flex';
+      } else {
+        fmInternalDysfBadge.style.display = 'none';
+      }
+    }
+
+    renderTensileRoutingChips();
+  }
+
+  function renderTensileRoutingChips() {
+    var routingField = document.getElementById('fm-tensile-routing-field');
+    var routingContainer = document.getElementById('fm-tensile-routing-chips');
+    if (!routingField || !routingContainer) return;
+
+    var activeTensileCodes = new Set();
+    document.querySelectorAll('#fm-tensile-chips .chip.selected').forEach(function(c){
+      activeTensileCodes.add(c.getAttribute('data-tensile'));
+    });
+    document.querySelectorAll('#fm-tensile-chips .chip.trigger-suggested').forEach(function(c){
+      activeTensileCodes.add(c.getAttribute('data-tensile'));
+    });
+
+    if (activeTensileCodes.size === 0) {
+      routingField.style.display = 'none';
+      routingContainer.innerHTML = '';
+      return;
+    }
+
+    routingField.style.display = 'block';
+    routingContainer.innerHTML = '';
+
+    var candidateSegs = [];
+    ['CP1', 'CL', 'TH', 'LU', 'PV'].forEach(function(seg){
+      var matchingTensiles = Object.keys(TENSILE_TO_SEGMENTS).filter(function(t){
+        return activeTensileCodes.has(t) && TENSILE_TO_SEGMENTS[t].indexOf(seg) !== -1;
+      });
+      if (matchingTensiles.length > 0) {
+        candidateSegs.push({ seg: seg, tensiles: matchingTensiles });
+      }
+    });
+
+    var existingCard1Segs = new Set();
+    document.querySelectorAll('#fm-seg-table tbody tr').forEach(function(tr){
+      var segInput = tr.querySelector('.seg-name');
+      if (segInput && segInput.value.trim()) {
+        existingCard1Segs.add(segInput.value.trim().toUpperCase());
+      }
+    });
+
+    candidateSegs.forEach(function(item){
+      var seg = item.seg;
+      var tensStr = item.tensiles.join('/');
+      var isAlreadyInCard1 = existingCard1Segs.has(seg.toUpperCase());
+
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      if (isAlreadyInCard1) {
+        btn.className = 'fm-routing-btn routed';
+        btn.disabled = true;
+        btn.textContent = '✓ ' + seg + ' in Card 1';
+        btn.title = seg + ' is already recorded in Card 1 Segment Assessment';
+      } else {
+        btn.className = 'fm-routing-btn';
+        btn.setAttribute('data-seg', seg);
+        btn.setAttribute('data-tensile', tensStr);
+        btn.textContent = '＋ Add ' + seg + ' to Card 1';
+        btn.title = 'Add ' + seg + ' to Card 1 Segment Assessment (PV grid remains untouched)';
+        btn.addEventListener('click', function(){
+          if (window.routeFmSegment) {
+            window.routeFmSegment('tensile-' + seg, seg, 'N/A', '', 'Internal: ' + tensStr);
+          } else {
+            window.addFmSegment('today', seg, false, true);
+          }
+          if (typeof window.refreshFmGridMissing === 'function') window.refreshFmGridMissing();
+          renderTensileRoutingChips();
+        });
+      }
+      routingContainer.appendChild(btn);
+    });
+  }
+
   function updateFmInternalDysf(){
     if(!fmInternalDysfEl) return;
     var active = getActiveInternalDysfunctionSystems();
@@ -11450,40 +11756,43 @@ document.addEventListener('click', function(e){
     document.querySelectorAll('#fm-apparatus-chips .chip').forEach(function(chip){
       chip.classList.toggle('trigger-suggested', !!apparatusSet[chip.getAttribute('data-apparatus')]);
     });
-    if(fmInternalDysfCard && !fmInternalDysfCard.dataset.manuallyOpened){
-      fmInternalDysfCard.style.display = active.length > 0 ? '' : 'none';
-    }
-    if(fmInternalDysfReveal){
-      fmInternalDysfReveal.style.display = (fmInternalDysfCard && fmInternalDysfCard.style.display !== 'none') ? 'none' : '';
-    }
+    updateFmInternalDysfSummary();
   }
-  if(fmInternalDysfReveal){
-    fmInternalDysfReveal.addEventListener('click', function(){
-      if(fmInternalDysfCard){
-        fmInternalDysfCard.dataset.manuallyOpened = '1';
-        fmInternalDysfCard.style.display = '';
-      }
-      fmInternalDysfReveal.style.display = 'none';
+
+  if (fmInternalDysfToggle) {
+    fmInternalDysfToggle.addEventListener('click', function(){
+      if (!fmInternalDysfBody) return;
+      var isOpen = fmInternalDysfBody.style.display !== 'none';
+      fmInternalDysfBody.style.display = isOpen ? 'none' : 'block';
+      fmInternalDysfToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      if (fmInternalDysfArrow) fmInternalDysfArrow.textContent = isOpen ? '▸' : '▾';
+      if (fmInternalDysfAction) fmInternalDysfAction.textContent = isOpen ? 'Open ▾' : 'Close ▴';
     });
   }
+
   historyChips.forEach(c => c.addEventListener('click', () => setTimeout(updateFmInternalDysf, 10)));
   updateFmInternalDysf();
+
   document.querySelectorAll('#fm-apparatus-chips .chip').forEach(function(chip){
     chip.addEventListener('click', function(){
-      var wasSelected = chip.classList.contains('selected');
-      document.querySelectorAll('#fm-apparatus-chips .chip').forEach(function(c){ c.classList.remove('selected'); });
-      var relevant = [];
-      if(!wasSelected){
-        chip.classList.add('selected');
-        relevant = APPARATUS_TENSILE_STRUCTURES[chip.getAttribute('data-apparatus')] || [];
-      }
-      document.querySelectorAll('#fm-tensile-chips .chip').forEach(function(t){
-        t.classList.toggle('trigger-suggested', relevant.indexOf(t.getAttribute('data-tensile')) !== -1);
+      chip.classList.toggle('selected');
+      var relevantSet = new Set();
+      document.querySelectorAll('#fm-apparatus-chips .chip.selected').forEach(function(sc){
+        var appKey = sc.getAttribute('data-apparatus');
+        (APPARATUS_TENSILE_STRUCTURES[appKey] || []).forEach(function(t){ relevantSet.add(t); });
       });
+      document.querySelectorAll('#fm-tensile-chips .chip').forEach(function(t){
+        t.classList.toggle('trigger-suggested', relevantSet.has(t.getAttribute('data-tensile')));
+      });
+      updateFmInternalDysfSummary();
     });
   });
+
   document.querySelectorAll('#fm-tensile-chips .chip').forEach(function(chip){
-    chip.addEventListener('click', function(){ chip.classList.toggle('selected'); });
+    chip.addEventListener('click', function(){
+      chip.classList.toggle('selected');
+      updateFmInternalDysfSummary();
+    });
   });
 
   

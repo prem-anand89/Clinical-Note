@@ -3715,59 +3715,6 @@
       </div>
       <div id="fm-trigger-reason" class="field-note" style="display:none; margin:-6px 0 14px; padding:8px 12px; background:var(--context-dim); color:var(--context); border-radius:var(--radius-sm); font-weight:600;"></div>
 
-      <!-- Internal Dysfunction — Stecco's Level 3 Apparatus/Tensile Structure framework.
-           Collapsed by default to keep Card 1 Segment Assessment immediately reachable.
-           Dynamically indicates Core systemic triggers and allows manual Level 3 evaluation. -->
-      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px;">
-        <button type="button" class="fm-drawer-toggle" id="fm-internal-dysf-toggle" aria-expanded="false" aria-controls="fm-internal-dysf-body">
-          <span class="fm-drawer-arrow" id="fm-internal-dysf-arrow">▸</span>
-          <span class="fm-drawer-title" id="fm-internal-dysf-title">Viscerofascial &amp; Internal Dysfunction</span>
-          <span class="fm-drawer-badge" id="fm-internal-dysf-badge" style="display:none;"></span>
-          <span class="fm-drawer-action" id="fm-internal-dysf-action" style="margin-left:auto; color:var(--clinical); font-size:12px; font-weight:600;">Open ▾</span>
-        </button>
-        <div id="fm-internal-dysf-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);">
-          <div class="field">
-            <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
-          </div>
-          <div class="field">
-            <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
-            <div class="chip-row" id="fm-apparatus-chips">
-              <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
-              <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
-              <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
-              <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
-              <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
-              <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
-              <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
-            </div>
-          </div>
-          <div class="field">
-            <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
-            <div class="chip-row" id="fm-tensile-chips">
-              <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
-              <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
-              <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
-              <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
-              <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
-            </div>
-          </div>
-          <!-- One-tap routing into Card 1 Segment Assessment ONLY -->
-          <div class="field" id="fm-tensile-routing-field" style="display:none; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px;">
-            <div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">
-              Route to Segment Assessment (Card 1):
-            </div>
-            <div class="chip-row" id="fm-tensile-routing-chips"></div>
-            <div style="font-size:11px; color:var(--ink-faint); margin-top:4px;">
-              Adds row to Card 1 and Mo/Ve table. Card 3 Palpation Grid remains therapist's choice.
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:0;">
-            <label>Apparatus-fascial sequence / catenary</label>
-            <input type="text" id="fm-internal-dysf-catenary" class="text-input" placeholder="therapist's clinical/palpatory finding">
-          </div>
-        </div>
-      </div>
-
       <!-- 1. Segment Assessment -->
       <div class="card" style="margin-bottom:14px;">
         <div class="card-heading" style="display:flex; justify-content:space-between; align-items:center;">
@@ -3816,6 +3763,59 @@
           <!-- Disclosed segment drawer -->
           <div id="fm-region-drawer" style="margin-top:10px; display:none; padding:10px 12px; background:var(--surface); border:1px solid var(--line); border-radius:var(--radius-sm);">
             <div id="fm-region-chips" class="chip-row" style="gap:6px;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Internal Dysfunction — Stecco's Level 3 Apparatus/Tensile Structure framework.
+           Sits directly under Card 1 Segment Assessment: internal dysfunction can still be part of the complaint.
+           Collapsed by default. Dynamically indicates Core systemic triggers and allows manual Level 3 evaluation. -->
+      <div class="card" id="fm-internal-dysf-card" style="margin-bottom:14px;">
+        <button type="button" class="fm-drawer-toggle" id="fm-internal-dysf-toggle" aria-expanded="false" aria-controls="fm-internal-dysf-body">
+          <span class="fm-drawer-arrow" id="fm-internal-dysf-arrow">▸</span>
+          <span class="fm-drawer-title" id="fm-internal-dysf-title">Viscerofascial &amp; Internal Dysfunction</span>
+          <span class="fm-drawer-badge" id="fm-internal-dysf-badge" style="display:none;"></span>
+          <span class="fm-drawer-action" id="fm-internal-dysf-action" style="margin-left:auto; color:var(--clinical); font-size:12px; font-weight:600;">Open ▾</span>
+        </button>
+        <div id="fm-internal-dysf-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);">
+          <div class="field">
+            <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
+          </div>
+          <div class="field">
+            <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
+            <div class="chip-row" id="fm-apparatus-chips">
+              <button type="button" class="chip" data-apparatus="Digestive (ADI)">Digestive (ADI)</button>
+              <button type="button" class="chip" data-apparatus="Respiratory (ARE)">Respiratory (ARE)</button>
+              <button type="button" class="chip" data-apparatus="Circulatory (ACI)">Circulatory (ACI)</button>
+              <button type="button" class="chip" data-apparatus="Urinary (AUN)">Urinary (AUN)</button>
+              <button type="button" class="chip" data-apparatus="Endocrine (AEN)">Endocrine (AEN)</button>
+              <button type="button" class="chip" data-apparatus="Haematopoietic (AHE)">Haematopoietic (AHE)</button>
+              <button type="button" class="chip" data-apparatus="Receptor (APR/AMR/ACR)">Receptor (APR/AMR/ACR)</button>
+            </div>
+          </div>
+          <div class="field">
+            <label>Tensile structure <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">TCP head &middot; TCL neck &middot; TTH thorax &middot; TLU lumbar &middot; TPV pelvis — relevant ones highlighted once an apparatus is picked</span></label>
+            <div class="chip-row" id="fm-tensile-chips">
+              <button type="button" class="chip" data-tensile="TCP">TCP (head)</button>
+              <button type="button" class="chip" data-tensile="TCL">TCL (neck)</button>
+              <button type="button" class="chip" data-tensile="TTH">TTH (thorax)</button>
+              <button type="button" class="chip" data-tensile="TLU">TLU (lumbar)</button>
+              <button type="button" class="chip" data-tensile="TPV">TPV (pelvis)</button>
+            </div>
+          </div>
+          <!-- One-tap routing into Card 1 Segment Assessment ONLY -->
+          <div class="field" id="fm-tensile-routing-field" style="display:none; background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:12px;">
+            <div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">
+              Route to Segment Assessment (Card 1):
+            </div>
+            <div class="chip-row" id="fm-tensile-routing-chips"></div>
+            <div style="font-size:11px; color:var(--ink-faint); margin-top:4px;">
+              Adds row to Card 1 and Mo/Ve table. Card 3 Palpation Grid remains therapist's choice.
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0;">
+            <label>Apparatus-fascial sequence / catenary</label>
+            <input type="text" id="fm-internal-dysf-catenary" class="text-input" placeholder="therapist's clinical/palpatory finding">
           </div>
         </div>
       </div>

@@ -567,3 +567,9 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - **Verification:**
   - Updated `tests/fm-workspace-tabs.mjs` verifying default collapsed state, toggle expansion/collapse, ADI apparatus selection, one-tap routing to Card 1 only (confirming Card 3 PV grid remains at 0 rows), confirmed button state, safety confirmation dismiss and accept.
   - All 17 test suites passing (100% pass rate).
+
+## FM: Internal Dysfunction drawer moved under Segment Assessment (29 Oct)
+- **Why:** internal dysfunction can still be part of the patient's complaint, so it belongs next to the complaint's segment rather than ahead of it. The FM tab now reads: 1. Segment Assessment → Viscerofascial & Internal Dysfunction drawer (collapsed) → 2. FM History → 3 → 4 → 5.
+- **What:** `#fm-internal-dysf-card` now sits directly after Card 1 and before Card 2. Ids, collapse behaviour, apparatus/tensile chips and routing into Card 1 are unchanged.
+- **Test:** `tests/fm-workspace-tabs.mjs` asserts the drawer's previous sibling is Card 1 (`#fm-seg-table`) and its next sibling is Card 2. All 17 suites pass.
+- **Also:** `CLAUDE_HANDOFF_FM_FIXES.md` added — triaged plan (Argon 4 review) for the next FM fixes, to be implemented in steps.

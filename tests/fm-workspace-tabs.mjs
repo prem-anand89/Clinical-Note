@@ -129,6 +129,15 @@ const drawerDefaultCollapsed = await page.evaluate(() => {
 });
 ok('Internal Dysfunction drawer is collapsed by default', drawerDefaultCollapsed);
 
+// Placement: directly under Card 1 (Segment Assessment), before Card 2 (FM History)
+const drawerPlacement = await page.evaluate(() => {
+  const drawer = document.getElementById('fm-internal-dysf-card');
+  const card1 = drawer.previousElementSibling;
+  const card2 = drawer.nextElementSibling;
+  return !!card1 && !!card2 && !!card1.querySelector('#fm-seg-table') && /2\. FM History/.test(card2.textContent);
+});
+ok('Internal Dysfunction drawer sits directly under Segment Assessment (Card 1)', drawerPlacement);
+
 // Toggle open drawer
 await page.click('#fm-internal-dysf-toggle');
 await page.waitForTimeout(100);

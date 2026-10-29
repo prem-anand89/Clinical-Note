@@ -14,8 +14,8 @@ await page.evaluate(() => window.openAdvancedModule('fascial-manipulation'));
 await page.waitForTimeout(400);
 await page.evaluate(() => {
   const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-  window.addFmSegment(today, 'GE');
-  window.addFmSegment(today, 'HU');
+  window.addFmSegment(today, 'GE', true, true);
+  window.addFmSegment(today, 'HU', true, true);
 });
 await page.waitForTimeout(100);
 const grade = async (row, g, side) => {
@@ -34,8 +34,8 @@ ok('side shown as R, no double brackets', /GE R/.test(d) && !/\(\(/.test(d), d);
 // the same segment graded twice is not a pattern
 await page.locator('#fm-pv-table tbody tr:not(.pv-session-banner-row)').nth(1).locator('.pv-cell').first().click();
 await page.locator('#pv-picker button[data-act="clear"]').click();
-await page.locator('#fm-region-tabs [data-region="Lower limb"]').click();
-await page.locator('#fm-region-chips .chip', { hasText: 'GE' }).first().click();
+await page.locator('#pv-add-region-tabs [data-region="Lower limb"]').click();
+await page.locator('#pv-region-chips .chip', { hasText: 'GE' }).first().click();
 await page.waitForTimeout(150);
 await grade(2, '2');
 d = await dens();

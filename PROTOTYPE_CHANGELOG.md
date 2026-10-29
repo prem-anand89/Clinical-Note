@@ -553,7 +553,10 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
     - Indicates manual apparatus / tensile selections (`✓ ADI · TLU, TPV`).
     - Excluded from signed-note disabling so clinicians can expand and read recorded notes on signed records.
   - Multi-select apparatus chips (`ADI`, `ARE`, `ACI`, `AUN`, `AEN`, `AHE`, `APR`) unioning tensile structure suggestions (`APPARATUS_TENSILE_STRUCTURES`).
-- **Strict Card 1 Routing (Card 3 Remains Deliberate Therapist Choice):**
+- **Strict Card 1 Routing & Card 3 Palpation Grid Decoupling:**
+  - Decoupled Card 1 Segment Assessment picker (`#fm-region-drawer .fm-seg-chip`) and "＋ Other" (`#fm-add-seg`) from Card 3 Palpation Grid: picking or adding a segment in Card 1 now explicitly passes `addToPv = false, addToSeg = true`.
+  - `addFmSegment(dateStr, segStr, addToPv = false, addToSeg = true)` default for `addToPv` is now `false`, guaranteeing that no complaint, systemic symptom, internal dysfunction, or Card 1 segment picker action ever auto-populates Card 3.
+  - Card 3 Palpation Grid starts completely blank for the current visit. The therapist retains 100% manual freedom to choose which segments to palpate (via Card 3's own `#pv-add-region-tabs` picker, "＋ Other", or the optional `#fm-grid-missing` strip), allowing cases where a patient presenting with knee pain (GE) is examined for Cx, PV, Ta, or PE while leaving GE unpalpated.
   - Added `#fm-tensile-routing-field` and `#fm-tensile-routing-chips` dynamically rendering one-tap routing pills for suggested/selected tensile structures (`TCP` → `CP1`, `CL`; `TCL` → `CL`; `TTH` → `TH`; `TLU` → `LU`; `TPV` → `PV`).
   - Tapping a routing chip invokes `window.routeFmSegment(...)` with `addToPv = false, addToSeg = true`, populating Card 1 Segment Assessment and syncing the Mo/Ve row without adding any rows to Card 3 (Palpation Grid).
   - Duplicate prevention: If a segment is already recorded in Card 1 (from Core auto-routing or manual entry), the chip renders as a confirmed badge (`✓ LU in Card 1`) instead of creating a duplicate row.

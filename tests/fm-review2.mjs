@@ -57,8 +57,8 @@ try {
     // Add 2 segments for today
     await page1.evaluate(() => {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-        window.addFmSegment(today, 'GE');
-        window.addFmSegment(today, 'HU');
+        window.addFmSegment(today, 'GE', true, true);
+        window.addFmSegment(today, 'HU', true, true);
     });
     await page1.waitForTimeout(100);
 
@@ -161,7 +161,7 @@ try {
 
     await page2.evaluate(() => {
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-        window.addFmSegment(today, 'GE');
+        window.addFmSegment(today, 'GE', true, true);
     });
     await page2.waitForTimeout(100);
 

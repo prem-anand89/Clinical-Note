@@ -9277,7 +9277,7 @@ setupSegmented('patient-progress');
     let gridMissingTimer = null;
     ['click', 'input', 'change'].forEach(ev => document.addEventListener(ev, () => { clearTimeout(gridMissingTimer); gridMissingTimer = setTimeout(refreshGridMissing, 120); }));
 
-    function addFmSegment(dateStr, segStr, addToPv = true, addToSeg = true) {
+    function addFmSegment(dateStr, segStr, addToPv = false, addToSeg = true) {
         let uniqueId = 'seg-' + Date.now() + Math.floor(Math.random() * 1000);
         const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
         if (dateStr === 'today') dateStr = today;
@@ -9301,7 +9301,7 @@ setupSegmented('patient-progress');
         }
 
         // --- 2. Add to PV Grid in active layout order ---
-        if (pvTableBody && addToPv) {
+        if (pvTableBody && (addToPv || isPrior)) {
             let trPv = document.createElement('tr');
             trPv.setAttribute('data-seg-id', uniqueId);
             trPv.setAttribute('data-seg', segStr);
@@ -9418,7 +9418,7 @@ setupSegmented('patient-progress');
     if (addSegBtn) {
         addSegBtn.addEventListener('click', function() {
             let today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-            addFmSegment(today, "");
+            addFmSegment(today, "", false, true);
         });
     }
 
@@ -9523,7 +9523,7 @@ setupSegmented('patient-progress');
                 const chip = e.target.closest('.fm-seg-chip');
                 if (!chip) return;
                 const today = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'2-digit', year:'2-digit'});
-                addFmSegment(today, chip.getAttribute('data-seg'));
+                addFmSegment(today, chip.getAttribute('data-seg'), false, true);
             });
         }
 

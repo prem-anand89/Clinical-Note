@@ -52,13 +52,21 @@ const kneeChip = page.locator('#fm-region-chips .fm-seg-chip', { hasText: 'GE' }
 const kneeChipText = await kneeChip.textContent();
 ok('shows anatomical name GE – Knee', /GE.*Knee/i.test(kneeChipText), kneeChipText);
 
-// 5. Click GE to add row
+// 5. Click GE to add row in Card 1 Segment Assessment
 await kneeChip.click();
 await page.waitForTimeout(300);
 
 const segRows = await page.locator('#fm-seg-table tbody tr').count();
+const pvRowsInitial = await page.locator('#fm-pv-table tbody tr').count();
+ok('adding segment in Card 1 does NOT auto-populate PV grid (0 rows)', segRows >= 1 && pvRowsInitial === 0, { segRows, pvRowsInitial });
+
+// Therapist manually adds GE to Card 3 palpation grid via missing strip
+const missingChip = page.locator('#fm-grid-missing-chips button', { hasText: 'GE' });
+await missingChip.click();
+await page.waitForTimeout(200);
+
 const pvRows = await page.locator('#fm-pv-table tbody tr').count();
-ok('adding segment creates row in assessment and PV table', segRows >= 1 && pvRows >= 1, { segRows, pvRows });
+ok('therapist manually adds segment to PV table', pvRows >= 1, pvRows);
 
 // 6. Grade AL (CF) as 2+ and An (CC) as 3 ✓ on Right side
 const alCell = page.locator('#fm-pv-table tbody tr .pv-cell[data-plane="AN-LA"][data-side="rt"]').first();

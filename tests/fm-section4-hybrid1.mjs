@@ -111,12 +111,11 @@ function ok(name, cond, info) {
     ok('Remaining chip is PE', (await remainingChip.locator('.point-seg').textContent()).trim() === 'PE');
     ok('Count updated to 1 point planned', (await page.textContent('#fm-seq-count')).trim() === '1 point planned');
 
-    // 6. Re-derive Button
-    console.log('--- 6. Testing Re-derive Button ---');
-    await page.click('#fm-re-derive-btn');
-    await page.waitForTimeout(50);
-    const reBtnText = await page.textContent('#fm-re-derive-btn');
-    ok('Re-derive gives visual feedback', reBtnText.includes('Updated'), reBtnText);
+    // 6. One sequence action: no manual Re-derive; the banner follows the grid
+    console.log('--- 6. Testing single sequence action ---');
+    ok('Re-derive button is gone (banner derives automatically)', (await page.locator('#fm-re-derive-btn').count()) === 0);
+    ok('Card 3 no longer has its own Apply button', (await page.locator('#fm-apply-to-seq').count()) === 0);
+    ok('One "Apply top findings" action exists in Card 4', (await page.locator('#fm-seq-from-findings').count()) === 1 && (await page.textContent('#fm-seq-from-findings')).includes('Apply top findings'));
 
     // 7. Collapsible Reasoning & Quick Tags
     console.log('--- 7. Testing Reasoning Collapse & Quick Tags ---');

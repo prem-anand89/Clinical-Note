@@ -1005,6 +1005,7 @@
     margin-left: 2px; padding: 0 2px;
   }
   .point-del:hover { color: var(--rust, #b3261e); }
+  .fm-ctx-pill { display:inline-block; padding:3px 10px; border-radius:var(--radius-pill); background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); font-size:12px; font-weight:600; }
 
   #fm-seq-picker {
     position: fixed; z-index: 60; display: none; background: #fff;
@@ -3748,12 +3749,6 @@
           No segments added yet. Choose a region below (e.g. <b>Lower limb ▾</b>) or record a Chief Complaint in Core Assessment.
         </div>
 
-        <!-- Segments recorded above but not yet in the palpation grid -->
-        <div id="fm-grid-missing" style="display:none; margin-top:12px; align-items:center; flex-wrap:wrap; gap:8px;">
-          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">Not in the palpation grid:</span>
-          <span id="fm-grid-missing-chips" class="chip-row"></span>
-        </div>
-
         <!-- Below-the-table Region Disclosure Picker -->
         <div id="fm-seg-picker" style="margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);">
           <div style="display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -3783,8 +3778,14 @@
           <span class="fm-drawer-action" id="fm-internal-dysf-action" style="margin-left:auto; color:var(--clinical); font-size:12px; font-weight:600;">Open ▾</span>
         </button>
         <div id="fm-internal-dysf-body" style="display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft);">
+          <!-- Read-only context from Subjective (systemic symptoms): shown, never copied into the notes box -->
+          <div class="field" id="fm-internal-dysf-context" style="display:none;">
+            <label>From Subjective <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">read-only</span></label>
+            <div class="chip-row" id="fm-internal-dysf-pills"></div>
+          </div>
           <div class="field">
-            <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Auto-populated from Subjective systemic symptoms..."></textarea>
+            <label for="fm-internal-dysf">FM notes on internal dysfunction</label>
+            <textarea id="fm-internal-dysf" class="text-input" style="min-height:60px;" placeholder="Visceral / fascial findings and reasoning (therapist's own notes)"></textarea>
           </div>
           <div class="field">
             <label>Apparatus involved <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">flagged from Subjective — confirm or pick manually</span></label>
@@ -3914,6 +3915,12 @@
           </table>
         </div>
 
+        <!-- Card 1 segments not yet in the grid: one tap adds them (sits with the other grid pickers) -->
+        <div id="fm-grid-missing" style="display:none; padding:12px 28px 0; align-items:center; flex-wrap:wrap; gap:8px;">
+          <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">From Card 1:</span>
+          <span id="fm-grid-missing-chips" class="chip-row"></span>
+        </div>
+
         <!-- Add Segment Directly to PV Grid (Below Table) -->
         <div id="pv-seg-picker" style="padding:12px 28px 0; display:flex; align-items:center; flex-wrap:wrap; gap:8px;">
           <span style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em;">＋ Add Segment to Grid:</span>
@@ -3936,7 +3943,7 @@
               <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--clinical-dim); color:var(--clinical); font-size:11px;">🔍</span>
               <b style="color:var(--clinical); font-size:11.5px; text-transform:uppercase; letter-spacing:.05em;">Density &amp; Pattern Intelligence</b>
             </div>
-            <button type="button" class="chip" id="fm-apply-to-seq" style="font-size:11.5px; padding:4px 10px; font-weight:700; color:var(--clinical); border-color:var(--clinical); background:var(--clinical-dim); display:none; cursor:pointer;" title="Add highest findings to Treatment Sequence">⚡ Apply to Sequence</button>
+
           </div>
           <div id="fm-density-summary" style="font-family:'IBM Plex Sans', system-ui, -apple-system, sans-serif; color:var(--ink); line-height:1.45;">
             <span style="color:var(--ink-faint); font-size:12.5px;">Palpate and grade points across segments. When ≥2 segments on a plane reach grade 2+, the dominant sequence or diagonal will synthesize here.</span>
@@ -3961,9 +3968,6 @@
             <span class="hyp-badge" id="fm-hyp-badge" style="display:none;"></span>
             <span class="hyp-meta" id="fm-hyp-meta">Palpate and grade points in Card 3 to derive pattern</span>
           </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="add-link" id="fm-re-derive-btn" style="padding:2px 6px; font-size:11.5px;" title="Re-scan grid findings">↻ Re-derive</button>
-          </div>
         </div>
 
         <!-- 2. Clean Planned Sequence -->
@@ -3974,7 +3978,7 @@
           </div>
 
           <div class="seq-builder seq-pills-row" id="fm-seq-builder">
-            <button type="button" class="add-link" id="fm-seq-from-findings" title="Add highest graded findings from Card 3">＋ From findings</button>
+            <button type="button" class="add-link" id="fm-seq-from-findings" style="font-weight:700; color:var(--clinical);" title="Add the highest graded findings from Card 3 to the sequence (needs a point graded 2 or higher)" disabled>⚡ Apply top findings</button>
             <button type="button" class="add-link" id="fm-add-seq-step" title="Add another point to sequence">＋ Add point</button>
           </div>
         </div>
@@ -4061,18 +4065,17 @@
           </div>
         </div>
         
-        <!-- Overall Session Response -->
+        <!-- Response to treatment: the same field as Intervention > Response to treatment (kept in sync) -->
         <div class="field" style="margin-bottom:16px;">
-          <label>Session Response</label>
-          <div class="chip-row" id="fm-session-response">
-            <button type="button" class="chip" data-chip="Immediate relief">Immediate relief</button>
-            <button type="button" class="chip" data-chip="Gradual improvement">Gradual improvement</button>
-            <button type="button" class="chip" data-chip="Pain reduced, still stiff">Pain reduced, still stiff</button>
-            <button type="button" class="chip" data-chip="No change">No change</button>
-            <button type="button" class="chip" data-chip="Increased pain">Increased pain</button>
+          <label>Response to treatment <span class="hint" style="text-transform:none; letter-spacing:0; font-weight:500;">same field as in Intervention</span></label>
+          <div class="segmented" id="fm-session-response">
+            <button type="button" data-val="Improved">Improved</button>
+            <button type="button" data-val="Unchanged">Unchanged</button>
+            <button type="button" data-val="Worse">Worse</button>
+            <button type="button" data-val="Unclear">Unclear</button>
           </div>
         </div>
-        
+
         <!-- Treatment Notes & Guidance (Collapsed by default) -->
         <details class="fm-collapse" id="fm-notes-collapse">
           <summary>
@@ -4704,7 +4707,24 @@
   setupChips('occ-desk-ergo-chips');
   setupChips('occ-manual-ergo-chips');
   setupChips('fm-reasoning-tags');
-  setupChips('fm-session-response');
+  // FM's Response control mirrors Core's #response-to-treatment (one field, two places).
+  (function(){
+    var core = document.getElementById('response-to-treatment'), fm = document.getElementById('fm-session-response');
+    if(!core || !fm) return;
+    function mirror(){
+      var sel = core.querySelector('button.selected'), v = sel ? sel.getAttribute('data-val') : null;
+      fm.querySelectorAll('button').forEach(function(b){ b.classList.toggle('selected', b.getAttribute('data-val') === v); });
+    }
+    fm.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', function(){
+        var target = core.querySelector('button[data-val="' + b.getAttribute('data-val') + '"]');
+        if(target) target.click();   // Core's own handler selects, or clears on a second tap
+        mirror();
+      });
+    });
+    core.addEventListener('click', function(){ setTimeout(mirror, 0); });
+    mirror();
+  })();
 
   // ---------- Observation ----------
   setupSegmented('obs-joint-effusion');
@@ -8706,10 +8726,8 @@ setupSegmented('patient-progress');
         });
         
         const summaryDiv = document.getElementById('fm-density-summary');
-        const applyBtn = document.getElementById('fm-apply-to-seq');
-        if (applyBtn) {
-            applyBtn.style.display = highestIndex >= 2 ? 'inline-flex' : 'none';
-        }
+        const applyBtn = document.getElementById('fm-seq-from-findings');
+        if (applyBtn) applyBtn.disabled = highestIndex < 2;
         if (!summaryDiv) return;
 
         if (highestIndex === 0) {
@@ -8817,15 +8835,6 @@ setupSegmented('patient-progress');
                 }
             }
         }
-        const applyBtn = e.target.closest('#fm-apply-to-seq');
-        if (applyBtn) {
-            const fromFindings = document.getElementById('fm-seq-from-findings');
-            if (fromFindings) {
-                fromFindings.click();
-                const seqBuilder = document.getElementById('fm-seq-builder');
-                if (seqBuilder) seqBuilder.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
-        }
     });
 
     // Module Visibility — nav-fm's own onclick="openAdvancedModule('fascial-manipulation')"
@@ -8852,7 +8861,7 @@ setupSegmented('patient-progress');
         var hasNotes = !!(fmd.treatmentNotes && fmd.treatmentNotes.trim());
         var hasIntern = false;
         var intEl = document.getElementById('fm-internal-dysf');
-        if (intEl && intEl.value && !intEl.value.startsWith('Auto-populated')) hasIntern = true;
+        if (intEl && intEl.value.trim()) hasIntern = true;
         if (document.querySelectorAll('#fm-apparatus-chips .chip.selected, #fm-tensile-chips .chip.selected').length > 0) hasIntern = true;
         hasData = hasPv || hasHyp || hasMove || hasNotes || hasIntern;
       }
@@ -10071,7 +10080,6 @@ setupSegmented('patient-progress');
     const seqBuilder = document.getElementById('fm-seq-builder');
     const addSeqBtn = document.getElementById('fm-add-seq-step');
     const diagOutput = document.getElementById('fm-hyp-diag');
-    const reDeriveBtn = document.getElementById('fm-re-derive-btn');
     
     const planes = ['AN-LA', 'AN-ME', 'An', 'Ir', 'Me', 'RE-LA', 'RE-ME', 'Re', 'Er', 'La']; // same order + case as PV_COLUMNS
     const segments = window.FM_SEGMENTS; // canonical list
@@ -10281,17 +10289,6 @@ setupSegmented('patient-progress');
                 const fromFindings = document.getElementById('fm-seq-from-findings');
                 if (fromFindings) fromFindings.click();
             }
-        });
-    }
-
-    if (reDeriveBtn) {
-        reDeriveBtn.addEventListener('click', function() {
-            if (typeof updateDensitySummary === 'function') {
-                updateDensitySummary();
-            }
-            updateDiagonal();
-            reDeriveBtn.textContent = '✓ Updated';
-            setTimeout(() => { reDeriveBtn.textContent = '↻ Re-derive'; }, 1000);
         });
     }
 
@@ -10509,7 +10506,7 @@ setupSegmented('patient-progress');
         } : null;
         return {
             enabled, segments, history, pv, hypothesis, moVe, palpatoryRecheck, internalDysfunction,
-            sessionResponse: moveCard ? Array.from(moveCard.querySelectorAll('#fm-session-response .chip.selected')).map(c => c.getAttribute('data-chip')) : [],
+            sessionResponse: Array.from(document.querySelectorAll('#response-to-treatment button.selected')).map(b => b.getAttribute('data-val')),
             treatmentNotes: val(document.getElementById('fm-rx-notes')) || (moveCard ? val(moveCard.querySelector('textarea')) : '')
         };
     };
@@ -11847,13 +11844,24 @@ document.addEventListener('click', function(e){
     });
   }
 
+  function makeCtxPill(text){
+    var sp = document.createElement('span');
+    sp.className = 'fm-ctx-pill';
+    sp.textContent = text;
+    return sp;
+  }
   function updateFmInternalDysf(){
     if(!fmInternalDysfEl) return;
     var active = getActiveInternalDysfunctionSystems();
-    if(active.length > 0 && !fmInternalDysfEl.value.includes('User manually modified')){
-      fmInternalDysfEl.value = 'Auto-populated from History: ' + active.join(', ');
-    } else if(active.length === 0 && fmInternalDysfEl.value.startsWith('Auto-populated')){
-      fmInternalDysfEl.value = '';
+    // Subjective systems and detail are shown as read-only pills; the textarea stays the therapist's own FM notes.
+    var pillsEl = document.getElementById('fm-internal-dysf-pills'), ctxEl = document.getElementById('fm-internal-dysf-context');
+    if(pillsEl && ctxEl){
+      var detailEl = document.getElementById('internal-dysf-detail');
+      var detail = detailEl ? detailEl.value.trim() : '';
+      pillsEl.innerHTML = '';
+      active.forEach(function(sys){ pillsEl.appendChild(makeCtxPill(sys)); });
+      if(detail) pillsEl.appendChild(makeCtxPill('Detail: ' + detail));
+      ctxEl.style.display = (active.length || detail) ? 'block' : 'none';
     }
     var apparatusSet = {};
     active.forEach(function(sys){ var a = SYSTEM_TO_APPARATUS[sys]; if(a) apparatusSet[a] = true; });
@@ -11875,6 +11883,8 @@ document.addEventListener('click', function(e){
   }
 
   historyChips.forEach(c => c.addEventListener('click', () => setTimeout(updateFmInternalDysf, 10)));
+  var coreDysfDetail = document.getElementById('internal-dysf-detail');
+  if (coreDysfDetail) coreDysfDetail.addEventListener('input', updateFmInternalDysf);
   updateFmInternalDysf();
 
   document.querySelectorAll('#fm-apparatus-chips .chip').forEach(function(chip){

@@ -56,7 +56,7 @@ await attempt('#rom-rows .remove-x', 'remove row');
 
 // switch to FM tab to test FM buttons
 if (await page.locator('#tab-btn-fm').count()) await page.click('#tab-btn-fm');
-await attempt('#fm-apply-to-seq', 'apply to sequence');
+await attempt('#fm-seq-from-findings', 'apply top findings to sequence');
 await attempt('#fm-grid-missing-chips .chip', 'grid strip');
 
 // switch to Core tab for gate button

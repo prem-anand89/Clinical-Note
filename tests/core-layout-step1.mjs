@@ -51,24 +51,36 @@ ok('the old single "Deep reasoning & ICF" chip is gone', !chipTxt.some(t => /Dee
 ok('Known condition field lives in Section 1', await inside('#known-condition-field', '#sec-chief-complaint') && !(await inside('#known-condition-field', '#sec-clinical-impression')));
 ok('there is exactly one Known condition field', await page.locator('#known-condition-field').count() === 1);
 ok('Impression echo is hidden while nothing is chosen', await page.locator('#ci-known-condition').isHidden());
-await page.locator('#known-condition-toggle-row .subsection-toggle').click();
+const vis = sel => page.evaluate(s => [...document.querySelectorAll(s)].filter(e => e.offsetParent !== null).length, sel);
+ok('the picker starts closed with one clear trigger', await page.locator('#known-condition-field').isHidden() && /Known diagnosis \/ referral/.test(await page.textContent('#kc-trigger')));
+await page.locator('#kc-trigger').click();
 await page.waitForTimeout(150);
-ok('the + toggle opens the condition chooser', await page.locator('#known-condition-field').isVisible());
+ok('the trigger opens the picker', await page.locator('#known-condition-field').isVisible() && (await page.getAttribute('#kc-trigger', 'aria-expanded')) === 'true');
+ok('four category tabs, only ONE category of chips visible at a time', (await page.locator('.kc-tab').count()) === 4 && (await vis('.kc-group')) === 1);
+ok('no condition is selected, so no summary pill and no tab badge', await page.locator('#kc-summary').isHidden() && (await vis('.kc-count')) === 0);
+await page.locator('.kc-tab[data-kc-tab="kc-postop"]').click();
+ok('switching tab swaps the visible category', await page.locator('#kc-postop').isVisible() && await page.locator('#kc-ortho').isHidden() && await page.locator('#kc-neuro').isHidden());
 await page.locator('#kc-postop [data-template-id="postop-tkr"]').click();
 await page.waitForTimeout(400);
 ok('choosing Post-op TKR sets the region to Knee', await page.evaluate(() => /Knee/.test(document.getElementById('region').value) || !!document.querySelector('#region-chips .chip.selected[data-chip="Knee"]')));
+ok('a coloured summary pill names it, the tab shows a count, and the trigger reads "Change"', await page.evaluate(() => { const p = document.querySelector('#kc-summary .kc-pill.kc-postop'); const b = document.querySelector('.kc-tab[data-kc-tab="kc-postop"] .kc-count'); return !!p && /TKR/i.test(p.textContent) && b.textContent === '1' && /Change/.test(document.getElementById('kc-trigger').textContent); }));
+await page.locator('#kc-trigger').click();
+ok('the trigger also closes the picker without clearing the choice', await page.locator('#known-condition-field').isHidden() && await page.locator('#kc-summary .kc-pill').count() === 1);
 const echo = await page.textContent('#ci-known-condition');
 ok('Impression now echoes it read-only', await page.locator('#ci-known-condition').isVisible() && /TKR/i.test(echo), echo);
 ok('the echo has no inputs (display only)', await page.locator('#ci-known-condition input, #ci-known-condition button').count() === 0);
 await page.locator('#ci-known-condition a').click();
 await page.waitForTimeout(1200);
 ok('the echo link scrolls back to the Section 1 row', await page.evaluate(() => { const r = document.getElementById('known-condition-toggle-row').getBoundingClientRect(); return r.top > 0 && r.bottom < window.innerHeight; }));
+ok('the echo link opens the picker', await page.locator('#known-condition-field').isVisible());
+// remove one condition from its summary pill: the real chip handler runs
+await page.locator('#kc-summary .kc-pill.kc-postop .kc-pill-x').click(); await page.waitForTimeout(300);
+ok('the pill ✕ clears that condition (template removed, pill gone)', await page.locator('#kc-summary .kc-pill.kc-postop').count() === 0 && !(await page.evaluate(() => !!(window.activeSuggestions && window.activeSuggestions['ortho-template']))));
 
 // review fixes: one name, region on one line, preview prints non-template conditions
-ok('one name for the row: Known diagnosis / referral', await page.evaluate(() => /Known diagnosis \/ referral/.test(document.getElementById('known-condition-toggle-row').textContent) && /Known diagnosis \/ referral/.test(document.querySelector('#known-condition-field > label').textContent) && !/Known Condition/.test(document.querySelector('#known-condition-field > label').textContent)));
+ok('one name for the row: Known diagnosis / referral', await page.evaluate(() => /Known diagnosis \/ referral/.test(document.getElementById('known-condition-toggle-row').textContent)));
 ok('region chips fit on one line at 1280px', await page.evaluate(() => { const t = [...document.querySelectorAll('#region-chips .chip')].map(c => Math.round(c.getBoundingClientRect().top)); return new Set(t).size === 1; }));
-ok('the "+ Select" link sits beside its label, not at the far edge', await page.evaluate(() => { const r = document.getElementById('known-condition-toggle-row'); return r.querySelector('.subsection-toggle').getBoundingClientRect().left - r.firstElementChild.getBoundingClientRect().right < 40; }));
-await page.locator('#kc-neuro [data-chip="Parkinson\'s"]').click();
+if (await page.locator('#known-condition-field').isHidden()) await page.locator('#kc-trigger').click(); await page.locator('.kc-tab[data-kc-tab="kc-neuro"]').click(); await page.locator('#kc-neuro [data-chip="Parkinson\'s"]').click();
 await page.evaluate(() => document.querySelector('.preview-open').click()); await page.waitForTimeout(250);
 ok('preview prints a neuro Known condition (was template-only)', await page.evaluate(() => /Known condition:\s*Parkinson/.test(document.getElementById('note-preview').textContent)));
 ok('no page errors', errors.length === 0, errors);

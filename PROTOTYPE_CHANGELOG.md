@@ -656,3 +656,10 @@ Blank note: **16 → 13 visible cards**. No field removed; every id kept (see `C
 - **One name** for the field: "Known diagnosis / referral".
 - **Chief Complaint layout:** short controls flow side by side and wrap on their own (Side + Onset on one row, Since and Course on their own rows) instead of fixed half columns; all ten region chips fit on one line; presenting problem starts at 2 rows; hairline dividers separate *when/how* (side, onset, since, course, known diagnosis), *what* (primary symptoms) and *function* (most limited activity); the "+ Select a known condition" link sits next to its label.
 - **Tests:** `core-layout-step1` and `core-layout-step6a7a` extended (phone banner, bar stack, preview, label, region on one line).
+
+## Known diagnosis / referral picker redesign (30 Oct)
+- **One trigger:** a dashed pill "＋ Known diagnosis / referral · optional" opens and closes the picker (it no longer clears your choice when closed — the old "− Collapse" un-highlighted chips while the template stayed applied).
+- **One category at a time:** four coloured tabs — Neuro / systemic · Orthopaedic · Post-surgical · Other — each with a count badge; only that category's chips show, with a one-line hint. It opens on the category already chosen, else Post-surgical when Onset is Post-Surgical, else Orthopaedic.
+- **Summary pills:** each chosen condition appears beside the trigger in its category colour with a ✕ that runs the real chip handler (template removed / module closed properly). The trigger reads "Change" once something is chosen.
+- All chip ids and handlers unchanged; the Impression echo link opens the picker.
+- Tests: `core-layout-step1` covers trigger, tabs, one visible group, pill, badge, ✕ and the echo link.

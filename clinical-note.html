@@ -353,9 +353,38 @@
   .cc-group{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line-soft); }
   #region-chips{ gap:5px; }
   #region-chips .chip{ padding:5px 9px; }
-  .cc-known-condition #known-condition-toggle-row{ justify-content:flex-start !important; gap:14px; margin:0; }
-  .cc-known-condition #known-condition-toggle-row .add-link{ margin-left:0; }
-  .cc-known-condition #known-condition-toggle-row > span{ flex:0 0 auto; }
+  /* Known diagnosis / referral: one trigger, one visible category at a time, a summary pill once chosen */
+  .kc-head{ display:flex; flex-wrap:wrap; align-items:center; gap:8px 10px; }
+  .kc-trigger{ appearance:none; display:inline-flex; align-items:center; gap:8px; background:#fff; border:1.5px dashed var(--line); border-radius:var(--radius-pill); padding:7px 14px; font:inherit; font-size:13px; font-weight:600; color:var(--clinical); cursor:pointer; }
+  .kc-trigger:hover, .kc-trigger[aria-expanded="true"]{ border-style:solid; border-color:var(--clinical); }
+  .kc-trigger-ico{ font-size:15px; line-height:1; }
+  .kc-trigger-opt{ font-weight:500; font-size:11.5px; color:var(--ink-faint); }
+  .kc-summary{ display:inline-flex; flex-wrap:wrap; gap:6px; }
+  .kc-pill{ display:inline-flex; align-items:center; gap:6px; border-radius:var(--radius-pill); padding:5px 6px 5px 12px; font-size:12.5px; font-weight:700; border:1px solid transparent; }
+  .kc-pill-x{ appearance:none; border:none; background:rgba(0,0,0,.08); width:18px; height:18px; border-radius:50%; font-size:12px; line-height:1; cursor:pointer; color:inherit; padding:0; }
+  .kc-pill-x:hover{ background:rgba(0,0,0,.18); }
+  .kc-pill.kc-neuro{ background:#ece6f6; color:#4b3a78; border-color:#d8cdee; }
+  .kc-pill.kc-ortho{ background:var(--clinical-dim); color:var(--clinical); border-color:#c6dcd9; }
+  .kc-pill.kc-postop{ background:var(--amber-dim); color:#7a4f12; border-color:#E9D3AC; }
+  .kc-pill.kc-other{ background:#eceff2; color:#44505c; border-color:#d5dbe1; }
+  #known-condition-field{ margin-top:10px; border:1px solid var(--line-soft); border-radius:var(--radius-md); background:#fff; overflow:hidden; }
+  .kc-tabs{ display:flex; overflow-x:auto; border-bottom:1px solid var(--line-soft); background:var(--surface); scrollbar-width:none; }
+  .kc-tabs::-webkit-scrollbar{ display:none; }
+  .kc-tab{ appearance:none; flex:1 0 auto; display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; border-bottom:3px solid transparent; background:none; padding:10px 14px; font:inherit; font-size:12.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; white-space:nowrap; }
+  .kc-tab:hover{ color:var(--ink); }
+  .kc-tab.active{ background:#fff; color:var(--ink); }
+  .kc-neuro-tab.active{ border-bottom-color:#7b64b4; }
+  .kc-ortho-tab.active{ border-bottom-color:var(--clinical); }
+  .kc-postop-tab.active{ border-bottom-color:#c98a2b; }
+  .kc-other-tab.active{ border-bottom-color:#7c8996; }
+  .kc-count{ min-width:18px; height:18px; border-radius:9px; background:var(--clinical); color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; padding:0 5px; }
+  .kc-group{ padding:12px 14px 14px; border-left:4px solid transparent; }
+  .kc-g-neuro{ border-left-color:#7b64b4; } .kc-g-ortho{ border-left-color:var(--clinical); } .kc-g-postop{ border-left-color:#c98a2b; } .kc-g-other{ border-left-color:#7c8996; }
+  .kc-hint{ font-size:12px; color:var(--ink-faint); margin:0 0 10px; }
+  .kc-g-neuro .chip.selected{ background:#7b64b4; border-color:#7b64b4; }
+  .kc-g-postop .chip.selected{ background:#c98a2b; border-color:#c98a2b; }
+  .kc-g-other .chip.selected{ background:#7c8996; border-color:#7c8996; }
+  .kc-neuro-tab .kc-count{ background:#7b64b4; } .kc-postop-tab .kc-count{ background:#c98a2b; } .kc-other-tab .kc-count{ background:#7c8996; }
 
   /* ---- add-menu: inline dashed "+Label" chips, same shape as the "+ Past
      Surgery"/"+ Past Injury" chips in History — the app's own established
@@ -1576,18 +1605,23 @@
         </div>
         <div class="cc-known-condition" style="margin-top:10px;">
         <!-- Known condition / template — lives in Section 1 (owner decision 2026-10-30): the template sets region, suggestions and post-op defaults, so it is chosen at intake. Impression shows it read-only (#ci-known-condition). -->
-        <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
-          <span>Known diagnosis / referral <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
-          <button type="button" class="add-link subsection-toggle" data-target="known-condition-field">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Select a known condition
+        <div class="kc-head" id="known-condition-toggle-row">
+          <button type="button" class="kc-trigger" id="kc-trigger" aria-expanded="false" aria-controls="known-condition-field">
+            <span class="kc-trigger-ico" aria-hidden="true">＋</span>
+            <span class="kc-trigger-lbl">Known diagnosis / referral</span>
+            <span class="kc-trigger-opt">optional</span>
           </button>
-          <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
+          <span class="kc-summary" id="kc-summary" style="display:none;"></span>
         </div>
         <div class="field" id="known-condition-field" style="display:none;">
-          <label style="margin-bottom:6px;">Known diagnosis / referral <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
+          <div class="kc-tabs" role="tablist" aria-label="Condition category">
+            <button type="button" class="kc-tab kc-neuro-tab" role="tab" data-kc-tab="kc-neuro">Neuro / systemic<span class="kc-count" style="display:none;"></span></button>
+            <button type="button" class="kc-tab kc-ortho-tab" role="tab" data-kc-tab="kc-ortho">Orthopaedic<span class="kc-count" style="display:none;"></span></button>
+            <button type="button" class="kc-tab kc-postop-tab" role="tab" data-kc-tab="kc-postop">Post-surgical<span class="kc-count" style="display:none;"></span></button>
+            <button type="button" class="kc-tab kc-other-tab" role="tab" data-kc-tab="kc-other">Other<span class="kc-count" style="display:none;"></span></button>
+          </div>
+          <div class="kc-group kc-g-neuro" data-kc-group="kc-neuro">
+            <div class="kc-hint">One at a time — opens the matching neuro assessment.</div>
             <div class="chip-row kc-chip-row" id="kc-neuro">
               <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
               <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
@@ -1597,8 +1631,8 @@
               <button type="button" class="chip" data-chip="Concussion">Concussion</button>
             </div>
           </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Orthopedic / MSK (non-surgical) <span class="hint" style="text-transform:none;letter-spacing:0;">— choosing one applies its template</span></div>
+          <div class="kc-group kc-g-ortho" data-kc-group="kc-ortho">
+            <div class="kc-hint">Non-surgical MSK — choosing one applies its template.</div>
             <div class="chip-row kc-chip-row" id="kc-ortho">
               <button type="button" class="chip" data-template-id="nonop-clbp" data-chip="Chronic Low Back Pain">Chronic Low Back Pain</button>
               <button type="button" class="chip" data-template-id="nonop-sis" data-chip="Subacromial Impingement">Subacromial Impingement / RC Tendinopathy</button>
@@ -1606,8 +1640,8 @@
               <button type="button" class="chip" data-template-id="nonop-cervrad" data-chip="Cervical Radiculopathy">Cervical Radiculopathy</button>
             </div>
           </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Post-surgical <span class="hint" style="text-transform:none;letter-spacing:0;">— manual override; normally suggested from Onset &gt; Post-Surgical</span></div>
+          <div class="kc-group kc-g-postop" data-kc-group="kc-postop">
+            <div class="kc-hint">Manual choice — normally suggested when Onset is Post-Surgical.</div>
             <div class="chip-row kc-chip-row" id="kc-postop">
               <button type="button" class="chip" data-template-id="postop-tkr">Post-op TKR</button>
               <button type="button" class="chip" data-template-id="postop-acl">Post-op ACL Reconstruction</button>
@@ -1617,8 +1651,8 @@
               <button type="button" class="chip" data-template-id="postop-achilles">Post-op Achilles Repair</button>
             </div>
           </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Other <span class="hint" style="text-transform:none;letter-spacing:0;">— Patient Profile modules, not a note section</span></div>
+          <div class="kc-group kc-g-other" data-kc-group="kc-other">
+            <div class="kc-hint">Patient Profile modules — not sections of this note.</div>
             <div class="chip-row kc-chip-row" id="kc-other">
               <button type="button" class="chip" data-chip="Cardiothoracic">Cardiothoracic</button>
               <button type="button" class="chip" data-chip="Facial Palsy">Facial Palsy</button>
@@ -4411,8 +4445,8 @@
     echo.querySelector('strong').textContent = parts.join(', ');
     echo.querySelector('a').addEventListener('click', function(ev){
       ev.preventDefault();
-      var tr = document.getElementById('known-condition-toggle-row'), f = document.getElementById('known-condition-field');
-      if(f && f.style.display === 'none'){ var t = tr && tr.querySelector('.subsection-toggle'); if(t) t.click(); }
+      var tr = document.getElementById('known-condition-toggle-row');
+      if(window.__kcOpen) window.__kcOpen();
       if(tr) tr.scrollIntoView({behavior: 'smooth', block: 'center'});
     });
   }
@@ -4446,6 +4480,54 @@
   (function(){
     var kc = document.getElementById('known-condition-field');
     if(kc) kc.addEventListener('click', function(){ setTimeout(updateKnownConditionEcho, 0); });
+  })();
+  // ---- Known diagnosis / referral picker: one category visible at a time + summary pills ----
+  (function(){
+    var panel = document.getElementById('known-condition-field'), trigger = document.getElementById('kc-trigger'), sum = document.getElementById('kc-summary');
+    if(!panel || !trigger || !sum) return;
+    var tabs = panel.querySelectorAll('.kc-tab'), groups = panel.querySelectorAll('.kc-group');
+    var CAT = {'kc-neuro': 'kc-neuro', 'kc-ortho': 'kc-ortho', 'kc-postop': 'kc-postop', 'kc-other': 'kc-other'};
+    function selectedChips(){ return Array.prototype.slice.call(panel.querySelectorAll('.kc-chip-row .chip.selected')); }
+    function showTab(id){
+      tabs.forEach(function(t){ var on = t.getAttribute('data-kc-tab') === id; t.classList.toggle('active', on); t.setAttribute('aria-selected', on ? 'true' : 'false'); });
+      groups.forEach(function(g){ g.style.display = g.getAttribute('data-kc-group') === id ? 'block' : 'none'; });
+    }
+    function defaultTab(){
+      var sel = selectedChips()[0];
+      if(sel) return sel.closest('.kc-chip-row').id;
+      return document.querySelector('#onset-mechanism [data-val="Post-Surgical"].selected') ? 'kc-postop' : 'kc-ortho';
+    }
+    function isOpen(){ return panel.style.display !== 'none'; }
+    function setOpen(o){
+      panel.style.display = o ? 'block' : 'none';
+      trigger.setAttribute('aria-expanded', o ? 'true' : 'false');
+      if(o) showTab(defaultTab());
+    }
+    function refresh(){
+      tabs.forEach(function(t){
+        var n = panel.querySelectorAll('#' + t.getAttribute('data-kc-tab') + ' .chip.selected').length, b = t.querySelector('.kc-count');
+        b.textContent = n || ''; b.style.display = n ? 'inline-flex' : 'none';
+      });
+      var sel = selectedChips();
+      sum.innerHTML = '';
+      sel.forEach(function(c){
+        var label = c.textContent.replace(/\s+/g, ' ').trim();
+        var pill = document.createElement('span'); pill.className = 'kc-pill ' + CAT[c.closest('.kc-chip-row').id];
+        var txt = document.createElement('span'); txt.textContent = label;
+        var x = document.createElement('button'); x.type = 'button'; x.className = 'kc-pill-x'; x.textContent = '×'; x.setAttribute('aria-label', 'Remove ' + label); x.title = 'Remove';
+        x.addEventListener('click', function(){ c.click(); });   // the real chip handler clears the template / module properly
+        pill.appendChild(txt); pill.appendChild(x); sum.appendChild(pill);
+      });
+      sum.style.display = sel.length ? 'inline-flex' : 'none';
+      trigger.querySelector('.kc-trigger-ico').textContent = sel.length ? '✎' : '＋';
+      trigger.querySelector('.kc-trigger-lbl').textContent = sel.length ? 'Change' : 'Known diagnosis / referral';
+      trigger.querySelector('.kc-trigger-opt').style.display = sel.length ? 'none' : '';
+    }
+    trigger.addEventListener('click', function(){ setOpen(!isOpen()); });
+    tabs.forEach(function(t){ t.addEventListener('click', function(){ showTab(t.getAttribute('data-kc-tab')); }); });
+    document.addEventListener('click', function(){ setTimeout(refresh, 0); });
+    window.__kcOpen = function(){ setOpen(true); };
+    refresh();
   })();
   function setSuggestion(key, label, sub, onAccept){ activeSuggestions[key] = {label: label, sub: sub, onAccept: onAccept}; renderSuggestions(); }
   function clearSuggestion(key){ delete activeSuggestions[key]; renderSuggestions(); }

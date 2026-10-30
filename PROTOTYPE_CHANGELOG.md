@@ -698,3 +698,11 @@ No visible change for FM; adding a module no longer means editing Core.
 - **Core add-ons:** `Lean.addon(barId, {id, label, targets, …})` adds one "+" chip to a section's bar; `Lean.addons()` lists every add-on with its section. *Deviation from the plan:* the existing `L.more` bars were not rebuilt from a data list (their configs carry closures); new add-ons are one call, existing ones are unchanged.
 - `PAYLOAD_SHAPE_DRAFT.md`: proposed `core` + `modules: { fm?, … }` port shape, each module versioned separately.
 - **Tests:** new `tests/module-contract.mjs` (registry shape, FM through the contract, a temporary second module with no Core change, slots, sign warning, badge, add-ons); `fm-step1-wiring` now reads the strip.
+
+## Core layout — Step 6b: "+ Module" in the tab bar and tab badges (30 Oct)
+- **"＋ Module"** sits at the far end of the tab bar (not a tab: arrow keys skip it). It opens the module list as a popover under the button; Escape, a click outside, picking a module, or the button again closes it. It stays inside the window at every width (full-width sheet on a phone) and re-positions on scroll/resize.
+- **The list left Section 4:** the "Modules…" chip and the card at the end of Objective are gone. Same element (`#lean-module-dock`), same 23 buttons, same registry — only its home changed, so `step3` is unchanged.
+- **Placement-aware:** choosing an **inline** module opens it in its Core section as before; a **tab** module (FM today) adds its tab and switches to it; **profile** modules show their launch card. Tab/profile modules carry a small tag in the list.
+- **Tab badges:** a module tab shows a count from the registry's `badge()` — FM shows how many points are graded (hidden at 0), refreshed with the rest of the note.
+- **Signed notes:** "+ Module" is hidden under the lock (adding a module edits the note).
+- **Tests:** new `tests/module-popover.mjs` (position, open/close paths, inline vs tab, badge, keyboard, signed note, 390 px).

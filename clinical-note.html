@@ -656,6 +656,13 @@
     scrollbar-width: none;
   }
   .module-tab-bar::-webkit-scrollbar { display: none; }
+  .module-add{ flex:0 0 auto; margin-left:auto; appearance:none; font:inherit; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:var(--radius-pill); border:1.5px dashed var(--line); background:none; color:var(--clinical); cursor:pointer; white-space:nowrap; }
+  .module-add:hover, .module-add[aria-expanded="true"]{ border-style:solid; border-color:var(--clinical); }
+  body.note-locked .module-add{ display:none; }
+  .module-tab-badge{ min-width:18px; height:18px; border-radius:9px; background:var(--clinical); color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; padding:0 5px; margin-left:2px; }
+  #lean-module-dock{ display:none; position:fixed; z-index:45; width:min(580px, calc(100vw - 16px)); max-height:min(70vh, 560px); overflow-y:auto; margin:0; box-shadow:0 12px 32px rgba(0,0,0,.18); }
+  #lean-module-dock.open{ display:block; }
+  .dock-tag{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; margin-left:4px; opacity:.7; }
   @media (max-width:743.98px){
     .module-tab-bar{ top:48px; }   /* phone top bar is ~49px tall, not 56 */
     .fm-jump{ position:static; }   /* two pinned bars is enough on a phone */
@@ -1491,7 +1498,8 @@
     <!-- ================= MODULE TAB BAR ================= -->
     <nav class="module-tab-bar" id="module-tab-bar" role="tablist" aria-label="Assessment views">
       <button type="button" class="module-tab active" id="tab-btn-core" role="tab" aria-selected="true" aria-controls="view-core">Core Assessment</button>
-      <button type="button" class="module-tab" id="tab-btn-fm" role="tab" aria-selected="false" aria-controls="view-fm" style="display:none;"><span class="module-tab-dot"></span><span>Fascial Manipulation (FM)</span><span class="module-tab-close" id="fm-tab-close" role="button" tabindex="0" title="Remove FM module" aria-label="Remove FM module">×</span></button>
+      <button type="button" class="module-tab" id="tab-btn-fm" role="tab" aria-selected="false" aria-controls="view-fm" style="display:none;"><span class="module-tab-dot"></span><span>Fascial Manipulation (FM)</span><span class="module-tab-badge" data-badge-for="fm" style="display:none;"></span><span class="module-tab-close" id="fm-tab-close" role="button" tabindex="0" title="Remove FM module" aria-label="Remove FM module">×</span></button>
+      <button type="button" class="module-add" id="module-add-btn" aria-haspopup="dialog" aria-expanded="false" aria-controls="lean-module-dock">＋ Module</button>
     </nav>
 
     <!-- ================= VIEW: CORE ASSESSMENT ================= -->
@@ -2781,7 +2789,8 @@
         <button type="button" class="lean-gate-btn" id="lean-screened">☐ Screened — no other deficits</button>
         <span class="field-note" id="lean-obj-gate-note" style="margin:0 0 0 10px;">or add more to the exam:</span>
       </div>
-      <div class="card lean-tucked" id="lean-module-dock" style="margin-bottom:14px;"></div>
+      <!-- the module list is a popover from the tab bar's "+ Module" button (the element is moved there at load; same id) -->
+      <div class="card" id="lean-module-dock" role="dialog" aria-label="Add a module" style="margin-bottom:14px;"></div>
       <!-- Modules added from the dock (or the sidebar) open here, right below it -->
       <div id="tier2-zone"></div>
     </section>
@@ -13070,8 +13079,7 @@ document.addEventListener('click', function(e){
     { id: 'o-neuro',  label: 'Neuro screen',         targets: ['#card-obj-neuro-screen'],
       body: 'obj-neuro-screen-body',
       suggested: () => !!(window.activeSuggestions && window.activeSuggestions['neuro-screen']) },
-    { id: 'o-region', label: 'Another region',       targets: ['#add-region-block-wrap'], visible: () => !!val('region') },
-    { id: 'o-modules', label: 'Modules…',            targets: ['#lean-module-dock'] }
+    { id: 'o-region', label: 'Another region',       targets: ['#add-region-block-wrap'], visible: () => !!val('region') }
   ]});
 
   // "Screened — no other deficits": one explicit statement, never stored as fake normal values
@@ -13135,16 +13143,35 @@ document.addEventListener('click', function(e){
   (function(){
     const dock = $('#lean-module-dock');
     const groups = {};
-    window.MODULE_REGISTRY.forEach((m, i) => { (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i }); });
-    dock.innerHTML = '<div class="card-heading">Modules <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — each opens below</span></div>' +
+    window.MODULE_REGISTRY.forEach((m, i) => { (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i, tag: m.placement === 'profile' ? 'profile' : (m.placement === 'tab' && m.id ? 'tab' : '') }); });
+    dock.innerHTML = '<div class="card-heading">Add a module <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — <b>tab</b> opens its own workspace, <b>profile</b> belongs to the Patient Profile</span></div>' +
       Object.keys(groups).filter(k => groups[k].length).map(k => '<div class="lean-dock-group"><div class="field-note" style="margin:0 0 6px;">' + k + '</div><div class="chip-row">' +
-        groups[k].map(m => '<button type="button" class="chip" data-dock-idx="' + m.idx + '">' + m.label + '</button>').join('') + '</div></div>').join('');
+        groups[k].map(m => '<button type="button" class="chip" data-dock-idx="' + m.idx + '">' + m.label + (m.tag ? '<span class="dock-tag">' + m.tag + '</span>' : '') + '</button>').join('') + '</div></div>').join('');
     dock.addEventListener('click', e => {
       const b = e.target.closest('[data-dock-idx]'); if(!b) return;
       e.stopPropagation();
       const m = window.MODULE_REGISTRY[Number(b.getAttribute('data-dock-idx'))];
       try { window[m.fn](m.arg); } catch(err) { console.warn('dock action failed', err); }
+      if(m.placement === 'tab' && m.tabKey && window.switchModuleTab) window.switchModuleTab(m.tabKey);
+      closeDock();
     });
+    // "+ Module" in the tab bar opens the list as a popover; it lives under <main> so a signed note's lock covers it
+    const addBtn = $('#module-add-btn'), bar = $('#module-tab-bar');
+    function placeDock(){
+      const r = addBtn.getBoundingClientRect(), w = Math.min(580, window.innerWidth - 16);
+      dock.style.top = Math.round(r.bottom + 6) + 'px';
+      dock.style.left = Math.round(Math.max(8, Math.min(r.right - w, window.innerWidth - w - 8))) + 'px';
+    }
+    function closeDock(){ dock.classList.remove('open'); if(addBtn) addBtn.setAttribute('aria-expanded', 'false'); }
+    function openDock(){ placeDock(); dock.classList.add('open'); addBtn.setAttribute('aria-expanded', 'true'); }
+    if(addBtn && bar){
+      bar.insertAdjacentElement('afterend', dock);
+      addBtn.addEventListener('click', e => { e.stopPropagation(); dock.classList.contains('open') ? closeDock() : openDock(); });
+      document.addEventListener('click', e => { if(dock.classList.contains('open') && !dock.contains(e.target) && !addBtn.contains(e.target)) closeDock(); });
+      document.addEventListener('keydown', e => { if(e.key === 'Escape' && dock.classList.contains('open')){ closeDock(); addBtn.focus(); } });
+      window.addEventListener('resize', () => { if(dock.classList.contains('open')) placeDock(); });
+      window.addEventListener('scroll', () => { if(dock.classList.contains('open')) placeDock(); }, { passive: true });
+    }
   })();
   /* ---- The Core <-> module contract ----
      Core never shows a module's fields. A tab module reaches Core through three things only, read from its registry entry:
@@ -13152,6 +13179,12 @@ document.addEventListener('click', function(e){
        interventionChip   its chip under Intervention is ticked while the module has treated something today
        printBlock()       its block in the preview / PDF (printSlot: a Core section id, default 'end' = after Core)
      plus an optional signWarning() — shown in the sign check as a warning, never a block. */
+  // count badges on module tabs: whatever the module's badge() reports (hidden at 0)
+  L.hooks.push(() => $$('.module-tab-badge[data-badge-for]').forEach(b => {
+    const n = window.CoreModules ? window.CoreModules.badge(b.getAttribute('data-badge-for')) : 0;
+    const t = n ? String(n) : '';
+    if(b.textContent !== t){ b.textContent = t; b.style.display = n ? 'inline-flex' : 'none'; b.title = n + ' graded point' + (n === 1 ? '' : 's'); }
+  }));
   window.CoreModules = {
     list: () => window.MODULE_REGISTRY.filter(m => m.placement === 'tab' && m.id),
     summaries: () => window.CoreModules.list().filter(m => m.summaryLine).map(m => ({ id: m.id, tabKey: m.tabKey, text: m.summaryLine() })).filter(x => x.text),

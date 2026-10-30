@@ -166,11 +166,10 @@ patient-profile page; the prototype shows a launch card only).
 | Placement | Modules |
 |---|---|
 | `inline` — Subjective | Pain Science, Sports Profile (with Work & sport) |
-| `inline` — Objective | Vitals & Measurements, Body Chart, Gait & Posture, VOMS, NKT, DNS |
+| `inline` — Objective | Vitals & Measurements, Body Chart, Gait & Posture, Palpation, VOMS, NKT, DNS |
 | `inline` — Plan | Functional Status (PSFS) |
 | `tab` | Fascial Manipulation (done), Visceral Manipulation, Craniosacral Therapy, Questionnaires, Stroke/TBI, Paraplegia/SCI, Parkinson's, MS, Peripheral Neuropathy, Concussion |
 | `profile` | Facial Palsy, Vestibular, Cardiothoracic Assessment |
-| **Owner to decide** | Palpation — overlaps the merged Observation & Palpation card; keep as an inline extension or retire it |
 
 Step 5 only *records* `placement` and moves FM onto the contract. Moving VM, CST, Questionnaires and the
 neuro condition modules into tabs is **one module per follow-up commit**, each with its own test, after

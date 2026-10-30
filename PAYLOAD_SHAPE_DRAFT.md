@@ -139,9 +139,10 @@ CoreAssessmentPayload {
   core: { chiefComplaint, history, safety, objective, impression, intervention, plan, pins, ... }
   modules?: {                          // present only for modules added to this note
     fm?:  { version: '1.0', segments, history, pv, hypothesis, sequence, moVe }   // = getFmData()
-    vm?:  { version: '1.0', ... }      // moves over one per commit (tab placement)
+    vm?:  { version: '1.0', ... }
     cst?: { version: '1.0', ... }
-    // questionnaires, neuro Group A conditions — same pattern
+    questionnaires?: { version: '1.0', ... }
+    groupa?: { version: '1.0', condition, ... }   // the six neuro conditions share one module
   }
 }
 ```

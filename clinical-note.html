@@ -658,6 +658,7 @@
   .module-tab-bar::-webkit-scrollbar { display: none; }
   .module-add{ flex:0 0 auto; margin-left:auto; appearance:none; font:inherit; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:var(--radius-pill); border:1.5px dashed var(--line); background:none; color:var(--clinical); cursor:pointer; white-space:nowrap; }
   .module-add:hover, .module-add[aria-expanded="true"]{ border-style:solid; border-color:var(--clinical); }
+  .module-add{ position:sticky; right:0; background:var(--surface); box-shadow:-10px 0 8px var(--surface); }   /* stays reachable when many tabs scroll the bar */
   body.note-locked .module-add{ display:none; }
   .module-tab-badge{ min-width:18px; height:18px; border-radius:9px; background:var(--clinical); color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; padding:0 5px; margin-left:2px; }
   #lean-module-dock{ display:none; position:fixed; z-index:45; width:min(580px, calc(100vw - 16px)); max-height:min(70vh, 560px); overflow-y:auto; margin:0; box-shadow:0 12px 32px rgba(0,0,0,.18); }
@@ -6990,6 +6991,7 @@
     });
     header.querySelector('.t2-remove').addEventListener('click', function(){
       card.remove();
+      if(key === 'questionnaires' && window.ModuleTabs) window.ModuleTabs.close('questionnaires');
             registerTier2Section(key, def.label, def.buildBody);
       var nav = document.getElementById('nav-t2-' + key);
       if(nav) {
@@ -7003,6 +7005,8 @@
     });
 
     tier2Zone.appendChild(card);
+    // Questionnaires lives in its own tab (added quietly here; the dock / sidebar then switch to it)
+    if(key === 'questionnaires' && window.ModuleTabs) window.ModuleTabs.open('questionnaires', {switch: false, el: card});
   }
 
   // ---- Vitals & Measurements (§9) ----
@@ -7514,7 +7518,11 @@
     mskWrap.style.display = 'block';
     mskBanner.style.display = 'none';
   });
-  document.getElementById('group-a-hide').addEventListener('click', function(){ hideGroupA(); });
+  // Remove = unset the condition (so the picker, the Impression line and the tab all agree), not just hide the section
+  document.getElementById('group-a-hide').addEventListener('click', function(){
+    var chip = document.querySelector('#kc-neuro .chip.selected');
+    if(chip) chip.click(); else hideGroupA();
+  });
 
   function collapseMSK(conditionLabel){
     if(mskManuallyToggled) return;
@@ -7529,11 +7537,14 @@
   function hideGroupA(){
     groupASection.style.display = 'none';
     expandMSK();
+    if(window.ModuleTabs) window.ModuleTabs.close('groupa');
   }
   function showGroupA(condition){
     groupASection.style.display = 'block';
     renderGroupA(condition);
     collapseMSK(condition);
+    // the neuro tools live in their own tab, named for the condition; choosing it in the picker adds the tab without leaving Section 1
+    if(window.ModuleTabs){ window.ModuleTabs.label('groupa', 'Neuro: ' + condition); window.ModuleTabs.open('groupa', {switch: false}); }
   }
 
   function makeGroupAGradeRow(label, options){
@@ -11411,11 +11422,8 @@ window.openConditionModule = function(key) {
   var groupALabel = groupAMap[key];
   if (groupALabel) {
     var chip = document.querySelector('#kc-neuro .chip[data-chip="' + groupALabel + '"]');
-    if (chip) chip.click();
-    setTimeout(function() {
-      var sec = document.getElementById('sec-group-a');
-      if (sec && sec.style.display !== 'none') sec.scrollIntoView({behavior: 'smooth', block: 'start'});
-    }, 60);
+    if (chip && !chip.classList.contains('selected')) chip.click();   // never toggle an already-chosen condition off
+    if (window.ModuleTabs) window.ModuleTabs.open('groupa', {switch: true});
     return;
   }
   var otherMap = { 'facial-palsy': 'Facial Palsy', 'vestibular': 'Vestibular', 'cardiothoracic': 'Cardiothoracic' };
@@ -11438,11 +11446,14 @@ window.openSportsProfile = function() {
 window.openTier2Module = function(key) {
   var targetId = 'tier2-card-' + key;
   var targetSec = document.getElementById(targetId);
+  var asTab = key === 'questionnaires' && window.ModuleTabs;   // Questionnaires is a tab module
   if(targetSec) {
-    targetSec.scrollIntoView({behavior: 'smooth', block: 'start'});
+    if(asTab) window.ModuleTabs.open(key, {switch: true, el: targetSec});
+    else targetSec.scrollIntoView({behavior: 'smooth', block: 'start'});
   } else {
     if(typeof window.addTier2Section === 'function') {
       window.addTier2Section(key);
+      if(asTab) { window.ModuleTabs.open(key, {switch: true}); return; }
       setTimeout(function(){
         var newSec = document.getElementById(targetId);
         if(newSec) newSec.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -11467,29 +11478,93 @@ window.openTier2Module = function(key) {
     var card = tgt && (tgt.closest('.card') || tgt);
     if(card) card.scrollIntoView({behavior: 'smooth', block: 'start'});
   });
+  /* ---- Dynamic module tabs (VM, CST, Questionnaires, Neuro conditions) ----
+     Same behaviour as the FM tab: the module's own section moves into its tab panel, the tab sits in the bar,
+     × removes the module from the note. Core and FM keep their static markup; everything else is created here. */
+  var TAB_CFG = {
+    vm:   { label: 'Visceral Manipulation', sec: 'sec-vm',  remove: function(){ window.hideAdvancedModule('vm'); } },
+    cst:  { label: 'Craniosacral Therapy',  sec: 'sec-cst', remove: function(){ window.hideAdvancedModule('cst'); } },
+    groupa: { label: 'Neuro', sec: 'sec-group-a', remove: function(){ var b = document.getElementById('group-a-hide'); if (b) b.click(); } },
+    questionnaires: { label: 'Questionnaires', sec: 'tier2-card-questionnaires', remove: function(){ var c = document.getElementById('tier2-card-questionnaires'); var r = c && c.querySelector('.t2-remove'); if (r) r.click(); } }
+  };
+  var tabState = {};   // key -> { btn, panel, label }
+  function tabKeys() { return ['core', 'fm'].concat(Object.keys(tabState)); }
+  function ensureTab(key) {
+    if (tabState[key]) return tabState[key];
+    var cfg = TAB_CFG[key], bar = document.getElementById('module-tab-bar'), add = document.getElementById('module-add-btn');
+    if (!cfg || !bar) return null;
+    var btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'module-tab'; btn.id = 'tab-btn-' + key; btn.setAttribute('role', 'tab');
+    btn.setAttribute('aria-selected', 'false'); btn.setAttribute('aria-controls', 'view-' + key); btn.style.display = 'none';
+    btn.innerHTML = '<span class="module-tab-dot"></span><span class="mt-label"></span><span class="module-tab-badge" data-badge-for="' + key + '" style="display:none;"></span>' +
+      '<span class="module-tab-close" role="button" tabindex="0" title="Remove from this note" aria-label="Remove">×</span>';
+    btn.querySelector('.mt-label').textContent = cfg.label;
+    bar.insertBefore(btn, add || null);
+    var panel = document.createElement('div');
+    panel.id = 'view-' + key; panel.className = 'tab-panel'; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', btn.id); panel.style.display = 'none';
+    var last = document.getElementById('view-fm'); (last.parentNode || document.body).insertBefore(panel, last.nextSibling);
+    btn.addEventListener('click', function(e) {
+      if (e.target.closest('.module-tab-close')) { e.stopPropagation(); window.ModuleTabs.requestRemove(key); return; }
+      window.switchModuleTab(key);
+    });
+    btn.addEventListener('keydown', function(e) {
+      if (e.target.closest('.module-tab-close') && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); e.stopPropagation(); window.ModuleTabs.requestRemove(key); }
+    });
+    tabState[key] = { btn: btn, panel: panel, label: cfg.label };
+    return tabState[key];
+  }
+  window.ModuleTabs = {
+    has: function(key) { return !!TAB_CFG[key]; },
+    isOpen: function(key) { return !!tabState[key] && tabState[key].btn.style.display !== 'none'; },
+    label: function(key, text) { var t = ensureTab(key); if (t && text) { t.label = text; t.btn.querySelector('.mt-label').textContent = text; } },
+    // open: show the tab and move the module's section into its panel. opts.switch === false adds the tab without leaving the current one.
+    open: function(key, opts) {
+      opts = opts || {};
+      var t = ensureTab(key); if (!t) return;
+      var sec = opts.el || document.getElementById(TAB_CFG[key].sec);
+      if (sec && sec.parentNode !== t.panel) t.panel.appendChild(sec);
+      t.btn.style.display = '';
+      if (opts.switch !== false) window.switchModuleTab(key);
+    },
+    close: function(key) {
+      var t = tabState[key]; if (!t) return;
+      t.btn.style.display = 'none';
+      if (currentTab === key) window.switchModuleTab('core');
+      else t.panel.style.display = 'none';
+    },
+    // × on the tab: the same as the module's own remove button, after asking if something was recorded
+    requestRemove: function(key) {
+      var sec = document.getElementById(TAB_CFG[key].sec), t = tabState[key];
+      var has = !!(sec && window.Lean && window.Lean.hasData(sec));
+      if (has && !window.confirm('Remove ' + (t ? t.label : 'this module') + ' from this visit note? What you recorded in it will not be part of the note.')) return;
+      TAB_CFG[key].remove();
+    }
+  };
+
   window.switchModuleTab = function(key) {
     if (!key) return;
     if (key === currentTab) return;
+    if (tabKeys().indexOf(key) === -1) return;
+    if (key !== 'core' && key !== 'fm' && (!tabState[key] || tabState[key].btn.style.display === 'none')) return;
 
     // 1. Save scroll position of current tab
     scrollPositions[currentTab] = window.scrollY || window.pageYOffset || 0;
 
-    // 2. Switch tab state
+    // 2. Switch tab state: exactly one tab / view is active
     currentTab = key;
-    var tabCore = document.getElementById('tab-btn-core');
-    var tabFm = document.getElementById('tab-btn-fm');
-    var viewCore = document.getElementById('view-core');
-    var viewFm = document.getElementById('view-fm');
-    var fmSec = document.getElementById('sec-fascial-manipulation');
-
+    tabKeys().forEach(function(k) {
+      var on = k === key;
+      var btn = k === 'core' || k === 'fm' ? document.getElementById('tab-btn-' + k) : (tabState[k] && tabState[k].btn);
+      var view = k === 'core' || k === 'fm' ? document.getElementById('view-' + k) : (tabState[k] && tabState[k].panel);
+      if (btn) { btn.classList.toggle('active', on); btn.setAttribute('aria-selected', on ? 'true' : 'false'); }
+      if (view) view.style.display = on ? 'block' : 'none';
+    });
+    document.body.classList.toggle('fm-tab-active', key === 'fm');
     if (key === 'fm') {
-      if (tabCore) { tabCore.classList.remove('active'); tabCore.setAttribute('aria-selected', 'false'); }
-      if (tabFm) { tabFm.classList.add('active'); tabFm.setAttribute('aria-selected', 'true'); }
-      if (viewCore) viewCore.style.display = 'none';
-      if (viewFm) viewFm.style.display = 'block';
+      var fmSec = document.getElementById('sec-fascial-manipulation');
       if (fmSec) fmSec.style.display = 'block';
-      document.body.classList.add('fm-tab-active');
-
+    }
+    if (key !== 'core') {
       // Close mobile drawer if open
       var outline = document.querySelector('.outline');
       if (outline && outline.classList.contains('drawer-open')) {
@@ -11497,18 +11572,10 @@ window.openTier2Module = function(key) {
         var bd = document.getElementById('nav-backdrop');
         if (bd) bd.classList.remove('open');
       }
-
-      window.scrollTo(0, scrollPositions.fm || 0);
-    } else {
-      if (tabFm) { tabFm.classList.remove('active'); tabFm.setAttribute('aria-selected', 'false'); }
-      if (tabCore) { tabCore.classList.add('active'); tabCore.setAttribute('aria-selected', 'true'); }
-      if (viewFm) viewFm.style.display = 'none';
-      if (viewCore) viewCore.style.display = 'block';
-      document.body.classList.remove('fm-tab-active');
-
-      if (window.syncFmCapsule) window.syncFmCapsule();
-      window.scrollTo(0, scrollPositions.core || 0);
+    } else if (window.syncFmCapsule) {
+      window.syncFmCapsule();
     }
+    window.scrollTo(0, scrollPositions[key] || 0);
   };
 
   // Wire tab clicks
@@ -11718,9 +11785,13 @@ window.openAdvancedModule = function(key, opts) {
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));
   if(sec) {
     sec.style.display = 'block';
-    setTimeout(function() {
-      sec.scrollIntoView({behavior: 'smooth', block: 'start'});
-    }, 50);
+    if(window.ModuleTabs && window.ModuleTabs.has(key)) {
+      window.ModuleTabs.open(key, {switch: doSwitch});   // VM / CST open as their own tab, like FM
+    } else {
+      setTimeout(function() {
+        sec.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }, 50);
+    }
   }
   if(nav) {
     var badge = nav.querySelector('.add-badge');
@@ -11776,6 +11847,7 @@ window.hideAdvancedModule = function(key) {
   var sec = document.getElementById('sec-' + key);
   var nav = document.getElementById('nav-' + (key === 'fascial-manipulation' ? 'fm' : key));
   if(sec) sec.style.display = 'none';
+  if(window.ModuleTabs && window.ModuleTabs.has(key)) window.ModuleTabs.close(key);
   if(nav) {
     var num = nav.querySelector('.num');
     if(num) num.remove();
@@ -13094,22 +13166,37 @@ document.addEventListener('click', function(e){
 
   // One module dock, built from a config (window.MODULE_REGISTRY), not from the sidebar's DOM, so the
   // sidebar can become navigation-only. Each entry calls the same global opener the sidebar uses.
+  // Tab modules that are one section of controls (everything except FM): the Core contract comes from this one helper.
+  const recorded = el => !el ? 0 : $$('.chip.selected, .segmented button.selected, .nrs-scale button.selected', el).length +
+    $$('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea', el).filter(f => f.value && f.value.trim() && f.dataset.auto !== '1').length +
+    $$('input[type=checkbox]:checked, input[type=radio]:checked', el).length + $$('select', el).filter(s => s.selectedIndex > 0).length;
+  const sectionModule = (id, secId, short, title, slot, nameFn) => ({
+    id, tabKey: id, payloadKey: id, printSlot: slot, printTitle: title,
+    el: () => document.getElementById(secId),
+    enabled() { const e = this.el(); return !!e && e.isConnected && e.style.display !== 'none'; },
+    count() { return this.enabled() ? recorded(this.el()) : 0; },
+    summaryLine() { const n = this.count(); return n ? (nameFn ? nameFn() : short) + ' · ' + n + ' item' + (n === 1 ? '' : 's') + ' recorded' : ''; },
+    badge() { return this.count(); },
+    printBlock() { const e = this.el(); return e && window.__previewSection ? window.__previewSection(e, nameFn ? nameFn() : title) : ''; }
+  });
+  const neuroName = () => { const c = document.querySelector('#kc-neuro .chip.selected'); return 'Neuro assessment' + (c ? ' (' + c.getAttribute('data-chip') + ')' : ''); };
+  const GROUP_A = sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName);
   window.MODULE_REGISTRY = [
     { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Functional Status (PSFS)', fn: 'openTier2Module', arg: 'psfs', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Gait & Posture', fn: 'openTier2Module', arg: 'gait', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Palpation', fn: 'openTier2Module', arg: 'palpation', placement: 'inline' },
-    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires', placement: 'tab' },
+    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires', placement: 'tab', ...sectionModule('questionnaires', 'tier2-card-questionnaires', 'Questionnaires', 'Questionnaires', 'sec-objective') },
     { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile', placement: 'inline' },
-    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi', placement: 'tab' },
-    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci', placement: 'tab' },
-    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons', placement: 'tab' },
-    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms', placement: 'tab' },
-    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy', placement: 'tab' },
-    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion', placement: 'tab' },
+    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion', placement: 'tab', ...GROUP_A },
     { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy', placement: 'profile' },
     { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular', placement: 'profile' },
     { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic', placement: 'profile' },
@@ -13135,8 +13222,8 @@ document.addEventListener('click', function(e){
         const open = $$('#fm-seq-builder .seq-step').filter(st => !st.querySelector('.step-treat.on')).length;
         return open ? 'FM: ' + open + ' planned point' + (open === 1 ? '' : 's') + ' not marked treated' : '';
       } },
-    { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm', placement: 'tab' },
-    { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst', placement: 'tab' },
+    { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm', placement: 'tab', ...sectionModule('vm', 'sec-vm', 'VM', 'Visceral Manipulation', 'end') },
+    { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst', placement: 'tab', ...sectionModule('cst', 'sec-cst', 'CST', 'Craniosacral Therapy', 'end') },
     { group: 'Manual & movement frameworks', label: 'NeuroKinetic Therapy (NKT)', fn: 'openAdvancedModule', arg: 'nkt', placement: 'inline' },
     { group: 'Manual & movement frameworks', label: 'Dynamic Neuromuscular Stabilization (DNS)', fn: 'openAdvancedModule', arg: 'dns', placement: 'inline' }
   ];
@@ -13186,7 +13273,7 @@ document.addEventListener('click', function(e){
     if(b.textContent !== t){ b.textContent = t; b.style.display = n ? 'inline-flex' : 'none'; b.title = n + ' graded point' + (n === 1 ? '' : 's'); }
   }));
   window.CoreModules = {
-    list: () => window.MODULE_REGISTRY.filter(m => m.placement === 'tab' && m.id),
+    list: () => window.MODULE_REGISTRY.filter((m, i, a) => m.placement === 'tab' && m.id && a.findIndex(x => x.id === m.id) === i),   // six neuro conditions share one module
     summaries: () => window.CoreModules.list().filter(m => m.summaryLine).map(m => ({ id: m.id, tabKey: m.tabKey, text: m.summaryLine() })).filter(x => x.text),
     signWarnings: () => window.CoreModules.list().filter(m => m.signWarning).map(m => m.signWarning()).filter(Boolean),
     printBlocks: slot => window.CoreModules.list().filter(m => m.printBlock && m.enabled && m.enabled() && (m.printSlot || 'end') === slot).map(m => m.printBlock()).filter(Boolean),
@@ -13583,6 +13670,11 @@ document.addEventListener('click', function(e){
     return h;
   }
   window.__fmPrintBlock = fmBlock;
+  // Any module section, laid out the same way as a Core section (used by tab modules' printBlock)
+  window.__previewSection = (sec, title) => {
+    const lines = collect(sec); if(!lines.length) return '';
+    return '<h4>' + esc(title) + '</h4>' + lines.map(l => l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>').join('');
+  };
   const host = document.createElement('div'); host.id = 'note-preview';
   host.innerHTML = '<div class="np-sheet"><div class="np-bar"><button type="button" id="np-close">Close</button><button type="button" id="np-print">Print</button></div><div id="np-body"></div></div>';
   document.body.appendChild(host);

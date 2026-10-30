@@ -706,3 +706,15 @@ No visible change for FM; adding a module no longer means editing Core.
 - **Tab badges:** a module tab shows a count from the registry's `badge()` — FM shows how many points are graded (hidden at 0), refreshed with the rest of the note.
 - **Signed notes:** "+ Module" is hidden under the lock (adding a module edits the note).
 - **Tests:** new `tests/module-popover.mjs` (position, open/close paths, inline vs tab, badge, keyboard, signed note, 390 px).
+
+## Modules as tabs: VM, CST, Questionnaires, Neuro conditions (30 Oct)
+Owner decision: these open like FM — in their own tab — instead of inside Core.
+- **Generic module tabs** (`ModuleTabs`): a tab button is created in the bar, the module's own section moves into its panel (`#view-<id>`), exactly one tab/view is active, × removes the module from the note (asks first if something was recorded). Core and FM keep their static markup; `switchModuleTab` now handles any tab.
+- **Visceral Manipulation, Craniosacral Therapy:** the dock / sidebar / suggestions open the tab and switch to it; the old "− Hide Module" still works and closes the tab.
+- **Questionnaires:** the card moved out of Objective into its own tab. A condition template that suggests questionnaires adds the tab quietly (you stay where you are); the dock and sidebar switch to it. Removing the card removes the tab, and it can be added again.
+- **Neuro conditions (Stroke/TBI, SCI, Parkinson's, MS, Peripheral Neuropathy, Concussion):** one **"Neuro: <condition>"** tab (the six share one module and one set of tools). Choosing the condition in the Known diagnosis picker adds the tab without leaving Section 1; switching condition renames it; unselecting removes it. **"Remove" / × now unsets the condition everywhere** (picker, Impression line, tab) — before, Remove hid the tools but left the condition selected. Opening a condition that is already chosen no longer toggles it off.
+- **Core contract:** every tab module now has a Key Findings line ("VM · 3 items recorded"), a tab badge (items recorded) and a print block. **VM, CST and the neuro tools now print** — they were not in the preview/PDF at all before (the preview only walked the seven Core sections). Neuro prints inside Objective, VM/CST after Core.
+- NKT, DNS and the rest stay inline; Facial Palsy, Vestibular, Cardiothoracic stay Patient-Profile modules.
+- "＋ Module" is pinned to the right end of the bar so it stays reachable when many tabs scroll it.
+- **Known gap (unchanged by this):** questionnaire *scale answers* do not appear in the preview/PDF — the generic collector does not read that button grid. Not fixed here.
+- **Tests:** new `tests/module-tabs.mjs`; `module-contract` now expects five tab modules.

@@ -21,13 +21,13 @@ let page = await fresh();
 ok('"+ Module" is the last control in the tab bar and is not itself a tab', await page.evaluate(() => { const bar = document.getElementById('module-tab-bar'); const last = bar.lastElementChild; return last.id === 'module-add-btn' && last.getAttribute('role') !== 'tab' && !last.classList.contains('module-tab'); }));
 ok('the module list is no longer inside Section 4', await page.evaluate(() => !document.getElementById('sec-objective').contains(document.getElementById('lean-module-dock'))));
 ok('Section 4 has no "Modules…" chip any more', !(await page.evaluate(() => [...document.querySelectorAll('#sec-objective .lean-chip')].some(b => /Modules…/.test(b.textContent)))));
-ok('the dock is hidden until asked for, and still renders all 18 modules', !(await dockOpen(page)) && await page.locator('#lean-module-dock [data-dock-idx]').count() === 18);
+ok('the dock is hidden until asked for, and lists the 9 tab/profile/framework modules (Additional sections live in the sidebar)', !(await dockOpen(page)) && await page.locator('#lean-module-dock [data-dock-idx]').count() === 9);
 
 await page.click('#module-add-btn');
 ok('clicking "+ Module" opens the list', await dockOpen(page) && (await page.getAttribute('#module-add-btn', 'aria-expanded')) === 'true');
 const box = await page.evaluate(() => { const r = document.getElementById('lean-module-dock').getBoundingClientRect(); const b = document.getElementById('module-add-btn').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom, iw: innerWidth, ih: innerHeight, btnBottom: b.bottom }; });
 ok('the popover sits under the button and inside the window', box.l >= 0 && box.r <= box.iw && box.t >= box.btnBottom && box.b <= box.ih + 1, box);
-ok('tab and profile modules are tagged in the list', await page.evaluate(() => { const t = id => [...document.querySelectorAll('#lean-module-dock .chip')].find(b => b.textContent.startsWith(id)); return /tab/.test(t('Fascial').textContent) && /profile/.test(t('Facial Palsy').textContent) && !t('Vitals').querySelector('.dock-tag'); }));
+ok('tab and profile modules are tagged in the list', await page.evaluate(() => { const t = id => [...document.querySelectorAll('#lean-module-dock .chip')].find(b => b.textContent.startsWith(id)); return /tab/.test(t('Fascial').textContent) && /profile/.test(t('Facial Palsy').textContent) && !t('Vitals'); }));
 await page.keyboard.press('Escape');
 ok('Escape closes it', !(await dockOpen(page)));
 await page.click('#module-add-btn'); await page.mouse.click(5, 450);
@@ -35,10 +35,10 @@ ok('clicking outside closes it', !(await dockOpen(page)));
 await page.click('#module-add-btn'); await page.click('#module-add-btn');
 ok('the button toggles it', !(await dockOpen(page)));
 
-// inline module: opens in Core, popover closes
-await page.click('#module-add-btn');
-await page.locator('#lean-module-dock [data-dock-idx]', { hasText: 'Vitals' }).click(); await page.waitForTimeout(400);
-ok('choosing an inline module (Vitals) opens it in Core and closes the list', !(await dockOpen(page)) && await page.evaluate(() => window.getActiveModuleTab() === 'core') && await page.evaluate(() => { const z = document.getElementById('tier2-zone'); return [...z.children].some(c => c.offsetParent !== null); }));
+// Additional section (Vitals): opened from the sidebar group, which is expanded by default; not in the list
+ok('the sidebar Additional Sections group is expanded by default', await page.evaluate(() => !document.querySelector('.outline-group:nth-child(2)').classList.contains('collapsed')));
+await page.locator('#nav-t2-vitals').click(); await page.waitForTimeout(400);
+ok('choosing Vitals in the sidebar opens it in Core', !(await dockOpen(page)) && await page.evaluate(() => window.getActiveModuleTab() === 'core') && await page.evaluate(() => { const z = document.getElementById('tier2-zone'); return [...z.children].some(c => c.offsetParent !== null); }));
 
 // tab module: FM
 await page.click('#module-add-btn');

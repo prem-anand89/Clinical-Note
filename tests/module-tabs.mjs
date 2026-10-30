@@ -57,7 +57,7 @@ for (const m of [{ k: 'vm', dock: 'Visceral Manipulation', sec: 'sec-vm' }, { k:
 // ---------------- Questionnaires is an Additional section: it stays inside Core, never a tab
 {
   const page = await fresh();
-  await fromDock(page, 'Questionnaires');
+  await page.locator('#nav-t2-questionnaires').click(); await page.waitForTimeout(500);
   ok('questionnaires: no tab is created and Core stays active', !(await tabShown(page, 'questionnaires')) && (await active(page)) === 'core');
   ok('questionnaires: the card lives inside Objective in Core', await page.evaluate(() => document.getElementById('sec-objective').contains(document.getElementById('tier2-card-questionnaires')) && document.getElementById('view-core').contains(document.getElementById('tier2-card-questionnaires'))));
   await page.evaluate(() => document.querySelector('#tier2-card-questionnaires .t2-remove').click()); await page.waitForTimeout(300);

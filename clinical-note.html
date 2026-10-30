@@ -1467,7 +1467,7 @@
       <div class="outline-item" data-target="sec-plan-goals" data-num="7"><span class="num">7</span>Plan &amp; Goals</div>
     </div>
 
-    <div class="outline-group collapsed">
+    <div class="outline-group">
       <div class="tier-label" onclick="this.parentElement.classList.toggle('collapsed')"><span>Additional Sections</span><svg class="tier-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
       <div class="outline-item stub" id="nav-t2-vitals" onclick="openTier2Module('vitals')">Vitals &amp; Measurements<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-t2-body-chart" onclick="openTier2Module('body-chart')">Body Chart<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
@@ -13391,7 +13391,8 @@ document.addEventListener('click', function(e){
   (function(){
     const dock = $('#lean-module-dock');
     const groups = {};
-    window.MODULE_REGISTRY.forEach((m, i) => { (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i, tag: m.placement === 'profile' ? 'profile' : (m.placement === 'tab' && m.id ? 'tab' : '') }); });
+    // The Additional sections (Vitals, Body Chart, PSFS, …) are part of Core: they are opened from the sidebar's "Additional Sections" group, not from this list
+    window.MODULE_REGISTRY.forEach((m, i) => { if(m.group === 'Clinical & functional tools') return; (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i, tag: m.placement === 'profile' ? 'profile' : (m.placement === 'tab' && m.id ? 'tab' : '') }); });
     dock.innerHTML = '<div class="card-heading">Add a module <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — <b>tab</b> opens its own workspace, <b>profile</b> belongs to the Patient Profile</span></div>' +
       Object.keys(groups).filter(k => groups[k].length).map(k => '<div class="lean-dock-group"><div class="field-note" style="margin:0 0 6px;">' + k + '</div><div class="chip-row">' +
         groups[k].map(m => '<button type="button" class="chip" data-dock-idx="' + m.idx + '">' + m.label + (m.tag ? '<span class="dock-tag">' + m.tag + '</span>' : '') + '</button>').join('') + '</div></div>').join('');

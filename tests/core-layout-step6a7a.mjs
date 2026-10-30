@@ -25,6 +25,9 @@ async function open(width) {
   await page.close();
   const m = await open(390);
   ok('banner fits at 390px with no sideways scroll', await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
+  const mh = await m.evaluate(() => Math.round(document.querySelector('.note-head').getBoundingClientRect().height));
+  ok('phone banner is one compact line (<= 56px)', mh <= 56, mh);
+  ok('Preview button still reachable on a phone (icon only, labelled)', await m.evaluate(() => { const b = document.getElementById('preview-open'); const r = b.getBoundingClientRect(); return r.width > 30 && r.right <= innerWidth && b.getAttribute('aria-label') === 'Preview note'; }));
   await m.close();
 }
 // ---- 6a FM chips
@@ -45,7 +48,10 @@ for (const w of [1280, 390]) {
   }
   await page.evaluate(() => window.scrollTo(0, 1500)); await page.waitForTimeout(900);
   const sticky = await page.evaluate(() => { const r = document.getElementById('fm-jump').getBoundingClientRect(); return { top: Math.round(r.top), ok: r.top >= 0 && r.top < 120 }; });
-  ok(w + 'px: the chip row stays visible while scrolling', sticky.ok, sticky);
+  if (w > 744) ok(w + 'px: the chip row stays visible while scrolling', sticky.ok, sticky);
+  const stack = await page.evaluate(() => { const g = s => document.querySelector(s).getBoundingClientRect(); const j = document.getElementById('fm-jump'); return { gapTopTabs: Math.round(g('#module-tab-bar').top - g('.topbar').bottom), jumpPinned: getComputedStyle(j).position, jumpGap: Math.round(g('#fm-jump').top - g('#module-tab-bar').bottom) }; });
+  ok(w + 'px: tab bar sits flush under the top bar (no gap showing content)', stack.gapTopTabs <= 1 && stack.gapTopTabs >= -2, stack);
+  ok(w + 'px: jump row ' + (w > 744 ? 'pinned flush under the tab bar' : 'scrolls away on phones'), w > 744 ? (stack.jumpPinned === 'sticky' && Math.abs(stack.jumpGap) <= 2) : stack.jumpPinned === 'static', stack);
   ok(w + 'px: no sideways page scroll', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await page.close();
 }

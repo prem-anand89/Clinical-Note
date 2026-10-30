@@ -191,6 +191,13 @@
   .note-head .preview-open{ margin:0 0 0 auto; padding:6px 12px; }
   .note-head .frozen-note{ flex:1 0 100%; }
   .main .build-note{ display:none; }
+  @media (max-width:743.98px){
+    .note-head{ flex-wrap:nowrap; gap:10px; }
+    .note-head h1{ font-size:17px; white-space:nowrap; }
+    .note-head p{ font-size:12.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .note-head .nh-extra, .note-head .preview-open .pv-lbl{ display:none; }
+    .note-head .frozen-note{ flex:1 0 100%; }
+  }
 
   .build-note{
     display:flex; gap:10px; align-items:flex-start;
@@ -340,7 +347,15 @@
   }
   .row-2{ display:grid; grid-template-columns:1fr; gap:14px; }
   .row-3{ display:grid; grid-template-columns:1fr; gap:14px; }
-  .cc-pair > .field{ min-width:0; }
+  /* Chief Complaint: short controls sit side by side and wrap by themselves — no fixed half/half columns */
+  .cc-pair{ display:flex; flex-wrap:wrap; gap:0 32px; align-items:flex-start; }
+  .cc-pair > .field{ flex:0 1 auto; min-width:0; max-width:100%; }
+  .cc-group{ margin-top:16px; padding-top:16px; border-top:1px solid var(--line-soft); }
+  #region-chips{ gap:5px; }
+  #region-chips .chip{ padding:5px 9px; }
+  .cc-known-condition #known-condition-toggle-row{ justify-content:flex-start !important; gap:14px; margin:0; }
+  .cc-known-condition #known-condition-toggle-row .add-link{ margin-left:0; }
+  .cc-known-condition #known-condition-toggle-row > span{ flex:0 0 auto; }
 
   /* ---- add-menu: inline dashed "+Label" chips, same shape as the "+ Past
      Surgery"/"+ Past Injury" chips in History — the app's own established
@@ -593,6 +608,10 @@
     scrollbar-width: none;
   }
   .module-tab-bar::-webkit-scrollbar { display: none; }
+  @media (max-width:743.98px){
+    .module-tab-bar{ top:48px; }   /* phone top bar is ~49px tall, not 56 */
+    .fm-jump{ position:static; }   /* two pinned bars is enough on a phone */
+  }
   .module-tab {
     display: inline-flex;
     align-items: center;
@@ -1417,8 +1436,8 @@
     <div class="note-head">
       <div class="eyebrow">Core Assessment · Prototype</div>
       <h1>New Visit</h1>
-      <p>Priya Reddy · Patient ID: 00214 · First visit for this episode</p>
-      <button type="button" class="preview-open" id="preview-open">👁 Preview note</button>
+      <p>Priya Reddy · Patient ID: 00214<span class="nh-extra"> · First visit for this episode</span></p>
+      <button type="button" class="preview-open" id="preview-open" aria-label="Preview note">👁<span class="pv-lbl"> Preview note</span></button>
     </div>
 
     <!-- ================= MODULE TAB BAR ================= -->
@@ -1447,7 +1466,7 @@
       <div class="card" style="margin-bottom:14px;">
         <div class="field">
           <label for="presenting-problem">Presenting problem</label>
-          <textarea id="presenting-problem" class="text-input" rows="3" placeholder="e.g. Right knee pain going up and down stairs..." style="resize:vertical;font-family:inherit;"></textarea>
+          <textarea id="presenting-problem" class="text-input" rows="2" placeholder="e.g. Right knee pain going up and down stairs..." style="resize:vertical;font-family:inherit;"></textarea>
         </div>
 
         <div class="field">
@@ -1468,7 +1487,7 @@
           <input type="hidden" id="region" value="">
         </div>
 
-        <div class="row-2 cc-pair">
+        <div class="cc-pair">
         <div class="field">
           <label>Side</label>
           <div class="segmented small" id="laterality">
@@ -1526,7 +1545,7 @@
           <input type="hidden" id="surgery-type" value="">
         </div>
 
-        <div class="row-2 cc-pair">
+        <div class="cc-pair">
         <div class="field">
           <label>Since</label>
           <div class="chip-row" id="onset-timeline-chips">
@@ -1555,7 +1574,7 @@
           </div>
         </div>
         </div>
-        <div class="cc-known-condition" style="margin-top:14px;">
+        <div class="cc-known-condition" style="margin-top:10px;">
         <!-- Known condition / template — lives in Section 1 (owner decision 2026-10-30): the template sets region, suggestions and post-op defaults, so it is chosen at intake. Impression shows it read-only (#ci-known-condition). -->
         <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
           <span>Known diagnosis / referral <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
@@ -1566,7 +1585,7 @@
           <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
         </div>
         <div class="field" id="known-condition-field" style="display:none;">
-          <label style="margin-bottom:6px;">Known Condition <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
+          <label style="margin-bottom:6px;">Known diagnosis / referral <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
           <div style="margin-bottom:8px;">
             <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
             <div class="chip-row kc-chip-row" id="kc-neuro">
@@ -1608,7 +1627,7 @@
           </div>
         </div>
         </div>
-        <div class="field" style="margin-top:14px; margin-bottom:0;">
+        <div class="field cc-group" style="margin-bottom:0;">
           <label>Primary Symptoms</label>
           <div class="chip-row" id="primary-complaint">
             <button type="button" class="chip" data-chip="Pain">Pain</button>
@@ -1619,7 +1638,7 @@
             <button type="button" class="chip" data-chip="Swelling">Swelling</button>
           </div>
         </div>
-        <div class="field lean-fp-block" style="margin-top:14px; margin-bottom:0;">
+        <div class="field lean-fp-block cc-group" style="margin-bottom:0;">
           <label>Most limited activity today</label>
           <input type="text" class="text-input" id="fp-limited" placeholder="e.g. Overhead lifting">
         </div>
@@ -13217,6 +13236,8 @@ document.addEventListener('click', function(e){
     document.documentElement.style.setProperty('--np-head-r', cssStr((signed ? 'Completed note' : 'DRAFT') + ' · Printed ' + stamp(new Date())));
     let h = '<h2>Core Assessment</h2><div class="np-meta">' + esc(PATIENT) + ' · Patient ID: ' + esc(PID) + ' · ' + esc(status) + '</div>';
     const act = window.activeSuggestions && window.activeSuggestions['ortho-template'];
+    const kcOther = Array.from(document.querySelectorAll('#known-condition-field .kc-chip-row .chip.selected:not([data-template-id])')).map(c => c.textContent.replace(/\s+/g, ' ').trim());
+    if(kcOther.length) h += '<div class="np-line"><b>Known condition:</b> ' + esc(kcOther.join(', ')) + '</div>';
     if(act) h += '<div class="np-line"><b>Condition template:</b> ' + esc(act.label.replace('Template: ', '')) + (act.source === 'manual' ? ' (manually selected)' : ' (suggested, accepted)') + '</div>';
     SECTIONS.forEach(id => {
       const sec = document.getElementById(id); if(!sec) return;

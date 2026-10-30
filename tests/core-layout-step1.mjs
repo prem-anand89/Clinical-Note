@@ -64,6 +64,13 @@ await page.locator('#ci-known-condition a').click();
 await page.waitForTimeout(1200);
 ok('the echo link scrolls back to the Section 1 row', await page.evaluate(() => { const r = document.getElementById('known-condition-toggle-row').getBoundingClientRect(); return r.top > 0 && r.bottom < window.innerHeight; }));
 
+// review fixes: one name, region on one line, preview prints non-template conditions
+ok('one name for the row: Known diagnosis / referral', await page.evaluate(() => /Known diagnosis \/ referral/.test(document.getElementById('known-condition-toggle-row').textContent) && /Known diagnosis \/ referral/.test(document.querySelector('#known-condition-field > label').textContent) && !/Known Condition/.test(document.querySelector('#known-condition-field > label').textContent)));
+ok('region chips fit on one line at 1280px', await page.evaluate(() => { const t = [...document.querySelectorAll('#region-chips .chip')].map(c => Math.round(c.getBoundingClientRect().top)); return new Set(t).size === 1; }));
+ok('the "+ Select" link sits beside its label, not at the far edge', await page.evaluate(() => { const r = document.getElementById('known-condition-toggle-row'); return r.querySelector('.subsection-toggle').getBoundingClientRect().left - r.firstElementChild.getBoundingClientRect().right < 40; }));
+await page.locator('#kc-neuro [data-chip="Parkinson\'s"]').click();
+await page.evaluate(() => document.querySelector('.preview-open').click()); await page.waitForTimeout(250);
+ok('preview prints a neuro Known condition (was template-only)', await page.evaluate(() => /Known condition:\s*Parkinson/.test(document.getElementById('note-preview').textContent)));
 ok('no page errors', errors.length === 0, errors);
 await browser.close();
 const failed = results.filter(r => !r[1]);

@@ -649,3 +649,10 @@ Blank note: **16 → 13 visible cards**. No field removed; every id kept (see `C
 - **Bug fix found on the way:** `body{overflow-x:hidden}` made the body its own scroll container, so the sticky top bar, module tab bar and sidebar never actually stuck. Changed to `overflow-x:clip` (no scroll container, still no sideways scroll). They now pin as designed.
 - Scroll margins keep cells, cards and sequence pills clear of the pinned bars when scrolled into view.
 - **Tests:** new `tests/core-layout-step6a7a.mjs`; `fm-seq-treat` waits for the cell scroll to settle.
+
+## Core layout — review fixes and Chief Complaint polish (30 Oct)
+- **Phone:** the tab bar now sits flush under the top bar (it was pinned at 56px under a 49px bar, leaving a strip of scrolling content); the FM jump row scrolls away on phones (two pinned bars is enough); the patient banner is one line (the "First visit…" text and the Preview label drop out; Preview is the 👁 icon, still labelled for screen readers).
+- **Preview/PDF:** non-template Known conditions (Stroke, Parkinson's, MS, Cardiothoracic, …) now print as "Known condition: …" next to the template line.
+- **One name** for the field: "Known diagnosis / referral".
+- **Chief Complaint layout:** short controls flow side by side and wrap on their own (Side + Onset on one row, Since and Course on their own rows) instead of fixed half columns; all ten region chips fit on one line; presenting problem starts at 2 rows; hairline dividers separate *when/how* (side, onset, since, course, known diagnosis), *what* (primary symptoms) and *function* (most limited activity); the "+ Select a known condition" link sits next to its label.
+- **Tests:** `core-layout-step1` and `core-layout-step6a7a` extended (phone banner, bar stack, preview, label, region on one line).

@@ -1,6 +1,6 @@
 # Plan: one Neuro Assessment module with condition-specific expansions (prototype first)
 
-Status: **PLAN — not started** · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only.
+Status: **N0 decided, N1 DONE (30 Oct)** · remaining: N2, N3, N4 · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only.
 Owner direction (30 Oct): the six neuro conditions are **one module**; build **one Neuro Assessment form**, and let each condition **expand** that form with its own parameters. "Additional sections" (Vitals, Body Chart, PSFS, Gait, Palpation, Questionnaires, VOMS, Pain Science, Sports Profile) are part of Core and stay inline — they are not tabs (Questionnaires moved back inline the same day).
 
 ## 1. What exists today (verified in `clinical-note.html`)
@@ -73,7 +73,8 @@ Each step: keep all existing ids that tests read (`#sec-group-a`, `#group-a-body
 ## 5. Tests to add
 `neuro-form.mjs`: switching/adding conditions keeps data · shared tool appears once for PD+MS · "+ Add tool" works with no condition · unselecting a condition with data keeps its tool · SCI swaps in ISNCSCI and keeps reflexes · Objective neuro screen and the module share data · Key Findings / badge / print per tool · tab × unsets all conditions · phone width.
 
-## 6. Decisions needed before N1 (recommendations in bold)
+## 6. Decisions (owner answered 30 Oct: yes to 1–4; 5–7 as recommended)
+_Original wording kept below; **1 multi-condition: yes · 2 ISNCSCI replaces generic sensory/motor for SCI: yes · 3 merge the Objective neuro screen into the module core: yes · 4 common core = sensory, motor, reflexes, coordination, tone: yes**._
 1. **Multiple conditions at once?** **Yes.**
 2. **SCI:** ISNCSCI **replaces** the generic sensory + motor blocks (reflexes stay)? **Yes** — it *is* the formal sensory/motor exam.
 3. **Objective "Neuro screen":** merge into the module's common core as one component with two hosts? **Yes** — otherwise the same exam is entered twice.

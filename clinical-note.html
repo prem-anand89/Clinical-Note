@@ -393,6 +393,9 @@
   .kc-count{ min-width:18px; height:18px; border-radius:9px; background:var(--clinical); color:#fff; font-size:11px; font-weight:700; align-items:center; justify-content:center; padding:0 5px; }
   .kc-group{ padding:12px 14px 14px; border-left:4px solid transparent; }
   .kc-g-neuro{ border-left-color:#7b64b4; } .kc-g-ortho{ border-left-color:var(--clinical); } .kc-g-postop{ border-left-color:#c98a2b; } .kc-g-other{ border-left-color:#7c8996; }
+  /* neuro tool slots: a hairline between visible tools, none above the first */
+  .ga-slot{ margin-top:18px; padding-top:18px; border-top:1px solid var(--line-soft); }
+  .ga-slot.ga-first{ margin-top:0; padding-top:0; border-top:none; }
   .kc-hint{ font-size:12px; color:var(--ink-faint); margin:0 0 10px; }
   .kc-g-neuro .chip.selected{ background:#7b64b4; border-color:#7b64b4; }
   .kc-g-postop .chip.selected{ background:#c98a2b; border-color:#c98a2b; }
@@ -7485,7 +7488,7 @@
   regionSelect.addEventListener('change', function(){
     var nsBody = document.getElementById('obj-neuro-screen-body');
     if(nsBody && nsBody.style.display !== 'none' && window.__refreshNeuroScreen) window.__refreshNeuroScreen();
-    if(groupASection.style.display !== 'none' && knownConditionValue) renderGroupA(knownConditionValue);
+    if(groupASection.style.display !== 'none' && knownConditionValue) syncNeuroForm();   // region only adds missing reflex rows
   });
 
   // ==========================================================
@@ -7519,6 +7522,7 @@
   document.getElementById('group-a-hide').addEventListener('click', function(){
     var chip = document.querySelector('#kc-neuro .chip.selected');
     if(chip) chip.click(); else hideGroupA();
+    resetNeuroForm();
   });
 
   function collapseMSK(conditionLabel){
@@ -7538,7 +7542,7 @@
   }
   function showGroupA(condition){
     groupASection.style.display = 'block';
-    renderGroupA(condition);
+    syncNeuroForm();
     collapseMSK(condition);
     // the neuro tools live in their own tab, named for the condition; choosing it in the picker adds the tab without leaving Section 1
     if(window.ModuleTabs){ window.ModuleTabs.label('groupa', 'Neuro: ' + condition); window.ModuleTabs.open('groupa', {switch: false}); }
@@ -7622,14 +7626,29 @@
   function buildReflexesOnlyBlock(){
     var el = document.createElement('div');
     el.innerHTML = '<div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="UMN screen — dermatomes/myotomes are root-level tests, not used for this condition (see Neuro Screen (minimal) or Cervical Radiculopathy for those)">0 (absent) – 4+ (clonus), L/R compared</span></div>' +
-      '<div id="ga-reflex-rows"></div>';
-    var reflexEl = el.querySelector('#ga-reflex-rows');
-    var region = regionSelect.value;
-    var groupKey = neuroScreenGroupForRegion(region);
+      '<div class="ga-reflex-rows"></div>';
+    refreshReflexRows(el);
+    return el;
+  }
+  // Region decides which reflexes are offered. A region change only ADDS the missing rows — entered grades are never rebuilt away.
+  function refreshReflexRows(el){
+    var reflexEl = el.querySelector('.ga-reflex-rows');
+    var groupKey = neuroScreenGroupForRegion(regionSelect.value);
     var groups = groupKey ? [groupKey] : ['cervical','lumbar'];
     groups.forEach(function(g){
-      NEURO_SCREEN_CONFIG[g].reflexes.forEach(function(r){ reflexEl.appendChild(makeGroupABilateralRow(r, ['0','1+','2+','3+','4+'])); });
+      NEURO_SCREEN_CONFIG[g].reflexes.forEach(function(r){
+        var exists = Array.prototype.some.call(reflexEl.children, function(row){ return row.getAttribute('data-ga-label') === r; });
+        if(exists) return;
+        var row = makeGroupABilateralRow(r, ['0','1+','2+','3+','4+']);
+        row.setAttribute('data-ga-label', r);
+        reflexEl.appendChild(row);
+      });
     });
+  }
+  function buildSciReflexBlock(){
+    var el = document.createElement('div');
+    el.innerHTML = '<div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">supplementary — not part of the formal AIS calculation above, but clinically relevant for UMN signs</span></div>';
+    ['Patellar (L3–4)','Achilles (S1–2)'].forEach(function(r){ el.appendChild(makeGroupABilateralRow(r, ['0','1+','2+','3+','4+'])); });
     return el;
   }
 
@@ -8046,30 +8065,48 @@
     return el;
   }
 
-  function renderGroupA(condition){
-    groupABody.innerHTML = '';
-    if(condition === 'Paraplegia / SCI'){
-      groupABody.appendChild(buildIsncsciWorksheet());
-      var divider = document.createElement('div');
-      divider.style.cssText = 'height:1px;background:var(--line-soft);margin:18px 0;';
-      groupABody.appendChild(divider);
-      var reflexBlock = document.createElement('div');
-      reflexBlock.innerHTML = '<div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">supplementary — not part of the formal AIS calculation above, but clinically relevant for UMN signs</span></div>';
-      ['Patellar (L3–4)','Achilles (S1–2)'].forEach(function(r){ reflexBlock.appendChild(makeGroupABilateralRow(r, ['0','1+','2+','3+','4+'])); });
-      groupABody.appendChild(reflexBlock);
-      return;
-    }
-    groupABody.appendChild(buildReflexesOnlyBlock());
-    var tools = GROUP_A_TOOL_MAP[condition] || [];
-    tools.forEach(function(key){
-      var builder = GROUP_A_TOOL_BUILDERS[key];
-      if(!builder) return;
-      var divider = document.createElement('div');
-      divider.style.cssText = 'height:1px;background:var(--line-soft);margin:18px 0;';
-      groupABody.appendChild(divider);
-      groupABody.appendChild(builder());
+  /* ---- Neuro tool registry ----
+     Every tool is built ONCE, into its own slot in #group-a-body. Conditions only decide which slots are visible:
+     a slot shows when any selected condition suggests its tool, or when it already holds data (so nothing recorded is ever
+     hidden, and nothing is wiped by switching condition or changing region). Suggestions come from GROUP_A_TOOL_MAP. */
+  var NEURO_TOOL_ORDER = ['isncsci','reflexes','reflexes_sci','tone_spasticity','motor_umn','fugl_meyer','coordination_cerebellar','cognitive_screen_light','hoehn_yahr','sensory_dermatomal','fatigue_relapse_ms','sensory_peripheral','symptom_checklist_concussion'];
+  var NEURO_SPECIAL = {
+    isncsci:      { conditions: ['Paraplegia / SCI'], build: buildIsncsciWorksheet },
+    reflexes:     { conditions: GROUP_A_CONDITIONS.filter(function(c){ return c !== 'Paraplegia / SCI'; }), build: buildReflexesOnlyBlock, refresh: refreshReflexRows },   // UMN screen: every condition but SCI
+    reflexes_sci: { conditions: ['Paraplegia / SCI'], build: buildSciReflexBlock }
+  };
+  var NEURO_TOOLS = NEURO_TOOL_ORDER.map(function(id){
+    if(NEURO_SPECIAL[id]) return Object.assign({ id: id }, NEURO_SPECIAL[id]);
+    return { id: id, build: GROUP_A_TOOL_BUILDERS[id], conditions: GROUP_A_CONDITIONS.filter(function(c){ return (GROUP_A_TOOL_MAP[c] || []).indexOf(id) > -1; }) };
+  });
+  var neuroSlots = {};
+  // Lean.hasData does not see every control (the ISNCSCI grid is plain buttons), so any selected button counts here
+  function neuroHasData(slot){ return !!((window.Lean && window.Lean.hasData(slot)) || slot.querySelector('button.selected')); }
+  function neuroConditions(){ return knownConditionValue ? [knownConditionValue] : []; }
+  function syncNeuroForm(){
+    var conds = neuroConditions(), firstShown = null;
+    NEURO_TOOLS.forEach(function(tool){
+      var slot = neuroSlots[tool.id];
+      var wanted = tool.conditions.some(function(c){ return conds.indexOf(c) > -1; });
+      if(!slot && wanted && tool.build){
+        slot = neuroSlots[tool.id] = document.createElement('div');
+        slot.className = 'ga-slot'; slot.setAttribute('data-neuro-tool', tool.id);
+        slot.appendChild(tool.build());
+        groupABody.appendChild(slot);
+      }
+      if(!slot) return;
+      if(wanted && tool.refresh) tool.refresh(slot);
+      var show = wanted || neuroHasData(slot);
+      slot.style.display = show ? '' : 'none';
+      slot.classList.remove('ga-first');
+      if(show && !firstShown){ firstShown = slot; slot.classList.add('ga-first'); }
     });
+    // keep slots in registry order even though they are built lazily
+    NEURO_TOOLS.forEach(function(tool){ if(neuroSlots[tool.id]) groupABody.appendChild(neuroSlots[tool.id]); });
   }
+  // explicit Remove only: forget everything entered in the neuro tools
+  function resetNeuroForm(){ groupABody.innerHTML = ''; neuroSlots = {}; }
+  window.__resetNeuroForm = resetNeuroForm;
 
   // ==========================================================
   // QUESTIONNAIRES — new Tier 2 section, auto-suggested by matched
@@ -13160,7 +13197,7 @@ document.addEventListener('click', function(e){
   // One module dock, built from a config (window.MODULE_REGISTRY), not from the sidebar's DOM, so the
   // sidebar can become navigation-only. Each entry calls the same global opener the sidebar uses.
   // Tab modules that are one section of controls (everything except FM): the Core contract comes from this one helper.
-  const recorded = el => !el ? 0 : $$('.chip.selected, .segmented button.selected, .nrs-scale button.selected', el).length +
+  const recorded = el => !el ? 0 : $$('button.selected, .chip.selected', el).length +
     $$('input:not([type=hidden]):not([type=checkbox]):not([type=radio]), textarea', el).filter(f => f.value && f.value.trim() && f.dataset.auto !== '1').length +
     $$('input[type=checkbox]:checked, input[type=radio]:checked', el).length + $$('select', el).filter(s => s.selectedIndex > 0).length;
   const sectionModule = (id, secId, short, title, slot, nameFn) => ({
@@ -13546,7 +13583,7 @@ document.addEventListener('click', function(e){
       if(n.nodeType !== 1) continue;
       if(n.hidden || n.style.display === 'none') return false;
       if(n.classList.contains('lean-tucked') && !n.classList.contains('lean-shown')) return false;
-      if(n.id === 'objective-region-preview' || n.id === 'pin-summary' || /(^|\s)lean-(sum|more|chips|gate)/.test(n.className || '')) return false;
+      if(n.id === 'known-condition-field' || n.id === 'known-condition-toggle-row' || n.id === 'ci-known-condition' || n.id === 'objective-region-preview' || n.id === 'pin-summary' || /(^|\s)lean-(sum|more|chips|gate)/.test(n.className || '')) return false;
     }
     return true;
   }

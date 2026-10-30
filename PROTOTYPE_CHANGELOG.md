@@ -721,3 +721,16 @@ Owner decision: these open like FM — in their own tab — instead of inside Co
 
 ## Questionnaires back inline (30 Oct)
 Owner: the **Additional sections** (Vitals, Body Chart, PSFS, Gait & Posture, Palpation, Questionnaires, VOMS, Pain Science, Sports Profile) are part of Core and expand it — they do **not** open as tabs. Questionnaires returns to its card inside Objective (a template that suggests it adds the card there; Remove deletes it); registry placement is `inline` (11 inline · 9 tab · 3 profile). VM, CST and the neuro tools remain tab modules. Neuro: see `CLAUDE_HANDOFF_NEURO_FORM.md` (plan only).
+
+## Neuro Assessment — N1: tools built once, conditions only show/hide (30 Oct)
+Plan: `CLAUDE_HANDOFF_NEURO_FORM.md` (owner decisions: multi-condition, ISNCSCI replaces generic sensory/motor for SCI, Objective neuro screen merges into the module core, common core = sensory/motor/reflexes/coordination/tone).
+- **No more data loss.** `renderGroupA` rebuilt the whole form on every condition or region change. It is replaced by a **tool registry** (`NEURO_TOOLS`, suggestions still from `GROUP_A_TOOL_MAP`): each tool is built **once**, lazily, into its own slot; a condition only decides which slots are visible.
+- **Shared tools appear once** (coordination for Parkinson's + MS + stroke, tone, cognitive screen, reflexes).
+- **Nothing recorded is hidden:** a slot that holds data stays visible after the condition that suggested it is replaced (any selected button counts, so the ISNCSCI grid is covered — `Lean.hasData` alone did not see it).
+- **Region change only adds** the new region's reflex rows; entered grades and the ISNCSCI worksheet are never rebuilt.
+- **Unselecting the condition in the picker** hides the module but forgets nothing; **explicit Remove (× on the tab / Remove)** clears the form.
+- SCI keeps its own pair: ISNCSCI worksheet + supplementary reflexes (the generic UMN screen is for the other five).
+- The module's recorded-items count (badge, Key Findings) now counts any selected button, so ISNCSCI entries are included.
+- **Bug fixed on the way:** the preview printed a stray "Create PSFS: Parkinson's" line — the generic collector was reading the Known diagnosis chips and borrowing the wrong label. The picker is now excluded from the collector (it prints on its own "Known condition:" line).
+- **Known gap for N4:** the ISNCSCI grid does not appear in the preview/PDF (the collector only reads the controls it knows).
+- **Tests:** new `tests/neuro-form.mjs`.

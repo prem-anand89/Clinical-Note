@@ -1,6 +1,6 @@
 # Plan: one Neuro Assessment module with condition-specific expansions (prototype first)
 
-Status: **N0, N1, N2, N3 DONE (30 Oct)** · remaining: N4 · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only.
+Status: **N0–N4 ALL DONE (30 Oct)** · next: therapist try-out of the form; clinician review of the tool→condition table (§6 item 5) · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only.
 Owner direction (30 Oct): the six neuro conditions are **one module**; build **one Neuro Assessment form**, and let each condition **expand** that form with its own parameters. "Additional sections" (Vitals, Body Chart, PSFS, Gait, Palpation, Questionnaires, VOMS, Pain Science, Sports Profile) are part of Core and stay inline — they are not tabs (Questionnaires moved back inline the same day).
 
 ## 1. What exists today (verified in `clinical-note.html`)

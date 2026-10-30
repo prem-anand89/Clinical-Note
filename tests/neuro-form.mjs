@@ -4,6 +4,9 @@ import { createRequire } from 'module';
 const require = createRequire('/home/theranet/TN Project/thera-net-1/package.json');
 const { chromium } = require('playwright-core');
 import path from 'path';
+import os from 'os';
+import fs from 'fs';
+import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const cn = 'file://' + path.join(dir, '..', 'clinical-note.html');
@@ -175,6 +178,56 @@ const pv = await page.evaluate(() => document.getElementById('np-body').textCont
 ok('the preview prints the tools and the hosted basic exam under the Neuro assessment', /Neuro assessment/.test(pv) && /impaired/i.test(pv) && /C5/.test(pv.slice(pv.indexOf('Neuro assessment'))) && /reduced/i.test(pv.slice(pv.indexOf('Neuro assessment'))), pv.slice(pv.indexOf('Neuro assessment'), pv.indexOf('Neuro assessment') + 300));
 ok('...and the exam is printed once (not also in Objective)', (pv.match(/Reduced|reduced/g) || []).length === 1, (pv.match(/educed/g) || []).length);
 ok('the Known condition picker is not read as a stray field', !/Create PSFS: Parkinson/.test(pv) && /Known condition: Parkinson/.test(pv));
+await page.close();
+
+// ================= N4: print each tool under its own name; ISNCSCI prints as tables; structured export
+page = await fresh();
+await region(page, 'Lumbar Spine');
+await page.evaluate(() => { openConditionModule('neuro'); document.querySelector('#ga-cond-chips [data-ga-cond="Paraplegia / SCI"]').click(); document.querySelector('#ga-cond-chips [data-ga-cond="Parkinson\'s"]').click(); }); await page.waitForTimeout(500);
+await page.evaluate(() => {
+  const s = document.querySelector('[data-neuro-tool="isncsci"]');
+  const pickv = (cell, v) => cell.querySelector('button[data-val="' + v + '"]').click();
+  const sRow = l => [...s.querySelectorAll('#isn-sensory-body tr')].find(tr => tr.querySelector('td').textContent.trim() === l);
+  const mRow = l => [...s.querySelectorAll('#isn-motor-body tr')].find(tr => tr.querySelector('td').textContent.trim() === l);
+  const c = sRow('C2').querySelectorAll('.isn-cell'); pickv(c[0], '2'); pickv(c[1], '1');
+  pickv(sRow('S4-5').querySelectorAll('.isn-cell')[0], '1');
+  pickv(mRow('C5').querySelectorAll('.isn-cell')[0], '5'); pickv(mRow('C5').querySelectorAll('.isn-cell')[1], '4');
+  pickv(s.querySelector('.isn-vac'), 'No'); pickv(s.querySelector('.isn-dap'), 'Yes');
+  document.querySelector('[data-neuro-tool="coordination_cerebellar"] .segmented button[data-val="Impaired"]').click();
+  document.querySelector('#obj-ns-reflex-rows .obj-row .segmented button').click();
+}); await page.waitForTimeout(500);
+await toCore(page);
+await page.evaluate(() => document.querySelector('.preview-open').click()); await page.waitForTimeout(300);
+const ph = await page.evaluate(() => document.getElementById('np-body').innerHTML);
+const pt = ph.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ');   // tags -> spaces, like the printed page
+const nb = pt.slice(pt.indexOf('Neuro assessment'), pt.indexOf('Clinical Impression'));
+ok('the Neuro assessment block names its conditions', /^Neuro assessment \(Paraplegia \/ SCI, Parkinson's\)/.test(nb) && /Conditions: Paraplegia \/ SCI, Parkinson's/.test(nb), nb.slice(0, 160));
+ok('each tool that holds something prints under its own name; empty tools are skipped', ['ISNCSCI worksheet', 'Basic neuro exam', 'Coordination / cerebellar'].every(t => nb.includes(t)) && !nb.includes('Tone / spasticity') && !nb.includes('Hoehn'), nb);
+ok('tool blocks follow the form order (ISNCSCI, basic exam, coordination)', nb.indexOf('ISNCSCI worksheet') < nb.indexOf('Basic neuro exam') && nb.indexOf('Basic neuro exam') < nb.indexOf('Coordination / cerebellar'));
+ok('the ISNCSCI grid now prints, as tables with only the levels that were recorded', /<table class="np-table">/.test(ph) && /C2<\/td><td>2<\/td><td>1<\/td>/.test(ph) && /S4-5/.test(nb) && !/>C3</.test(ph.slice(ph.indexOf('ISNCSCI worksheet'), ph.indexOf('Clinical Impression'))), nb.slice(0, 400));
+ok('...key muscles, anorectal function and the computed result print', /C5 Elbow flexors 5 4/.test(nb) && /VAC No · DAP Yes/.test(nb) && /AIS B/.test(nb) && /Sensory totals/.test(nb), nb);
+ok('the basic exam prints under its own group heading (Reflexes), not as loose rows', /Reflexes Patellar \(L3–4\): R: 0/.test(nb), nb);
+ok('no leftover form text ("Tools shown are condition-mapped…") leaks into the print', !/condition-mapped|Add a tool|Choose every condition/i.test(nb), nb);
+// a real PDF from headless Chrome carries the same content
+{
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cn-neuro-')), 'neuro.pdf');
+  await page.pdf({ path: f, preferCSSPageSize: true, printBackground: true });
+  const txt = execSync('pdftotext -layout "' + f + '" -').toString();
+  ok('the PDF prints the ISNCSCI worksheet, its key muscles and the AIS grade', /ISNCSCI worksheet/.test(txt) && /Key muscle/.test(txt) && /AIS B/.test(txt) && /Elbow flexors/.test(txt), txt.slice(txt.indexOf('Neuro'), txt.indexOf('Neuro') + 300));
+  fs.rmSync(path.dirname(f), { recursive: true, force: true });
+}
+await page.evaluate(() => document.getElementById('np-close').click());
+
+const nd = await page.evaluate(() => window.getNeuroData());
+ok('getNeuroData: version, enabled and the selected conditions', nd.version === '1.0' && nd.enabled === true && nd.conditions.join() === "Paraplegia / SCI,Parkinson's", nd);
+ok('getNeuroData: only tools with data (ISNCSCI, coordination)', Object.keys(nd.tools).sort().join() === 'coordination_cerebellar,isncsci', Object.keys(nd.tools));
+ok('getNeuroData: ISNCSCI is structured — recorded levels only, null for the rest', nd.tools.isncsci.sensory.C2.rLT === '2' && nd.tools.isncsci.sensory.C2.lLT === null && !nd.tools.isncsci.sensory.C3 && nd.tools.isncsci.motor.C5.l === '4' && nd.tools.isncsci.vac === 'No' && nd.tools.isncsci.dap === 'Yes', nd.tools.isncsci);
+ok('getNeuroData: tools carry label / value entries', nd.tools.coordination_cerebellar[0].label === 'Finger-to-nose' && nd.tools.coordination_cerebellar[0].value === 'impaired');
+ok('getNeuroData: the basic exam is returned separately (it is Core data)', nd.basicExam.length === 1 && nd.basicExam[0].group === 'Reflexes' && /Patellar/.test(nd.basicExam[0].label) && !nd.tools.basic_exam, nd.basicExam);
+await page.evaluate(() => document.getElementById('tab-btn-groupa').click()); await page.waitForTimeout(200);
+await page.locator('#tab-btn-groupa .module-tab-close').click(); await page.waitForTimeout(500);
+const nd2 = await page.evaluate(() => window.getNeuroData());
+ok('after Remove the export is empty apart from the basic exam, which stays in Core', nd2.enabled === false && Object.keys(nd2.tools).length === 0 && nd2.conditions.length === 0 && nd2.basicExam.length === 0, nd2);
 await page.close();
 
 ok('no page errors', errors.length === 0, errors);

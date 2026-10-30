@@ -1325,6 +1325,7 @@
   #note-preview h4{ font-size:13.5px; margin:12px 0 4px; }
   #note-preview .np-line{ margin:2px 0; } #note-preview .np-line b{ font-weight:600; }
   #note-preview .np-empty{ color:#999; font-style:italic; }
+  #note-preview .np-sub{ font-weight:700; font-size:12.5px; margin:10px 0 3px; color:#444; }
   #note-preview .np-table{ width:100%; border-collapse:collapse; margin:4px 0 8px; font-size:12.5px; }
   #note-preview .np-table th, #note-preview .np-table td{ border:1px solid #ddd; padding:3px 7px; text-align:left; vertical-align:top; }
   #note-preview .np-table th{ background:#f3f3f1; font-weight:600; }
@@ -1341,7 +1342,7 @@
     #note-preview .np-sheet{ box-shadow:none; max-width:none; padding:0; border-radius:0; font-size:10.5pt; line-height:1.45; }
     #note-preview h2{ font-size:16pt; }
     #note-preview h3{ break-after:avoid; margin-top:14px; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-    #note-preview h4{ break-after:avoid; }
+    #note-preview h4, #note-preview .np-sub{ break-after:avoid; }
     #note-preview .np-line, #note-preview .np-table tr{ break-inside:avoid; }
     #note-preview .np-table{ font-size:9.5pt; }
     #note-preview .np-table thead{ display:table-header-group; }
@@ -8121,6 +8122,7 @@
     t.title = NEURO_TITLES[id];
     return t;
   });
+  window.__neuroToolTitle = function(id){ return NEURO_TITLES[id]; };
   var neuroSlots = {};
   var neuroOverride = {};     // id -> 'show' (added by hand) | 'hide' (hidden by hand, only possible while empty)
   var neuroSet = [];          // selected neuro conditions, in the order they were chosen (the picker's chips are the visual state)
@@ -13324,7 +13326,7 @@ document.addEventListener('click', function(e){
     printBlock() { const e = this.el(); return e && window.__previewSection ? window.__previewSection(e, nameFn ? nameFn() : title) : ''; }
   });
   const neuroName = () => { const c = $$('#kc-neuro .chip.selected').map(b => b.getAttribute('data-chip')); return 'Neuro assessment' + (c.length ? ' (' + c.join(', ') + ')' : ''); };
-  const GROUP_A = sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName);
+  const GROUP_A = Object.assign(sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName), { printBlock() { return window.__previewNeuro ? window.__previewNeuro() : ''; } });   // per-tool blocks, ISNCSCI as tables
   window.MODULE_REGISTRY = [
     { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart', placement: 'inline' },
@@ -13725,7 +13727,11 @@ document.addEventListener('click', function(e){
   }
   function collect(sec){
     const lines = [], done = new Set(); let group = '';
-    const heading = el => { const c = el.closest('.card, .repeatable-card'); const h = c && c.querySelector(':scope > .card-heading:not(#known-condition-toggle-row), :scope > .section-title, :scope > h3, :scope > .rc-head'); return h ? short(plainText(h)) : ''; };
+    const heading = el => {
+      const grp = el.closest('.ns-grp');   // dermatomes / myotomes / reflexes inside the basic neuro exam
+      if(grp){ const gh = grp.querySelector(':scope > .card-heading'); if(gh) return short(plainText(gh)); }
+      const c0 = el.closest('.card, .repeatable-card'); if(c0 && c0.classList.contains('ns-hosted')) return '';
+      const c = el.closest('.card, .repeatable-card'); const h = c && c.querySelector(':scope > .card-heading:not(#known-condition-toggle-row), :scope > .section-title, :scope > h3, :scope > .rc-head'); return h ? short(plainText(h)) : ''; };
     const push = (el, label, text) => { if(!text) return; const g = heading(el); if(g !== group){ group = g; if(g) lines.push({ h: g }); } lines.push({ label, text }); };
     sec.querySelectorAll('.obj-row, input, textarea, select, .chip-row, .segmented, .chips').forEach(el => {
       if(done.has(el) || !live(el, sec)) return;
@@ -13810,9 +13816,65 @@ document.addEventListener('click', function(e){
   }
   window.__fmPrintBlock = fmBlock;
   // Any module section, laid out the same way as a Core section (used by tab modules' printBlock)
+  // ISNCSCI worksheet: only the levels with something recorded, VAC / DAP, and the computed result as shown on screen
+  // "LT 3/112 · PP 1/112 (Sensory totals)" — the value, then what it is
+  const isnResults = slot => Array.from(slot.querySelectorAll('.isn-results .derived-field')).map(d => { const v = d.querySelector('.val'), sub = d.querySelector('.sub'); return v ? clean(v.textContent) + (sub ? ' (' + clean(sub.textContent) + ')' : '') : clean(d.textContent); }).filter(Boolean);
+  function isncsciBlock(slot){
+    const val = c => { const b = c.querySelector('button.selected'); return b ? b.dataset.val : ''; };
+    const sens = Array.from(slot.querySelectorAll('#isn-sensory-body tr')).map(tr => [clean(tr.querySelector('td').textContent)].concat(Array.from(tr.querySelectorAll('.isn-cell')).map(val))).filter(r => r.slice(1).some(Boolean));
+    const mot = Array.from(slot.querySelectorAll('#isn-motor-body tr')).map(tr => { const td = tr.querySelectorAll('td'); return [clean(td[0].textContent), clean(td[1].textContent)].concat(Array.from(tr.querySelectorAll('.isn-cell')).map(val)); }).filter(r => r.slice(2).some(Boolean));
+    const vac = val(slot.querySelector('.isn-vac')), dap = val(slot.querySelector('.isn-dap'));
+    const res = isnResults(slot);
+    const notes = Array.from(slot.querySelectorAll('.isn-results .field-note')).map(n => clean(n.textContent)).filter(t => t && !/^(Simplified for this mockup|Fill in S4)/.test(t));
+    if(!sens.length && !mot.length && !vac && !dap) return '';
+    const row = (cells, tag) => '<tr>' + cells.map(c => '<' + (tag || 'td') + '>' + esc(c) + '</' + (tag || 'td') + '>').join('') + '</tr>';
+    let h = '';
+    if(sens.length) h += '<table class="np-table"><thead>' + row(['Level', 'R LT', 'R PP', 'L LT', 'L PP'], 'th') + '</thead><tbody>' + sens.map(r => row(r)).join('') + '</tbody></table>';
+    if(mot.length) h += '<table class="np-table"><thead>' + row(['Level', 'Key muscle', 'R', 'L'], 'th') + '</thead><tbody>' + mot.map(r => row(r)).join('') + '</tbody></table>';
+    if(vac || dap) h += '<div class="np-line"><b>Anorectal:</b> ' + esc('VAC ' + (vac || '—') + ' · DAP ' + (dap || '—')) + '</div>';
+    if(res.length) h += '<div class="np-line"><b>Result:</b> ' + esc(res.join('; ')) + '</div>';
+    notes.forEach(n => { h += '<div class="np-line">' + esc(n) + '</div>'; });
+    return h;
+  }
+  const renderLines = lines => lines.map(l => l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>').join('');
+  const neuroConds = () => Array.from(document.querySelectorAll('#kc-neuro .chip.selected')).map(c => clean(c.textContent));
+  const visibleNeuroSlots = () => Array.from(document.querySelectorAll('#group-a-body > .ga-slot')).filter(sl => sl.style.display !== 'none');
+  // Neuro Assessment: one block per tool that holds something, each under its own name; tools with nothing recorded are skipped
+  window.__previewNeuro = () => {
+    const conds = neuroConds();
+    let body = '';
+    visibleNeuroSlots().forEach(slot => {
+      const id = slot.dataset.neuroTool, title = (window.__neuroToolTitle && window.__neuroToolTitle(id)) || id;
+      const inner = id === 'isncsci' ? isncsciBlock(slot) : renderLines(collect(slot));
+      if(inner) body += '<div class="np-sub">' + esc(title) + '</div>' + inner;
+    });
+    if(!body) return '';
+    return '<h4>' + esc('Neuro assessment' + (conds.length ? ' (' + conds.join(', ') + ')' : '')) + '</h4>' + (conds.length ? '<div class="np-line"><b>Conditions:</b> ' + esc(conds.join(', ')) + '</div>' : '') + body;
+  };
+  // Structured export of the Neuro Assessment (prototype of the payload's modules.groupa). The basic exam is Core data and is returned separately.
+  window.getNeuroData = () => {
+    const entries = lines => { let g = ''; const out = []; lines.forEach(l => { if(l.h) g = l.h; else out.push({ group: g, label: l.label, value: l.text }); }); return out; };
+    const tools = {}; let basicExam = [];
+    visibleNeuroSlots().forEach(slot => {
+      const id = slot.dataset.neuroTool;
+      if(id === 'basic_exam'){ basicExam = entries(collect(slot)); return; }
+      if(id === 'isncsci'){
+        const val = c => { const b = c.querySelector('button.selected'); return b ? b.dataset.val : null; };
+        const sensory = {}, motor = {};
+        slot.querySelectorAll('#isn-sensory-body tr').forEach(tr => { const c = Array.from(tr.querySelectorAll('.isn-cell')).map(val); if(c.some(v => v !== null)) sensory[clean(tr.querySelector('td').textContent)] = { rLT: c[0], rPP: c[1], lLT: c[2], lPP: c[3] }; });
+        slot.querySelectorAll('#isn-motor-body tr').forEach(tr => { const c = Array.from(tr.querySelectorAll('.isn-cell')).map(val); if(c.some(v => v !== null)) motor[clean(tr.querySelector('td').textContent)] = { r: c[0], l: c[1] }; });
+        const vac = val(slot.querySelector('.isn-vac')), dap = val(slot.querySelector('.isn-dap'));
+        if(Object.keys(sensory).length || Object.keys(motor).length || vac || dap) tools.isncsci = { sensory, motor, vac, dap, result: isnResults(slot) };
+        return;
+      }
+      const e = entries(collect(slot));
+      if(e.length) tools[id] = e;
+    });
+    return { version: '1.0', enabled: !!(window.__neuroModuleOn && window.__neuroModuleOn()), conditions: neuroConds(), tools, basicExam };
+  };
   window.__previewSection = (sec, title) => {
     const lines = collect(sec); if(!lines.length) return '';
-    return '<h4>' + esc(title) + '</h4>' + lines.map(l => l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>').join('');
+    return '<h4>' + esc(title) + '</h4>' + renderLines(lines);
   };
   const host = document.createElement('div'); host.id = 'note-preview';
   host.innerHTML = '<div class="np-sheet"><div class="np-bar"><button type="button" id="np-close">Close</button><button type="button" id="np-print">Print</button></div><div id="np-body"></div></div>';

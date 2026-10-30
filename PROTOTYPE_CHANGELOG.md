@@ -754,3 +754,10 @@ Plan: `CLAUDE_HANDOFF_NEURO_FORM.md` (owner decisions: multi-condition, ISNCSCI 
 - Removed dead code: the old per-condition reflex builders and the MS dermatomal block; the form re-syncs after any edit so Hide / Add-list state is never stale.
 - **Tests:** `tests/neuro-form.mjs` rewritten for N1–N3 (core with no condition, hosted exam, Remove returns data, one data source, union of conditions, MS levels, Add / Hide, region, SCI swap, preview prints the exam once).
 - **Still for N4:** the ISNCSCI grid does not print; per-tool preview blocks; `neuro` payload draft.
+
+## Neuro Assessment — N4: print and export (30 Oct)
+- **Print:** the Neuro assessment block now lists **each tool that holds something under its own name** (ISNCSCI worksheet · Basic neuro exam · Coordination / cerebellar …), in form order, under "Neuro assessment (conditions)" with a "Conditions:" line; tools with nothing recorded are skipped. Before, the generic collector printed one run-on list and even leaked form text ("Tools shown are condition-mapped, not all tools always: …").
+- **ISNCSCI now prints** (it never did): sensory table (only the levels with an entry, R/L LT/PP), key-muscle table, anorectal function (VAC / DAP) and the computed result as shown on screen — totals, NLI, AIS grade and its interpretation. Checked in a real PDF.
+- **The basic exam prints once**, under its own group headings (Dermatomes / Myotomes / Reflexes), whether it is hosted in the module or inline in Objective.
+- **`getNeuroData()`** — a structured export of the Neuro Assessment (conditions, tools with data, structured ISNCSCI, the basic exam returned separately because it is Core data); the working draft of the payload, documented in `PAYLOAD_SHAPE_DRAFT.md`.
+- **Tests:** `tests/neuro-form.mjs` gains the print (HTML and PDF) and export checks. The neuro plan (N1–N4) is complete.

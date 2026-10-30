@@ -152,3 +152,27 @@ CoreAssessmentPayload {
 
 ## Neuro Assessment — shared basic exam (N3)
 The module's **basic exam** (dermatomes, myotomes, reflexes) is the same data as Objective's Neuro screen — store it **once** in Core (`objective.neuroScreen`), not inside `modules.groupa`. `modules.groupa.tools` holds only the module-specific tools (tone, coordination, motor UMN, Fugl-Meyer, cognitive, Hoehn & Yahr, fatigue/relapse, peripheral sensory, symptom checklist, ISNCSCI) plus `conditions[]`. Removing the module never deletes the basic exam.
+
+## Neuro Assessment payload — as exported by the prototype (N4)
+`window.getNeuroData()` returns exactly this; it is the working draft for `modules.groupa` (versioned separately, `'1.0'`):
+```ts
+{
+  version: '1.0',
+  enabled: boolean,                     // module present in this note
+  conditions: NeuroCondition[],         // 'Stroke / TBI' | 'Paraplegia / SCI' | "Parkinson's" | 'MS' | 'Peripheral Neuropathy' | 'Concussion' — multi, in the order chosen
+  tools: {                              // ONLY tools that hold something; keys = tool ids
+    isncsci?: {                         // structured, recorded levels only
+      sensory: { [level: 'C2'…'S4-5']: { rLT, rPP, lLT, lPP: '0'|'1'|'2'|'NT'|null } },
+      motor:   { [level: 'C5'…'S1']:   { r, l: '0'…'5'|'NT'|null } },
+      vac: 'Yes'|'No'|null, dap: 'Yes'|'No'|null,
+      result: string[]                  // the computed totals / NLI / AIS as shown (derived — recompute at port, do not trust)
+    },
+    tone_spasticity?, coordination_cerebellar?, motor_umn?, fugl_meyer?, cognitive_screen_light?,
+    hoehn_yahr?, fatigue_relapse_ms?, sensory_peripheral?, symptom_checklist_concussion?:
+      { group: string, label: string, value: string }[]          // prototype: label/value entries; port: typed per tool
+  },
+  basicExam: { group: 'Dermatomes'|'Myotomes'|'Reflexes', label: string, value: string }[]
+              // = Objective's Neuro screen. CORE data: store once in objective.neuroScreen, NOT in modules.groupa
+}
+```
+Rules the port must keep: a tool with data is never dropped because its suggesting condition was unselected; removing the module deletes `tools` and `conditions` but never `basicExam`; conditions only *suggest* tools (any tool can be added by hand); SCI replaces the generic dermatome + myotome blocks with `isncsci` (reflexes stay); MS asks the basic exam for every dermatomal level C5–S2; `modules.groupa` is the episode-level master (`neuro_spinal_assessments`) with a snapshot per note.

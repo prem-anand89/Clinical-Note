@@ -41,7 +41,7 @@ const steps = page => page.evaluate(() => Array.from(document.querySelectorAll('
   await page.waitForTimeout(250);
   let c = await chips(page);
   ok('grade 1 never counts: only the RL diagonal is detected (AM has one segment at grade 2+)', c.length === 1 && /RL diagonal R 3 segments/.test(c[0].text), c);
-  ok('the chip names the segments', /CX · GE · TA/.test(c[0].text), c);
+  ok('the chip shows each segment with its grade (the data to decide from)', /CX 3 · GE 2 · TA 3/.test(c[0].text), c);
   const card3 = await page.evaluate(() => document.getElementById('fm-density-summary').textContent.replace(/\s+/g, ' '));
   ok('Card 3 no longer repeats the pattern list (still has highest findings and totals)', !/Pattern Detected/i.test(card3) && /Highest Findings/i.test(card3) && /Treated/.test(card3), card3);
   ok('Card 4 shows the empty-state text only when no pattern exists', await page.locator('#fm-pattern-empty').isHidden());
@@ -68,13 +68,15 @@ const steps = page => page.evaluate(() => Array.from(document.querySelectorAll('
   await grade(page, 'GE', 'AN-ME', 'rt', '2'); await grade(page, 'TA', 'AN-ME', 'rt', '2');
   await page.waitForTimeout(250);
   const c = await chips(page);
-  ok('two candidate lines appear, the 3-segment one first', c.length === 2 && /RL diagonal/.test(c[0].text) && /AM diagonal/.test(c[1].text) && /3 segments/.test(c[0].text) && /2 segments/.test(c[1].text), c);
+  ok('two candidate lines appear in fixed grid order (AM before RL), not ranked by count', c.length === 2 && /AM diagonal/.test(c[0].text) && /RL diagonal/.test(c[1].text) && /2 segments/.test(c[0].text) && /3 segments/.test(c[1].text), c);
+  ok('with two candidates the banner does not suggest one', /2 patterns detected/.test(await page.textContent('#fm-hyp-diag')) && await page.locator('.fm-hyp-suggest').count() === 0, await page.textContent('#fm-hyp-diag'));
+  ok('...and tells the therapist to choose', /Choose which line/.test(await page.textContent('#fm-hyp-meta')), await page.textContent('#fm-hyp-meta'));
   const panel = await page.evaluate(() => document.getElementById('fm-pattern-panel').textContent);
   ok('no "primary", "counter" or "antagonist" labelling is generated', !/primary|counter|antagonist/i.test(panel), panel);
-  await page.locator('#fm-pattern-chips .fm-pattern-chip').nth(1).click(); await page.waitForTimeout(200);
-  let st = await steps(page);
-  ok('tapping the second chip adds only its own two points', st.length === 2 && st.every(s => /AN-ME\|rt$/.test(s)), st);
   await page.locator('#fm-pattern-chips .fm-pattern-chip').nth(0).click(); await page.waitForTimeout(200);
+  let st = await steps(page);
+  ok('tapping the AM chip adds only its own two points', st.length === 2 && st.every(s => /AN-ME\|rt$/.test(s)), st);
+  await page.locator('#fm-pattern-chips .fm-pattern-chip').nth(1).click(); await page.waitForTimeout(200);
   st = await steps(page);
   ok('adding the other pattern keeps both (5 points, no duplicates)', st.length === 5 && new Set(st).size === 5, st);
   ok('both chips show as added', (await chips(page)).every(x => x.added), await chips(page));

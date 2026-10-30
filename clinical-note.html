@@ -8797,7 +8797,7 @@ setupSegmented('patient-progress');
         findingsHtml += `</div></div>`;
         
         // Patterns: >=2 segments graded 2 or higher on one plane and side (CFs = diagonal, CCs = sequence).
-        // Ordered by segment count, then strongest grade, so the list is stable. They are shown in Card 4,
+        // They are shown in Card 4,
         // where tapping one adds its points to the treatment sequence.
         const detectedPatterns = [];
         Object.keys(planePts).forEach(k => {
@@ -8813,7 +8813,11 @@ setupSegmented('patient-progress');
                 text: `${planeCode(o.plane)} ${term} (${sideLetter(o.side)})`
             });
         });
-        detectedPatterns.sort((a, b) => b.count - a.count || b.top - a.top);
+        // Fixed grid order (column order, right side first) so the list never implies a priority:
+        // which line to treat is the therapist's call.
+        const planeOrder = (window.PV_COLUMNS || []).map(c => c.plane);
+        const sideOrder = sd => ({ rt: 0, lt: 1 })[sd] === undefined ? 2 : ({ rt: 0, lt: 1 })[sd];
+        detectedPatterns.sort((a, b) => planeOrder.indexOf(a.pName) - planeOrder.indexOf(b.pName) || sideOrder(a.pSide) - sideOrder(b.pSide));
         window.__fmDetectedPatterns = detectedPatterns;
         if (window.updateFmDiagonal) window.updateFmDiagonal();
         window.__fmRenderPatternPanel();
@@ -8890,7 +8894,7 @@ setupSegmented('patient-progress');
                 b.type = 'button'; b.className = 'chip fm-pattern-chip' + (added ? ' selected' : ''); b.dataset.pattern = pt.key;
                 b.title = added ? 'All of this pattern\'s points are in the sequence' : 'Add this pattern\'s points to the treatment sequence';
                 b.innerHTML = '<span class="pat-dot"></span><b>' + planeCode(pt.pName) + '</b> ' + pt.term + ' ' + sideLetter(pt.pSide) +
-                    ' <span class="pat-count">' + pt.count + ' segments</span> <span class="pat-segs">' + pt.segs.join(' · ') + '</span>';
+                    ' <span class="pat-count">' + pt.count + ' segments</span> <span class="pat-segs">' + pt.segs.map(sg => sg + ' ' + grades[pt.grades[sg]]).join(' · ') + '</span>';
                 chipsEl.appendChild(b);
             });
             if (emptyEl) emptyEl.style.display = detectedPatterns.length ? 'none' : 'block';
@@ -10239,7 +10243,14 @@ setupSegmented('patient-progress');
 
         if (steps.length === 0) {
             const patterns = window.__fmDetectedPatterns || [];
-            if (patterns.length > 0) {
+            if (patterns.length > 1) {
+                // Several candidate lines: the banner does not pick one — that is the therapist's decision.
+                diagOutput.textContent = patterns.length + ' patterns detected';
+                diagOutput.style.color = "var(--ink-faint)";
+                diagOutput.style.fontWeight = "500";
+                if (badge) badge.style.display = 'none';
+                if (meta) meta.textContent = "Choose which line to treat from the patterns below";
+            } else if (patterns.length === 1) {
                 const topPat = patterns[0];
                 diagOutput.innerHTML = `<span class="fm-hyp-suggest" style="cursor:pointer; color:var(--ink-faint);" title="Tap to add to sequence">Suggested: <b style="color:var(--ink);">${topPat.text}</b> — <span style="color:var(--clinical); text-decoration:underline;">tap to add</span></span>`;
                 diagOutput.style.color = "var(--ink-faint)";

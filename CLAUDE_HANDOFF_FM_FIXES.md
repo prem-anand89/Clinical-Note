@@ -324,6 +324,7 @@ generated clinical text).
 | 4.5 catenary pills | Owner decision 29 Oct: **do not add catenary pills.** Keep the free-text catenary field. |
 | Card 1 plane pills (AN RE LA ME IR ER) in Painful Movements, plus Card 3 column highlight / per-plane Card 5 | Owner decision 29 Oct: **skip.** Painful Movements stays free text. |
 | Card 1 deficit-type, 24h-rhythm and chronology columns; per-row "+ Grid" button; merged 6-column layout; auto-written hypothesis note | Reviewed 29 Oct and not built: Core already holds these at complaint level, and the rest duplicates or is unsourced. |
+| Antagonist-diagonal labelling (AM–RL, AL–RM), "primary" vs "counter" line, auto-including the antagonist | Owner decision 30 Oct: **do not build.** The app shows the data (patterns with segment grades); the therapist decides which line to treat, and whether to go internal or musculoskeletal. |
 
 ## When done
 

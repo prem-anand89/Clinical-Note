@@ -718,3 +718,6 @@ Owner decision: these open like FM — in their own tab — instead of inside Co
 - "＋ Module" is pinned to the right end of the bar so it stays reachable when many tabs scroll it.
 - **Known gap (unchanged by this):** questionnaire *scale answers* do not appear in the preview/PDF — the generic collector does not read that button grid. Not fixed here.
 - **Tests:** new `tests/module-tabs.mjs`; `module-contract` now expects five tab modules.
+
+## Questionnaires back inline (30 Oct)
+Owner: the **Additional sections** (Vitals, Body Chart, PSFS, Gait & Posture, Palpation, Questionnaires, VOMS, Pain Science, Sports Profile) are part of Core and expand it — they do **not** open as tabs. Questionnaires returns to its card inside Objective (a template that suggests it adds the card there; Remove deletes it); registry placement is `inline` (11 inline · 9 tab · 3 profile). VM, CST and the neuro tools remain tab modules. Neuro: see `CLAUDE_HANDOFF_NEURO_FORM.md` (plan only).

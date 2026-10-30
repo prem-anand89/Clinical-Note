@@ -6991,7 +6991,6 @@
     });
     header.querySelector('.t2-remove').addEventListener('click', function(){
       card.remove();
-      if(key === 'questionnaires' && window.ModuleTabs) window.ModuleTabs.close('questionnaires');
             registerTier2Section(key, def.label, def.buildBody);
       var nav = document.getElementById('nav-t2-' + key);
       if(nav) {
@@ -7005,8 +7004,6 @@
     });
 
     tier2Zone.appendChild(card);
-    // Questionnaires lives in its own tab (added quietly here; the dock / sidebar then switch to it)
-    if(key === 'questionnaires' && window.ModuleTabs) window.ModuleTabs.open('questionnaires', {switch: false, el: card});
   }
 
   // ---- Vitals & Measurements (§9) ----
@@ -11446,14 +11443,11 @@ window.openSportsProfile = function() {
 window.openTier2Module = function(key) {
   var targetId = 'tier2-card-' + key;
   var targetSec = document.getElementById(targetId);
-  var asTab = key === 'questionnaires' && window.ModuleTabs;   // Questionnaires is a tab module
   if(targetSec) {
-    if(asTab) window.ModuleTabs.open(key, {switch: true, el: targetSec});
-    else targetSec.scrollIntoView({behavior: 'smooth', block: 'start'});
+    targetSec.scrollIntoView({behavior: 'smooth', block: 'start'});
   } else {
     if(typeof window.addTier2Section === 'function') {
       window.addTier2Section(key);
-      if(asTab) { window.ModuleTabs.open(key, {switch: true}); return; }
       setTimeout(function(){
         var newSec = document.getElementById(targetId);
         if(newSec) newSec.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -11484,8 +11478,7 @@ window.openTier2Module = function(key) {
   var TAB_CFG = {
     vm:   { label: 'Visceral Manipulation', sec: 'sec-vm',  remove: function(){ window.hideAdvancedModule('vm'); } },
     cst:  { label: 'Craniosacral Therapy',  sec: 'sec-cst', remove: function(){ window.hideAdvancedModule('cst'); } },
-    groupa: { label: 'Neuro', sec: 'sec-group-a', remove: function(){ var b = document.getElementById('group-a-hide'); if (b) b.click(); } },
-    questionnaires: { label: 'Questionnaires', sec: 'tier2-card-questionnaires', remove: function(){ var c = document.getElementById('tier2-card-questionnaires'); var r = c && c.querySelector('.t2-remove'); if (r) r.click(); } }
+    groupa: { label: 'Neuro', sec: 'sec-group-a', remove: function(){ var b = document.getElementById('group-a-hide'); if (b) b.click(); } }
   };
   var tabState = {};   // key -> { btn, panel, label }
   function tabKeys() { return ['core', 'fm'].concat(Object.keys(tabState)); }
@@ -13187,7 +13180,7 @@ document.addEventListener('click', function(e){
     { group: 'Clinical & functional tools', label: 'Functional Status (PSFS)', fn: 'openTier2Module', arg: 'psfs', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Gait & Posture', fn: 'openTier2Module', arg: 'gait', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Palpation', fn: 'openTier2Module', arg: 'palpation', placement: 'inline' },
-    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires', placement: 'tab', ...sectionModule('questionnaires', 'tier2-card-questionnaires', 'Questionnaires', 'Questionnaires', 'sec-objective') },
+    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile', placement: 'inline' },

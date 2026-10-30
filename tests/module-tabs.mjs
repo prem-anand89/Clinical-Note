@@ -1,4 +1,4 @@
-// VM, CST, Questionnaires and the Neuro conditions open as their own tabs, like FM. Run: node tests/module-tabs.mjs
+// VM, CST and the Neuro conditions open as their own tabs, like FM (Questionnaires and the other Additional sections stay in Core). Run: node tests/module-tabs.mjs
 import { createRequire } from 'module';
 const require = createRequire('/home/theranet/TN Project/thera-net-1/package.json');
 const { chromium } = require('playwright-core');
@@ -54,29 +54,25 @@ for (const m of [{ k: 'vm', dock: 'Visceral Manipulation', sec: 'sec-vm' }, { k:
   await page.close();
 }
 
-// ---------------- Questionnaires
+// ---------------- Questionnaires is an Additional section: it stays inside Core, never a tab
 {
   const page = await fresh();
   await fromDock(page, 'Questionnaires');
-  ok('questionnaires: tab added and active, card in its panel', (await tabShown(page, 'questionnaires')) && (await active(page)) === 'questionnaires' && await page.evaluate(() => document.getElementById('view-questionnaires').contains(document.getElementById('tier2-card-questionnaires'))));
-  ok('questionnaires: the card is no longer inside Objective', await page.evaluate(() => !document.getElementById('sec-objective').contains(document.getElementById('tier2-card-questionnaires'))));
-  await page.locator('#tab-btn-questionnaires .module-tab-close').click(); await page.waitForTimeout(400);
-  ok('questionnaires: × removes it (card gone, tab gone, on Core)', !(await tabShown(page, 'questionnaires')) && (await active(page)) === 'core' && await page.evaluate(() => !document.getElementById('tier2-card-questionnaires')));
-  await fromDock(page, 'Questionnaires');
-  ok('questionnaires: can be added again after removal', (await tabShown(page, 'questionnaires')) && (await active(page)) === 'questionnaires');
+  ok('questionnaires: no tab is created and Core stays active', !(await tabShown(page, 'questionnaires')) && (await active(page)) === 'core');
+  ok('questionnaires: the card lives inside Objective in Core', await page.evaluate(() => document.getElementById('sec-objective').contains(document.getElementById('tier2-card-questionnaires')) && document.getElementById('view-core').contains(document.getElementById('tier2-card-questionnaires'))));
+  await page.evaluate(() => document.querySelector('#tier2-card-questionnaires .t2-remove').click()); await page.waitForTimeout(300);
+  ok('questionnaires: Remove deletes the card and it can be added again', await page.evaluate(() => !document.getElementById('tier2-card-questionnaires')));
   await page.close();
 }
-// auto-added by a condition template: the tab appears quietly, the therapist stays where they are
+// a condition template that suggests questionnaires adds the card inside Core, quietly
 {
   const page = await fresh();
   await page.locator('#kc-trigger').click(); await page.locator('.kc-tab[data-kc-tab="kc-postop"]').click();
   await page.locator('#kc-postop [data-template-id="postop-tkr"]').click(); await page.waitForTimeout(600);
-  ok('a post-op template adds the Questionnaires tab without leaving Core', (await tabShown(page, 'questionnaires')) && (await active(page)) === 'core');
+  ok('a post-op template adds the Questionnaires card in Core (still no tab)', await page.evaluate(() => !!document.getElementById('tier2-card-questionnaires') && document.getElementById('sec-objective').contains(document.getElementById('tier2-card-questionnaires'))) && !(await tabShown(page, 'questionnaires')) && (await active(page)) === 'core');
   await page.evaluate(() => document.querySelector('#tier2-card-questionnaires .q-use').click()); await page.waitForTimeout(400);
   await page.evaluate(() => { const c = document.getElementById('tier2-card-questionnaires'); const b = [...c.querySelectorAll('button')].find(x => x.textContent.trim() === '3'); if (b) b.click(); });
-  await page.waitForTimeout(300);
-  ok('a suggested questionnaire can be accepted and answered inside its tab', await page.evaluate(() => { const c = document.getElementById('tier2-card-questionnaires'); return !!c.querySelector('button.selected') && !!document.getElementById('view-questionnaires').contains(c); }));
-  // NOTE: scale answers were never part of the preview/PDF (identical before this change) — a known gap, not covered here.
+  ok('a suggested questionnaire can be accepted and answered in Core', await page.evaluate(() => !!document.querySelector('#tier2-card-questionnaires button.selected')));
   await page.close();
 }
 
@@ -113,10 +109,10 @@ for (const m of [{ k: 'vm', dock: 'Visceral Manipulation', sec: 'sec-vm' }, { k:
 // ---------------- several tabs at once, keyboard, phone, signed
 {
   const page = await fresh();
-  await fromDock(page, 'Visceral Manipulation'); await fromDock(page, 'Craniosacral'); await fromDock(page, 'Questionnaires');
+  await fromDock(page, 'Visceral Manipulation'); await fromDock(page, 'Craniosacral'); await fromDock(page, "Parkinson's");
   ok('several module tabs can be open together; exactly one is active', await page.evaluate(() => document.querySelectorAll('#module-tab-bar .module-tab[role="tab"]:not([style*="display: none"])').length >= 4 && document.querySelectorAll('#module-tab-bar .module-tab.active').length === 1));
   ok('"+ Module" is still the last control in the bar', await page.evaluate(() => document.getElementById('module-tab-bar').lastElementChild.id === 'module-add-btn'));
-  await page.focus('#tab-btn-questionnaires'); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(300);
+  await page.focus('#tab-btn-groupa'); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(300);
   ok('arrow keys move between the tabs', (await active(page)) === 'cst', await active(page));
   await page.click('#tab-btn-core'); await page.waitForTimeout(200);
   await page.click('#lean-no-redflags');

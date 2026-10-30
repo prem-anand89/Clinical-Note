@@ -168,7 +168,8 @@ patient-profile page; the prototype shows a launch card only).
 | `inline` — Subjective | Pain Science, Sports Profile (with Work & sport) |
 | `inline` — Objective | Vitals & Measurements, Body Chart, Gait & Posture, Palpation, VOMS, NKT, DNS |
 | `inline` — Plan | Functional Status (PSFS) |
-| `tab` | Fascial Manipulation (done), Visceral Manipulation, Craniosacral Therapy, Questionnaires, Stroke/TBI, Paraplegia/SCI, Parkinson's, MS, Peripheral Neuropathy, Concussion |
+| `inline` — Objective (Additional sections) | Questionnaires — an Additional section; **never a tab** (owner, 30 Oct) |
+| `tab` | Fascial Manipulation, Visceral Manipulation, Craniosacral Therapy (all built as tabs), and the six neuro conditions as **one** Neuro Assessment module — see `CLAUDE_HANDOFF_NEURO_FORM.md` |
 | `profile` | Facial Palsy, Vestibular, Cardiothoracic Assessment |
 
 Step 5 only *records* `placement` and moves FM onto the contract. Moving VM, CST, Questionnaires and the

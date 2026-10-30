@@ -631,3 +631,14 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - **Not built (decision):** a "mark all planned points as treated" action — it can record treatment that did not happen, and ticking each point as you go is 3–6 taps.
 - **Signed notes:** the ✓ and the order controls are blocked by the existing lock.
 - **Tests:** new `tests/fm-seq-treat.mjs` (30 checks: graded / ungraded / out-of-grid, two-way sync, ordering, signed note, 390 px fit). All 23 suites pass.
+
+## Core layout compaction — Step 1 (30 Oct)
+Blank note: **16 → 13 visible cards**. No field removed; every id kept (see `CLAUDE_HANDOFF_CORE_LAYOUT.md`).
+- **Section 1:** Side | Onset and Since | Course now share a row each (stack on phones; Onset keeps its own sideways scroll). **Functional priority** (most limited activity, return-to, PSFS) is the last block of the Chief Complaint card.
+- **Known condition moved back to Section 1** (owner decision, reverses the 21 Oct move to Impression): collapsed row "Known diagnosis / referral — optional" after the onset rows, still one field. Impression shows a read-only line under the working diagnosis ("Known condition: … · change in Section 1") that scrolls back to the row.
+- **Safety:** the gate and the three precautions (blood thinner, implants, pregnancy) are one card.
+- **Risk line:** when empty it is faint text ("No risks recorded"), no box; with real risks it keeps the amber card.
+- **Plan:** Phase (with the recommended-phase note, drift banner and drift reason) is the first row of the Plan card.
+- **Impression:** "Deep reasoning & ICF" is now three chips — Differential & evidence · Impairments & ICF · Contributing factors.
+- Pain card needed no change (it already hides when Pain is not selected).
+- **Tests:** new `tests/core-layout-step1.mjs`; existing suites unchanged and passing.

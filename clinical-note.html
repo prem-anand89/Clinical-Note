@@ -327,6 +327,7 @@
   }
   .row-2{ display:grid; grid-template-columns:1fr; gap:14px; }
   .row-3{ display:grid; grid-template-columns:1fr; gap:14px; }
+  .cc-pair > .field{ min-width:0; }
 
   /* ---- add-menu: inline dashed "+Label" chips, same shape as the "+ Past
      Surgery"/"+ Past Injury" chips in History — the app's own established
@@ -1290,6 +1291,7 @@
   #screening-toggle{ display:none !important; }   /* the gate card replaces the collapsed header */
   .lean-quick{ display:flex; flex-wrap:wrap; gap:12px 28px; }
   .lean-quick .safety-item{ flex:1 1 220px; margin:0; padding:0; border-bottom:none; }
+  .lean-gate-precautions{ margin-top:14px; padding-top:14px; border-top:1px solid var(--line-soft); }
   .lean-suggest{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
   .lean-sug{ appearance:none; border:1px dashed #cfcfcc; background:#fff; color:var(--ink-soft); font:inherit; font-size:12.5px; font-weight:600; padding:6px 12px; border-radius:var(--radius-pill); cursor:pointer; }
   .lean-sug.on{ background:var(--clinical); border-color:var(--clinical); border-style:solid; color:#fff; }
@@ -1298,7 +1300,7 @@
   .lean-hide{ display:none !important; }
   .segmented button.lean-ghost{ box-shadow:inset 0 0 0 2px var(--clinical-ring); }
   #risk-summary-card{ padding:10px 14px; margin-bottom:10px; background:var(--amber-dim); border-color:#E9D3AC; font-size:13px; line-height:1.5; }
-  #risk-summary-card.risk-none{ background:#fff; border-color:var(--line); }
+  #risk-summary-card.risk-none{ background:none; border:none; padding:0 2px; margin-bottom:6px; font-size:12px; color:var(--ink-faint); }
   #risk-summary-card .risk-lbl{ color:#8C5A1E; margin-right:4px; }
   #risk-summary-card .risk-alert{ color:var(--bad, #B3261E); font-weight:700; }
   #risk-summary-card .risk-warn{ color:#6b4515; font-weight:500; }
@@ -1453,6 +1455,7 @@
           <input type="hidden" id="region" value="">
         </div>
 
+        <div class="row-2 cc-pair">
         <div class="field">
           <label>Side</label>
           <div class="segmented small" id="laterality">
@@ -1472,6 +1475,7 @@
             <button type="button" data-val="Post-Surgical">Post-Surgical</button>
             <button type="button" data-val="Flare-up">Flare-up</button>
           </div>
+        </div>
         </div>
 
         <!-- Dynamic Reveals -->
@@ -1509,6 +1513,7 @@
           <input type="hidden" id="surgery-type" value="">
         </div>
 
+        <div class="row-2 cc-pair">
         <div class="field">
           <label>Since</label>
           <div class="chip-row" id="onset-timeline-chips">
@@ -1536,6 +1541,60 @@
             </div>
           </div>
         </div>
+        </div>
+        <div class="cc-known-condition" style="margin-top:14px;">
+        <!-- Known condition / template — lives in Section 1 (owner decision 2026-10-30): the template sets region, suggestions and post-op defaults, so it is chosen at intake. Impression shows it read-only (#ci-known-condition). -->
+        <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
+          <span>Known diagnosis / referral <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
+          <button type="button" class="add-link subsection-toggle" data-target="known-condition-field">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Select a known condition
+          </button>
+          <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
+        </div>
+        <div class="field" id="known-condition-field" style="display:none;">
+          <label style="margin-bottom:6px;">Known Condition <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
+            <div class="chip-row kc-chip-row" id="kc-neuro">
+              <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
+              <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
+              <button type="button" class="chip" data-chip="Parkinson's">Parkinson's</button>
+              <button type="button" class="chip" data-chip="MS">MS</button>
+              <button type="button" class="chip" data-chip="Peripheral Neuropathy">Peripheral Neuropathy</button>
+              <button type="button" class="chip" data-chip="Concussion">Concussion</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Orthopedic / MSK (non-surgical) <span class="hint" style="text-transform:none;letter-spacing:0;">— choosing one applies its template</span></div>
+            <div class="chip-row kc-chip-row" id="kc-ortho">
+              <button type="button" class="chip" data-template-id="nonop-clbp" data-chip="Chronic Low Back Pain">Chronic Low Back Pain</button>
+              <button type="button" class="chip" data-template-id="nonop-sis" data-chip="Subacromial Impingement">Subacromial Impingement / RC Tendinopathy</button>
+              <button type="button" class="chip" data-template-id="nonop-ankle" data-chip="Ankle Sprain">Ankle Sprain</button>
+              <button type="button" class="chip" data-template-id="nonop-cervrad" data-chip="Cervical Radiculopathy">Cervical Radiculopathy</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Post-surgical <span class="hint" style="text-transform:none;letter-spacing:0;">— manual override; normally suggested from Onset &gt; Post-Surgical</span></div>
+            <div class="chip-row kc-chip-row" id="kc-postop">
+              <button type="button" class="chip" data-template-id="postop-tkr">Post-op TKR</button>
+              <button type="button" class="chip" data-template-id="postop-acl">Post-op ACL Reconstruction</button>
+              <button type="button" class="chip" data-template-id="postop-thr">Post-op THR</button>
+              <button type="button" class="chip" data-template-id="postop-rc">Post-op Rotator Cuff / Shoulder Stabilization</button>
+              <button type="button" class="chip" data-template-id="postop-lumbar">Post-op Lumbar Discectomy</button>
+              <button type="button" class="chip" data-template-id="postop-achilles">Post-op Achilles Repair</button>
+            </div>
+          </div>
+          <div style="margin-bottom:8px;">
+            <div class="field-note" style="margin:0 0 6px;">Other <span class="hint" style="text-transform:none;letter-spacing:0;">— Patient Profile modules, not a note section</span></div>
+            <div class="chip-row kc-chip-row" id="kc-other">
+              <button type="button" class="chip" data-chip="Cardiothoracic">Cardiothoracic</button>
+              <button type="button" class="chip" data-chip="Facial Palsy">Facial Palsy</button>
+              <button type="button" class="chip" data-chip="Vestibular">Vestibular</button>
+            </div>
+          </div>
+        </div>
+        </div>
         <div class="field" style="margin-top:14px; margin-bottom:0;">
           <label>Primary Symptoms</label>
           <div class="chip-row" id="primary-complaint">
@@ -1547,6 +1606,19 @@
             <button type="button" class="chip" data-chip="Swelling">Swelling</button>
           </div>
         </div>
+        <div class="field lean-fp-block" style="margin-top:14px; margin-bottom:0;">
+          <label>Most limited activity today</label>
+          <input type="text" class="text-input" id="fp-limited" placeholder="e.g. Overhead lifting">
+        </div>
+        <div class="field lean-tucked" id="lean-fp-return" style="margin-top:10px; margin-bottom:0;">
+          <label>What does the patient most need or want to return to?</label>
+          <input type="text" class="text-input" id="fp-return" placeholder="e.g. Golfing 18 holes without pain">
+        </div>
+        <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; cursor:pointer; margin-top:10px;">
+          <input type="checkbox" id="create-psfs" style="width:16px; height:16px;">
+          Create PSFS (Patient-Specific Functional Scale) item and a goal from this activity
+        </label>
+        <div id="create-psfs-note" class="field-note" style="display:none; margin-top:6px; color:#8C5A1E;"></div>
       </div>
 
       <!-- Pain Profile Card — everything specific to characterizing pain,
@@ -1641,27 +1713,6 @@
           </div>
         </div>
         </div>
-      </div>
-
-      <!-- Functional priority — closes the core complaint; the "return to" box is tucked behind a + chip -->
-      <!-- Functional Priority Card — goal-setting wrap-up, now sitting right
-           after Occupation & Activity (what they do all day, then what they
-           want back) as the closing note for Chief Complaint. -->
-      <div class="card" style="margin-bottom:14px; background:var(--clinical-dim); border-color:var(--clinical-ring);">
-        <div class="card-heading" style="color:var(--clinical);">Functional priority</div>
-        <div class="field" style="margin-top:8px; margin-bottom:8px;">
-          <label>Most limited activity today</label>
-          <input type="text" class="text-input" id="fp-limited" placeholder="e.g. Overhead lifting">
-        </div>
-        <div class="field lean-tucked" id="lean-fp-return" style="margin-bottom:8px;">
-          <label>What does the patient most need or want to return to?</label>
-          <input type="text" class="text-input" id="fp-return" placeholder="e.g. Golfing 18 holes without pain">
-        </div>
-        <label style="display:flex; align-items:center; gap:8px; font-weight:500; font-size:13px; cursor:pointer;">
-          <input type="checkbox" id="create-psfs" style="width:16px; height:16px;">
-          Create PSFS (Patient-Specific Functional Scale) item and a goal from this activity
-        </label>
-        <div id="create-psfs-note" class="field-note" style="display:none; margin-top:6px; color:#8C5A1E;"></div>
       </div>
 
       <!-- Psychosocial (yellow flags) — moved from Safety: it is asked in the interview, and it prognosticates rather than endangers -->
@@ -2144,6 +2195,48 @@
           <button type="button" class="lean-gate-btn warn" id="lean-flag-one">⚠ Flag one…</button>
         </div>
         <div id="lean-redflag-callout" class="field-note" style="display:none; margin:10px 0 0; color:#8C5A1E;"></div>
+        <!-- Medical precautions — merged into the gate card (was the separate #safety-flags-card) -->
+        <div id="safety-flags-card" class="lean-gate-precautions">
+        <div class="lean-quick">
+
+        <div class="safety-item">
+          <div class="yn-row">
+            <span class="yn-label">On blood thinner</span>
+            <div class="segmented small" id="blood-thinner-yn">
+              <button type="button" data-val="yes">Yes</button>
+              <button type="button" data-val="no">No</button>
+            </div>
+          </div>
+          <div class="reveal" id="reveal-blood-thinner" style="display:none; margin-top:12px;">
+            <input type="text" class="text-input" placeholder="Which medication?">
+          </div>
+        </div>
+
+        <div class="safety-item">
+          <div class="yn-row">
+            <span class="yn-label">Implants / pacemaker</span>
+            <div class="segmented small" id="implants-yn">
+              <button type="button" data-val="yes">Yes</button>
+              <button type="button" data-val="no">No</button>
+            </div>
+          </div>
+          <div class="reveal" id="reveal-implants" style="display:none; margin-top:12px;">
+            <input type="text" class="text-input" placeholder="Type / details">
+          </div>
+        </div>
+
+        <div class="safety-item">
+          <div class="yn-row">
+            <span class="yn-label">Pregnancy status</span>
+            <div class="segmented small" id="pregnancy-status">
+              <button type="button" data-val="No">No</button>
+              <button type="button" data-val="Yes">Yes</button>
+              <button type="button" data-val="N/A">N/A</button>
+            </div>
+          </div>
+        </div>
+        </div>
+        </div>
       </div>
 
       <!-- ==========================================================
@@ -2215,48 +2308,6 @@
         </div>
       </div>
 
-      <!-- Safety flags — relocated from History, fully functional -->
-      <div class="card" id="safety-flags-card">
-        <div class="lean-quick">
-
-        <div class="safety-item">
-          <div class="yn-row">
-            <span class="yn-label">On blood thinner</span>
-            <div class="segmented small" id="blood-thinner-yn">
-              <button type="button" data-val="yes">Yes</button>
-              <button type="button" data-val="no">No</button>
-            </div>
-          </div>
-          <div class="reveal" id="reveal-blood-thinner" style="display:none; margin-top:12px;">
-            <input type="text" class="text-input" placeholder="Which medication?">
-          </div>
-        </div>
-
-        <div class="safety-item">
-          <div class="yn-row">
-            <span class="yn-label">Implants / pacemaker</span>
-            <div class="segmented small" id="implants-yn">
-              <button type="button" data-val="yes">Yes</button>
-              <button type="button" data-val="no">No</button>
-            </div>
-          </div>
-          <div class="reveal" id="reveal-implants" style="display:none; margin-top:12px;">
-            <input type="text" class="text-input" placeholder="Type / details">
-          </div>
-        </div>
-
-        <div class="safety-item">
-          <div class="yn-row">
-            <span class="yn-label">Pregnancy status</span>
-            <div class="segmented small" id="pregnancy-status">
-              <button type="button" data-val="No">No</button>
-              <button type="button" data-val="Yes">Yes</button>
-              <button type="button" data-val="N/A">N/A</button>
-            </div>
-          </div>
-        </div>
-        </div>
-      </div>
     </section>
 
     <!-- =========================================================
@@ -2948,58 +2999,8 @@
           <label for="working-diagnosis">Working diagnosis / classification</label>
           <input type="text" class="text-input" id="working-diagnosis" placeholder="e.g. Subacromial impingement, Stage II">
         </div>
+        <div class="field-note" id="ci-known-condition" style="display:none; margin:-6px 0 14px;"></div>
 
-        <!-- Known condition / template — moved here from Chief Complaint: it is a diagnosis choice, so it sits beside the working diagnosis -->
-        <div class="card-heading" id="known-condition-toggle-row" style="display:flex; align-items:center; justify-content:space-between;">
-          <span>Known Condition <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">optional</span></span>
-          <button type="button" class="add-link subsection-toggle" data-target="known-condition-field">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Select a known condition
-          </button>
-          <button type="button" class="add-link subsection-remove" data-target="known-condition-field" style="display:none; color:var(--ink-faint);">− Collapse</button>
-        </div>
-        <div class="field" id="known-condition-field" style="display:none;">
-          <label style="margin-bottom:6px;">Known Condition <span class="hint" title="Confirms/overrides the region-based guess; drives Neuro Assessment, condition templates, and Patient Profile module suggestions">optional, refines suggestions</span></label>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Neuro / systemic</div>
-            <div class="chip-row kc-chip-row" id="kc-neuro">
-              <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
-              <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
-              <button type="button" class="chip" data-chip="Parkinson's">Parkinson's</button>
-              <button type="button" class="chip" data-chip="MS">MS</button>
-              <button type="button" class="chip" data-chip="Peripheral Neuropathy">Peripheral Neuropathy</button>
-              <button type="button" class="chip" data-chip="Concussion">Concussion</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Orthopedic / MSK (non-surgical) <span class="hint" style="text-transform:none;letter-spacing:0;">— choosing one applies its template</span></div>
-            <div class="chip-row kc-chip-row" id="kc-ortho">
-              <button type="button" class="chip" data-template-id="nonop-clbp" data-chip="Chronic Low Back Pain">Chronic Low Back Pain</button>
-              <button type="button" class="chip" data-template-id="nonop-sis" data-chip="Subacromial Impingement">Subacromial Impingement / RC Tendinopathy</button>
-              <button type="button" class="chip" data-template-id="nonop-ankle" data-chip="Ankle Sprain">Ankle Sprain</button>
-              <button type="button" class="chip" data-template-id="nonop-cervrad" data-chip="Cervical Radiculopathy">Cervical Radiculopathy</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Post-surgical <span class="hint" style="text-transform:none;letter-spacing:0;">— manual override; normally suggested from Onset &gt; Post-Surgical</span></div>
-            <div class="chip-row kc-chip-row" id="kc-postop">
-              <button type="button" class="chip" data-template-id="postop-tkr">Post-op TKR</button>
-              <button type="button" class="chip" data-template-id="postop-acl">Post-op ACL Reconstruction</button>
-              <button type="button" class="chip" data-template-id="postop-thr">Post-op THR</button>
-              <button type="button" class="chip" data-template-id="postop-rc">Post-op Rotator Cuff / Shoulder Stabilization</button>
-              <button type="button" class="chip" data-template-id="postop-lumbar">Post-op Lumbar Discectomy</button>
-              <button type="button" class="chip" data-template-id="postop-achilles">Post-op Achilles Repair</button>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <div class="field-note" style="margin:0 0 6px;">Other <span class="hint" style="text-transform:none;letter-spacing:0;">— Patient Profile modules, not a note section</span></div>
-            <div class="chip-row kc-chip-row" id="kc-other">
-              <button type="button" class="chip" data-chip="Cardiothoracic">Cardiothoracic</button>
-              <button type="button" class="chip" data-chip="Facial Palsy">Facial Palsy</button>
-              <button type="button" class="chip" data-chip="Vestibular">Vestibular</button>
-            </div>
-          </div>
-        </div>
 
 
 
@@ -3317,32 +3318,6 @@
         <div class="field-note" id="rehab-timeline-caveat" style="margin-top:12px;">Illustrative placeholder — real week boundaries/content come from Protocol Library (§13.3), only a starter set of which is seeded; clinic-editable defaults, not fixed rules.</div>
       </div>
 
-      <!-- Phase — reused field, not a new one. Defaults to calendar-computed recommended_phase for post-op, therapist-editable. -->
-      <div class="card">
-        <div class="field">
-          <label>Phase</label>
-          <div class="segmented" id="plan-phase">
-            <button type="button" data-val="Acute">Acute</button>
-            <button type="button" data-val="Subacute">Subacute</button>
-            <button type="button" data-val="Chronic">Chronic</button>
-            <button type="button" data-val="Maintenance">Maintenance</button>
-            <button type="button" data-val="RTS-prep">RTS-prep</button>
-            <button type="button" data-val="Discharge">Discharge</button>
-          </div>
-          <div class="field-note" id="phase-recommended-note" style="display:none; margin-top:8px;"></div>
-          <div class="field-note" id="lean-phase-note" style="display:none; margin-top:8px;"></div>
-        </div>
-
-        <!-- Drift banner — compares today's Phase selection against today's freshly-computed recommended_phase -->
-        <div id="drift-banner" style="display:none; margin-top:4px; margin-bottom:4px;"></div>
-
-        <!-- Drift reason — optional, appears only when actual_phase ≠ recommended_phase -->
-        <div class="field" id="drift-reason-field" style="display:none; margin-top:12px; margin-bottom:0;">
-          <label for="drift-reason">Reason for phase deviation <span class="hint">optional</span></label>
-          <input type="text" id="drift-reason" class="text-input" placeholder="e.g. missed sessions, complications">
-        </div>
-      </div>
-
       <!-- Goals -->
       <div class="card">
         <div class="card-heading">Goal</div>
@@ -3381,7 +3356,30 @@
       <!-- Plan Details -->
       <div class="card">
         <div class="card-heading">Plan</div>
-        <div class="row-2">
+        <!-- Phase — reused field, not a new one. Defaults to calendar-computed recommended_phase for post-op, therapist-editable. -->
+        <div class="field">
+          <label>Phase</label>
+          <div class="segmented" id="plan-phase">
+            <button type="button" data-val="Acute">Acute</button>
+            <button type="button" data-val="Subacute">Subacute</button>
+            <button type="button" data-val="Chronic">Chronic</button>
+            <button type="button" data-val="Maintenance">Maintenance</button>
+            <button type="button" data-val="RTS-prep">RTS-prep</button>
+            <button type="button" data-val="Discharge">Discharge</button>
+          </div>
+          <div class="field-note" id="phase-recommended-note" style="display:none; margin-top:8px;"></div>
+          <div class="field-note" id="lean-phase-note" style="display:none; margin-top:8px;"></div>
+        </div>
+
+        <!-- Drift banner — compares today's Phase selection against today's freshly-computed recommended_phase -->
+        <div id="drift-banner" style="display:none; margin-top:4px; margin-bottom:4px;"></div>
+
+        <!-- Drift reason — optional, appears only when actual_phase ≠ recommended_phase -->
+        <div class="field" id="drift-reason-field" style="display:none; margin-top:12px; margin-bottom:0;">
+          <label for="drift-reason">Reason for phase deviation <span class="hint">optional</span></label>
+          <input type="text" id="drift-reason" class="text-input" placeholder="e.g. missed sessions, complications">
+        </div>
+        <div class="row-2" style="margin-top:14px;">
           <div class="field">
             <label>Visit Frequency</label>
             <div class="chip-row" id="plan-visit-frequency">
@@ -4360,7 +4358,26 @@
   }
 
   // ---- Clinical Impression: read-only cross-references — connects, never re-asks ----
+  // Known condition is chosen in Section 1; Impression only echoes it (read-only, never a second field).
+  function updateKnownConditionEcho(){
+    var echo = document.getElementById('ci-known-condition');
+    if(!echo) return;
+    var tpl = activeSuggestions['ortho-template'];
+    var parts = tpl ? [tpl.label.replace('Template: ', '')] : Array.prototype.map.call(
+      document.querySelectorAll('#known-condition-field .kc-chip-row .chip.selected'), function(c){ return c.textContent.replace(/\s+/g, ' ').trim(); });
+    if(!parts.length){ echo.style.display = 'none'; echo.textContent = ''; return; }
+    echo.style.display = 'block';
+    echo.innerHTML = 'Known condition: <strong></strong> · <a href="#known-condition-toggle-row" class="ci-known-jump">change in Section 1</a>';
+    echo.querySelector('strong').textContent = parts.join(', ');
+    echo.querySelector('a').addEventListener('click', function(ev){
+      ev.preventDefault();
+      var tr = document.getElementById('known-condition-toggle-row'), f = document.getElementById('known-condition-field');
+      if(f && f.style.display === 'none'){ var t = tr && tr.querySelector('.subsection-toggle'); if(t) t.click(); }
+      if(tr) tr.scrollIntoView({behavior: 'smooth', block: 'center'});
+    });
+  }
   function updateClinicalImpressionCrossRefs(){
+    updateKnownConditionEcho();
     var el = document.getElementById('ci-cross-refs');
     if(!el) return;
     var lines = [];
@@ -4386,6 +4403,10 @@
     el.innerHTML = '<div style="background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:10px 14px;">' + lines.join('') + '</div>';
   }
   window.updateClinicalImpressionCrossRefs = updateClinicalImpressionCrossRefs;
+  (function(){
+    var kc = document.getElementById('known-condition-field');
+    if(kc) kc.addEventListener('click', function(){ setTimeout(updateKnownConditionEcho, 0); });
+  })();
   function setSuggestion(key, label, sub, onAccept){ activeSuggestions[key] = {label: label, sub: sub, onAccept: onAccept}; renderSuggestions(); }
   function clearSuggestion(key){ delete activeSuggestions[key]; renderSuggestions(); }
 
@@ -12901,7 +12922,9 @@ document.addEventListener('click', function(e){
     }
   });
   L.more('sec-clinical-impression', { id: 'imp', anchor: '#lean-i-more-anchor', where: 'afterend', groups: [
-    { id: 'i-deep', label: 'Deep reasoning & ICF', targets: ['#lean-i-diff', '#lean-i-evidence', '#lean-i-impair', '#lean-i-activity', '#lean-i-cf', '#lean-i-echo'] }
+    { id: 'i-diff', label: 'Differential & evidence', targets: ['#lean-i-diff', '#lean-i-evidence'] },
+    { id: 'i-icf', label: 'Impairments & ICF', targets: ['#lean-i-impair', '#lean-i-activity'] },
+    { id: 'i-cf', label: 'Contributing factors', targets: ['#lean-i-cf', '#lean-i-echo'] }
   ]});
   // Activity limitations / participation start from Chief Complaint's answers (editable; never re-typed).
   // Auto-filled values are flagged so they don't count as "entered data" and force the block open.

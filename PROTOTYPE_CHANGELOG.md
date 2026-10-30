@@ -677,3 +677,14 @@ No visible change; fewer ways for a "+" chip to leave a card half-open.
 - It **opens by itself** when Passive° or End-feel holds a value — typed, picked, or written by code (checked on every refresh) — and then cannot be hidden, so an entered value is never out of sight.
 - The fields stay in the DOM (hidden by a stylesheet rule), so saved data, the row summary, ⭐ pins and the preview/PDF read them exactly as before; Full / WNL still clears and disables both degree boxes.
 - **Tests:** new `tests/rom-passive.mjs` (hidden by default, per-side open/close, cannot hide data, end-feel alone, code-written value, WNL, pin snapshot, preview prints while closed, 390 px). `step3`, `pins`, `preview` unchanged and passing.
+
+## Core layout — Step 4: Key Findings strip in Impression (30 Oct)
+- A **read-only strip of pills** at the top of Impression (above the existing cross-references) summarises what was entered elsewhere, so the therapist reasons from the findings without scrolling back:
+  - **Subjective:** side · region · onset · NRS now — e.g. "R Knee · Sudden · NRS 7/10".
+  - **Range of motion:** a movement appears when a side is **painful (⚡)**, or when both sides have an Active° and they **differ by more than 10°** (owner decision; exactly 10° does not count; a Full / WNL side is never read as a number). The pill lists only sides with something to say — e.g. "Flexion R 95° · L 140° (Δ45°)".
+  - **Strength:** any grade **below 5** (only the weak side is named).
+  - **Special tests:** marked **Positive** (Equivocal does not count).
+  - Up to 12 pills, then "+N more". FM keeps its existing line in the cross-references until Step 5 moves it onto the module contract.
+- **Display only:** no inputs. Each pill **jumps to the row it came from** (switching back to Core and expanding a collapsed section if needed) with a brief highlight.
+- **Signed notes:** pills (and the FM jump chips, the Impression "change in Section 1" link) are reading aids and still work under the lock; nothing is editable through them. *Correction:* the lock was blocking the FM jump chips on a signed note — fixed and now tested.
+- **Tests:** new `tests/key-findings.mjs`; `core-layout-step6a7a` gains a signed-note jump-chip check.

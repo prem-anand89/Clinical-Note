@@ -172,6 +172,18 @@
   /* ================= MAIN COLUMN ================= */
   .main{ flex:1 1 auto; min-width:0; padding:28px 20px 120px; }
   .note-head{ margin-bottom:22px; }
+  /* Key Findings strip (Impression): read-only pills; each one jumps to where the finding was entered */
+  .kf-strip{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 12px; align-items:center; }
+  .kf-lbl{ font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-right:2px; }
+  .kf-pill{ appearance:none; font:inherit; font-size:12.5px; font-weight:600; padding:5px 11px; border-radius:var(--radius-pill); border:1px solid var(--line); background:#fff; color:var(--ink); cursor:pointer; text-align:left; }
+  .kf-pill:hover{ border-color:var(--clinical); }
+  .kf-pill.kf-subj{ background:var(--surface); }
+  .kf-pill.kf-rom{ background:var(--amber-dim); border-color:#E9D3AC; color:#6b4515; }
+  .kf-pill.kf-mmt{ background:var(--rust-dim); border-color:#F3B7B4; color:#8a1d17; }
+  .kf-pill.kf-test{ background:#ece6f6; border-color:#d8cdee; color:#4b3a78; }
+  .kf-more{ font-size:12px; color:var(--ink-faint); }
+  .kf-flash{ animation:kfFlash 1.4s ease; }
+  @keyframes kfFlash{ 0%,60%{ box-shadow:0 0 0 3px var(--clinical-dim); background:var(--clinical-dim); } 100%{ box-shadow:none; } }
   .fm-jump{ position:sticky; top:105px; z-index:20; display:flex; gap:6px; overflow-x:auto; padding:8px 0; margin:0 0 12px; background:var(--surface); border-bottom:1px solid var(--line-soft); scrollbar-width:none; }
   .fm-jump::-webkit-scrollbar{ display:none; }
   #view-fm .card{ scroll-margin-top:160px; }
@@ -12016,7 +12028,7 @@ document.addEventListener('click', function(e){
   var t = e.target;
   if(!t.closest || !t.closest('main')) return;
   if(t.closest('.module-tab-close')) { e.preventDefault(); e.stopPropagation(); return; }
-  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open, #fm-internal-dysf-toggle')) return;
+  if(t.closest('.preview-open, summary, #pv-side-toggle, #pv-layout-toggle, #pv-visit-toggle, .module-tab, .fm-capsule-open, #fm-internal-dysf-toggle, .fm-jump-chip, .kf-pill, .ci-known-jump')) return;
   if(t.closest('.lean-head') && !t.closest('button')) return;
   e.preventDefault(); e.stopPropagation();
 }, true);
@@ -13111,6 +13123,86 @@ document.addEventListener('click', function(e){
     { id: 'i-icf', label: 'Impairments & ICF', targets: ['#lean-i-impair', '#lean-i-activity'] },
     { id: 'i-cf', label: 'Contributing factors', targets: ['#lean-i-cf', '#lean-i-echo'] }
   ]});
+  /* ---- Key Findings strip (top of Impression) ----
+     Read-only: it only reads what was entered elsewhere and never becomes a second place to edit. Each pill jumps to its source.
+     ROM counts when a side is painful, or when both sides have an Active° and they differ by more than 10°.
+     MMT counts when a grade is below 5. Special tests count when marked Positive. */
+  (function(){
+    const host = $('#ci-cross-refs');
+    if(!host) return;
+    const strip = document.createElement('div');
+    strip.id = 'ci-key-findings'; strip.className = 'kf-strip'; strip.style.display = 'none';
+    host.insertAdjacentElement('beforebegin', strip);
+    const MAX = 12, ROM_GAP = 10;
+    const nameOf = row => { const l = $('.obj-label', row); return l ? (l.value || l.textContent || '').trim() : ''; };
+    const tagOf = sb => { const t = $('.side-tag', sb); return t ? t.textContent.trim() : ''; };
+    const SIDE = { Right: 'R', Left: 'L', Bilateral: 'Bilateral' };
+    function collect(){
+      const out = [];
+      // subjective
+      const side = SIDE[selected('#laterality')[0]] || '';
+      const subj = parts([[side, selected('#region-chips')[0] || ''].filter(Boolean).join(' '), selected('#onset-mechanism')[0], selected('#nrs-current')[0] ? 'NRS ' + selected('#nrs-current')[0] + '/10' : '']);
+      if(subj) out.push({ kind: 'subj', text: subj, el: $('#sec-chief-complaint') });
+      // range of motion
+      $$('#rom-rows .obj-row, .rom-rows-sub .obj-row').forEach(row => {
+        const name = nameOf(row); if(!name) return;
+        const blocks = $$('.side-block', row);
+        const info = blocks.map(b => {
+          const deg = $('.deg-input', b), v = deg && deg.value !== '' && !$('.wnl-toggle.active', b) ? Number(deg.value) : null;
+          return { tag: tagOf(b), v, pain: !!$('.pain-toggle.active', b), wnl: !!$('.wnl-toggle.active', b) };
+        });
+        const nums = info.filter(i => i.v !== null);
+        const gap = nums.length === 2 ? Math.abs(nums[0].v - nums[1].v) : 0;
+        const painful = info.some(i => i.pain);
+        if(!painful && !(gap > ROM_GAP)) return;
+        const body = info.filter(i => i.v !== null || i.wnl || i.pain).map(i => [i.tag, i.v !== null ? i.v + '°' : (i.wnl ? 'WNL' : ''), i.pain ? '⚡' : ''].filter(Boolean).join(' ')).join(' · ');
+        out.push({ kind: 'rom', text: name + ' ' + body + (gap > ROM_GAP ? ' (Δ' + gap + '°)' : ''), el: row });
+      });
+      // strength
+      $$('#mmt-rows .obj-row, .mmt-rows-sub .obj-row').forEach(row => {
+        const name = nameOf(row); if(!name) return;
+        const weak = $$('.side-block', row).map(b => {
+          const pv = $('.mrc-preview.has-value', b); const g = pv ? pv.textContent.trim() : '';
+          const n = /^[0-5]/.test(g) ? Number(g[0]) : 5;
+          return n < 5 ? (tagOf(b) ? tagOf(b) + ' ' : '') + g : null;
+        }).filter(Boolean);
+        if(weak.length) out.push({ kind: 'mmt', text: name + ' ' + weak.join(' · '), el: row });
+      });
+      // special tests
+      $$('#specialtest-rows .obj-row, .st-rows-sub .obj-row').forEach(row => {
+        const name = nameOf(row);
+        if(name && $('.segmented button.selected[data-val="Positive"]', row)) out.push({ kind: 'test', text: name + ' positive', el: row });
+      });
+      return out;
+    }
+    let items = [], lastKey = '';
+    function render(){
+      items = collect();
+      const key = items.map(i => i.kind + i.text).join('|');
+      if(key === lastKey) return;
+      lastKey = key;
+      if(!items.length){ strip.style.display = 'none'; strip.innerHTML = ''; return; }
+      strip.style.display = 'flex';
+      strip.innerHTML = '<span class="kf-lbl">Key findings</span>';
+      items.slice(0, MAX).forEach((it, i) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'kf-pill kf-' + it.kind; b.textContent = it.text; b.dataset.kf = i;
+        b.title = 'Jump to where this was entered';
+        strip.appendChild(b);
+      });
+      if(items.length > MAX){ const m = document.createElement('span'); m.className = 'kf-more'; m.textContent = '+' + (items.length - MAX) + ' more'; strip.appendChild(m); }
+    }
+    strip.addEventListener('click', e => {
+      const b = e.target.closest('.kf-pill'); if(!b) return;
+      const it = items[Number(b.dataset.kf)]; if(!it || !it.el || !it.el.isConnected) return;
+      if(window.getActiveModuleTab && window.getActiveModuleTab() !== 'core' && window.switchModuleTab) window.switchModuleTab('core');
+      const sec = it.el.closest('.section'); if(sec) sec.classList.remove('sec-lean-collapsed');
+      it.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      it.el.classList.remove('kf-flash'); void it.el.offsetWidth; it.el.classList.add('kf-flash');
+      setTimeout(() => it.el.classList.remove('kf-flash'), 1500);
+    });
+    L.hooks.push(render);
+  })();
   // Activity limitations / participation start from Chief Complaint's answers (editable; never re-typed).
   // Auto-filled values are flagged so they don't count as "entered data" and force the block open.
   function prefill(id, srcId){

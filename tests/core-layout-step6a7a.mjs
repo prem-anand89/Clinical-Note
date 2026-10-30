@@ -55,6 +55,23 @@ for (const w of [1280, 390]) {
   ok(w + 'px: no sideways page scroll', await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));
   await page.close();
 }
+// ---- signed note: the jump chips are a reading aid and must still work
+{
+  const page = await open(1280);
+  await page.evaluate(() => window.openAdvancedModule('fascial-manipulation')); await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('tab-btn-core').click());
+  await page.click('#lean-no-redflags');
+  await page.evaluate(() => document.getElementById('sign-note-btn').click()); await page.waitForTimeout(300);
+  if (await page.locator('#sign-anyway').count()) await page.locator('#sign-anyway').click();
+  await page.waitForTimeout(300);
+  await page.evaluate(() => document.getElementById('tab-btn-fm').click()); await page.waitForTimeout(300);
+  await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(500);
+  await page.locator('#fm-jump .fm-jump-chip', { hasText: '3 Grid' }).click();
+  await page.waitForTimeout(1000);
+  const r = await page.evaluate(() => { const b = (document.getElementById('fm-pv-table').closest('.card')).getBoundingClientRect(); return { top: Math.round(b.top), visible: b.top < innerHeight && b.bottom > 100 }; });
+  ok('signed note: the FM jump chips still scroll to their card', r.visible && r.top >= 150, r);
+  await page.close();
+}
 ok('no page errors', errors.length === 0, errors);
 await browser.close();
 const failed = results.filter(r => !r[1]);

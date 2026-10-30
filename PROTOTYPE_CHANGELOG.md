@@ -767,3 +767,16 @@ Plan: `CLAUDE_HANDOFF_NEURO_FORM.md` (owner decisions: multi-condition, ISNCSCI 
 - **New "✓ Sign" shortcut** in the top bar. It is **read-only: it never signs.** It returns to Core if you are on a module tab, shows what is still open in the sign panel — completeness gaps, open module items (warnings), or a safety blocker as "Can't sign yet" — or "Nothing outstanding", then scrolls to the real "Sign & Complete Note" button and focuses it. It has no "Sign anyway" of its own; only the real button can complete the note. Hidden once the note is signed (Preview stays).
 - The sign preflight is now one function used by both the real button and the shortcut, so the two can never disagree.
 - **Tests:** new `tests/topbar-sign.mjs`; `core-layout-step6a7a` now expects Preview in the top bar.
+
+## Review of the 30 Oct work — fixes (31 Oct)
+Found by driving real workflows (post-op template + Parkinson's + FM + VM in one note, signing, phone widths, idle churn) rather than re-reading code.
+- **Neuro badge / Key Findings line counted the selected condition chips as findings** ("2 items recorded" with nothing entered). Now only what is recorded in the tools counts.
+- **Sports Profile (an Additional section) never printed.** The preview only walked the seven Core sections. It now prints after Core when it has been added *and* something is recorded (nothing printed for an added-but-empty or absent section).
+- **Phone: the pinned "+ Module" could cover the active tab's ×** (up to 20px on the FM tab). The tab bar now reserves room for it when a tab is scrolled into view.
+- **The "Neurological screen — in Objective" suggestion** was still offered while the Neuro Assessment (which already holds that exam) was on. It is withdrawn while the module is on and returns when it is removed.
+- Removed dead code (`GROUP_A_KEY_LABELS`, `GROUP_A_LABEL_TO_KEY`); marked the old "Group A" line in `PAYLOAD_SHAPE_DRAFT.md` as superseded.
+- **Checked and fine:** no console errors or duplicate ids across a combined session; no page-level sideways scroll at 390 or 320 px; zero DOM churn when idle with three module tabs open; the signed-note lock holds for every control added today; Preview/Sign shortcut never signs.
+- **Stability:** three consecutive full runs of all 34 suites, no failures.
+- **Tests:** new `tests/review-fixes.mjs`.
+- **Open design question (not changed):** choosing any neuro condition collapses the whole MSK Objective behind "Show anyway" — fine when neuro is primary, awkward for e.g. a post-TKR patient who also has Parkinson's. After "Show anyway" a later condition never re-collapses it.
+- **Known gap (not changed):** questionnaire scale answers are not in the preview/PDF.

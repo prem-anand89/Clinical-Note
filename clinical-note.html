@@ -673,6 +673,7 @@
     scrollbar-width: none;
   }
   .module-tab-bar::-webkit-scrollbar { display: none; }
+  .module-tab-bar{ scroll-padding-right: 108px; }   /* room for the pinned + Module when a tab is scrolled into view */
   .module-add{ flex:0 0 auto; margin-left:auto; appearance:none; font:inherit; font-size:12.5px; font-weight:600; padding:7px 13px; border-radius:var(--radius-pill); border:1.5px dashed var(--line); background:none; color:var(--clinical); cursor:pointer; white-space:nowrap; }
   .module-add:hover, .module-add[aria-expanded="true"]{ border-style:solid; border-color:var(--clinical); }
   .module-add{ position:sticky; right:0; background:var(--surface); box-shadow:-10px 0 8px var(--surface); }   /* stays reachable when many tabs scroll the bar */
@@ -4680,7 +4681,8 @@
     var weaknessSel = document.querySelector('#primary-complaint .chip[data-chip="Weakness"].selected');
     var numbnessSel = document.querySelector('#primary-complaint .chip[data-chip="Numbness/tingling"].selected');
     var cervicalRadMatch = activeSuggestions['ortho-template'] && activeSuggestions['ortho-template'].label.indexOf('Cervical Radiculopathy') !== -1;
-    if(weaknessSel || numbnessSel || cervicalRadMatch){
+    var neuroOn = window.__neuroModuleOn && window.__neuroModuleOn();
+    if(!neuroOn && (weaknessSel || numbnessSel || cervicalRadMatch)){
       // Owner decision: suggested only. Accept opens it; nothing opens automatically.
       setSuggestion('neuro-screen', 'Neurological screen', 'myotomes/dermatomes/reflexes · in Objective', function(){
         if(window.__neuroModuleOn && window.__neuroModuleOn()){ if(window.openNeuroModule) window.openNeuroModule({switch: true}); return; }   // the exam lives in the Neuro Assessment now
@@ -7612,6 +7614,7 @@
     setNavAdded(document.getElementById('nav-neuro'), on);
     if(on) showGroupA(); else hideGroupA();
     syncNeuroBar();
+    if(typeof evaluateNeuroScreenTrigger === 'function') evaluateNeuroScreenTrigger();   // the Objective suggestion only makes sense while the module is off
   }
   window.openNeuroModule = function(opts){
     opts = opts || {};
@@ -8526,16 +8529,6 @@
   //  - Non-op templates (#kc-ortho): mutually exclusive — only one template applies.
   //  - Facial Palsy/Vestibular/Cardiothoracic (#kc-other): independent toggles, each
   //    its own standalone card — a patient can plausibly need more than one.
-  var GROUP_A_KEY_LABELS = {
-    'stroke-tbi': 'Stroke / TBI',
-    'paraplegia-sci': 'Paraplegia / SCI',
-    'parkinsons': "Parkinson's",
-    'ms': 'MS',
-    'peripheral-neuropathy': 'Peripheral Neuropathy',
-    'concussion': 'Concussion'
-  };
-  var GROUP_A_LABEL_TO_KEY = {};
-  Object.keys(GROUP_A_KEY_LABELS).forEach(function(k){ GROUP_A_LABEL_TO_KEY[GROUP_A_KEY_LABELS[k]] = k; });
   var CARD_MODULES = {
     'Facial Palsy': { cardId: 'card-facial-palsy', navId: 'nav-facial-palsy' },
     'Vestibular': { cardId: 'card-vestibular', navId: 'nav-vestibular' },
@@ -11725,7 +11718,7 @@ window.openTier2Module = function(key) {
     }
     // with many tabs the bar scrolls sideways: bring the active one into view
     var activeTab = document.querySelector('#module-tab-bar .module-tab.active');
-    if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ inline: 'center', block: 'nearest' });
+    if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ inline: 'nearest', block: 'nearest' });
     window.scrollTo(0, scrollPositions[key] || 0);
   };
 
@@ -13352,7 +13345,8 @@ document.addEventListener('click', function(e){
     printBlock() { const e = this.el(); return e && window.__previewSection ? window.__previewSection(e, nameFn ? nameFn() : title) : ''; }
   });
   const neuroName = () => { const c = $$('#kc-neuro .chip.selected').map(b => b.getAttribute('data-chip')); return 'Neuro assessment' + (c.length ? ' (' + c.join(', ') + ')' : ''); };
-  const GROUP_A = Object.assign(sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName), { printBlock() { return window.__previewNeuro ? window.__previewNeuro() : ''; } });   // per-tool blocks, ISNCSCI as tables
+  const GROUP_A = Object.assign(sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName), { printBlock() { return window.__previewNeuro ? window.__previewNeuro() : ''; },   // per-tool blocks, ISNCSCI as tables
+    count() { return this.enabled() ? recorded($('#group-a-body')) : 0; } });          // only what is recorded in the tools — the selected condition chips are not findings
   window.MODULE_REGISTRY = [
     { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart', placement: 'inline' },
@@ -13836,6 +13830,12 @@ document.addEventListener('click', function(e){
       h += '<h3>' + esc(title.replace(/^\d+\.\s*/, '')) + '</h3>';
       if(!all.length){ h += '<div class="np-empty">Nothing recorded</div>'; return; }
       all.forEach(l => { h += l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>'; });
+    });
+    // Additional sections that live outside the seven Core sections: printed only when added and something is recorded
+    ['sec-sports-profile'].forEach(id => {
+      const sec = document.getElementById(id); if(!sec || sec.style.display === 'none') return;
+      const lines = collect(sec); if(!lines.length) return;
+      h += '<h3>' + esc(clean((sec.querySelector('.section-title h2') || {}).textContent) || id) + '</h3>' + renderLines(lines);
     });
     if(window.CoreModules) window.CoreModules.printBlocks('end').forEach(html => { h += html; });   // modules without a Core slot print after Core, in tab order
     return h;

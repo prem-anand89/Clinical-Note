@@ -761,3 +761,9 @@ Plan: `CLAUDE_HANDOFF_NEURO_FORM.md` (owner decisions: multi-condition, ISNCSCI 
 - **The basic exam prints once**, under its own group headings (Dermatomes / Myotomes / Reflexes), whether it is hosted in the module or inline in Objective.
 - **`getNeuroData()`** — a structured export of the Neuro Assessment (conditions, tools with data, structured ISNCSCI, the basic exam returned separately because it is Core data); the working draft of the payload, documented in `PAYLOAD_SHAPE_DRAFT.md`.
 - **Tests:** `tests/neuro-form.mjs` gains the print (HTML and PDF) and export checks. The neuro plan (N1–N4) is complete.
+
+## Core layout — Step 7b: Preview and Sign in the top bar (30 Oct) — layout plan complete
+- **Preview moved to the top bar**, beside the save pill (same `#preview-open` id and `preview-open` class); the patient banner is now just title + patient. `#preview-open-2` stays next to the real Sign button at the end of the note. On a phone both top-bar buttons are icon-only.
+- **New "✓ Sign" shortcut** in the top bar. It is **read-only: it never signs.** It returns to Core if you are on a module tab, shows what is still open in the sign panel — completeness gaps, open module items (warnings), or a safety blocker as "Can't sign yet" — or "Nothing outstanding", then scrolls to the real "Sign & Complete Note" button and focuses it. It has no "Sign anyway" of its own; only the real button can complete the note. Hidden once the note is signed (Preview stays).
+- The sign preflight is now one function used by both the real button and the shortcut, so the two can never disagree.
+- **Tests:** new `tests/topbar-sign.mjs`; `core-layout-step6a7a` now expects Preview in the top bar.

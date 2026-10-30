@@ -21,7 +21,7 @@ async function open(width) {
   ok('the patient banner is one compact line (<= 60px)', h.h <= 60, h);
   ok('banner still carries the patient name and ID', /Priya Reddy · Patient ID: 00214/.test(h.text), h.text);
   ok('the prototype build note is hidden', h.build === 'none' && h.eyebrow === 'none', h);
-  ok('Preview stays in the banner for now (moves in step 7b)', h.prevInHead);
+  ok('Preview has moved out of the banner into the top bar (step 7b)', !h.prevInHead && await page.evaluate(() => !!document.querySelector('.topbar .status #preview-open')));
   await page.close();
   const m = await open(390);
   ok('banner fits at 390px with no sideways scroll', await m.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth));

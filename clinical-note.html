@@ -76,6 +76,10 @@
     color:var(--ink-faint); font-size:13px; display:flex; align-items:center; gap:6px;
   }
   .topbar .crumb b{ color:var(--ink-soft); font-weight:600; }
+  .topbar .preview-open{ margin:0; padding:5px 11px; font-size:12px; }
+  .topbar-sign{ appearance:none; font:inherit; font-size:12px; font-weight:700; padding:5px 11px; border-radius:var(--radius-sm); border:1.5px solid var(--clinical); background:var(--clinical); color:#fff; cursor:pointer; white-space:nowrap; }
+  .topbar-sign:hover{ filter:brightness(1.08); }
+  body.note-locked .topbar-sign{ display:none; }
   .topbar .status{
     flex:0 0 auto; margin-left:auto; display:flex; align-items:center; gap:10px;
     font-size:12.5px; color:var(--ink-faint);
@@ -107,7 +111,7 @@
   /* ================= SIDEBAR OUTLINE ================= */
   .outline{
     width:230px; flex:0 0 230px;
-    position:sticky; top:57px;
+    position:sticky; top:var(--topbar-h, 57px);
     padding:28px 14px 40px 20px;
     display:none;
   }
@@ -185,7 +189,7 @@
   .kf-more{ font-size:12px; color:var(--ink-faint); }
   .kf-flash{ animation:kfFlash 1.4s ease; }
   @keyframes kfFlash{ 0%,60%{ box-shadow:0 0 0 3px var(--clinical-dim); background:var(--clinical-dim); } 100%{ box-shadow:none; } }
-  .fm-jump{ position:sticky; top:105px; z-index:20; display:flex; gap:6px; overflow-x:auto; padding:8px 0; margin:0 0 12px; background:var(--surface); border-bottom:1px solid var(--line-soft); scrollbar-width:none; }
+  .fm-jump{ position:sticky; top:calc(var(--topbar-h, 57px) + var(--tabbar-h, 49px)); z-index:20; display:flex; gap:6px; overflow-x:auto; padding:8px 0; margin:0 0 12px; background:var(--surface); border-bottom:1px solid var(--line-soft); scrollbar-width:none; }
   .fm-jump::-webkit-scrollbar{ display:none; }
   #view-fm .card{ scroll-margin-top:160px; }
   #fm-pv-table tbody tr, #fm-seg-table tbody tr, #view-fm .pv-cell, #view-fm .seq-step{ scroll-margin-top:160px; }
@@ -201,14 +205,14 @@
   .note-head{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin-bottom:16px; }
   .note-head .eyebrow{ display:none; }
   .note-head h1{ font-size:19px; margin:0; }
-  .note-head .preview-open{ margin:0 0 0 auto; padding:6px 12px; }
   .note-head .frozen-note{ flex:1 0 100%; }
   .main .build-note{ display:none; }
   @media (max-width:743.98px){
     .note-head{ flex-wrap:nowrap; gap:10px; }
     .note-head h1{ font-size:17px; white-space:nowrap; }
     .note-head p{ font-size:12.5px; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .note-head .nh-extra, .note-head .preview-open .pv-lbl{ display:none; }
+    .note-head .nh-extra{ display:none; }
+    .topbar .pv-lbl, .topbar .ts-lbl{ display:none; }
     .note-head .frozen-note{ flex:1 0 100%; }
   }
 
@@ -653,7 +657,7 @@
   /* ================= MODULE TABS & WORKSPACE ================= */
   .module-tab-bar {
     position: sticky;
-    top: 56px;
+    top: var(--topbar-h, 56px);   /* measured, see the script that sets --topbar-h */
     z-index: 25;
     display: flex;
     align-items: center;
@@ -678,7 +682,6 @@
   #lean-module-dock.open{ display:block; }
   .dock-tag{ font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; margin-left:4px; opacity:.7; }
   @media (max-width:743.98px){
-    .module-tab-bar{ top:48px; }   /* phone top bar is ~49px tall, not 56 */
     .fm-jump{ position:static; }   /* two pinned bars is enough on a phone */
   }
   .module-tab {
@@ -1437,6 +1440,9 @@
     Core Assessment
   </div>
   <div class="status">
+    <button type="button" class="preview-open" id="preview-open" aria-label="Preview note">👁<span class="pv-lbl"> Preview</span></button>
+    <!-- Goes to the sign section and shows what is still open; it never signs — only "Sign & Complete Note" does -->
+    <button type="button" class="topbar-sign" id="topbar-sign-btn" aria-label="Go to Sign and complete"><span aria-hidden="true">✓</span><span class="ts-lbl"> Sign</span></button>
     <span class="save-pill"><span class="pulse"></span>Draft<span class="save-pill-long"> — autosaving</span></span>
   </div>
 </div>
@@ -1502,7 +1508,6 @@
       <div class="eyebrow">Core Assessment · Prototype</div>
       <h1>New Visit</h1>
       <p>Priya Reddy · Patient ID: 00214<span class="nh-extra"> · First visit for this episode</span></p>
-      <button type="button" class="preview-open" id="preview-open" aria-label="Preview note">👁<span class="pv-lbl"> Preview note</span></button>
     </div>
 
     <!-- ================= MODULE TAB BAR ================= -->
@@ -12216,6 +12221,33 @@ window.hideAdvancedModule = function(key) {
     // the clinician can override with "Sign anyway".
     function checkPanel(){ return document.getElementById('sign-check'); }
     function showCheck(html){ var el = checkPanel(); el.innerHTML = html; el.style.display = 'block'; el.scrollIntoView({behavior:'smooth', block:'center'}); return el; }
+    // Completeness gaps and open module items (warnings only — the clinician can always sign anyway)
+    function collectSignIssues(){
+      var gaps = [];
+      if(!document.getElementById('region').value) gaps.push('Anatomical region');
+      if(!document.querySelector('#primary-complaint .chip.selected')) gaps.push('Primary complaint');
+      if(!document.getElementById('primary-hypothesis').value.trim()) gaps.push('Primary hypothesis (Clinical Impression)');
+      if(!document.querySelector('#goals-rows .repeatable-card')) gaps.push('At least one goal (Plan &amp; Goals)');
+      return { gaps: gaps, warnings: window.CoreModules ? window.CoreModules.signWarnings() : [] };
+    }
+    function issuesHtml(issues){
+      return (issues.gaps.length ? '<b>Not yet documented:</b> ' + issues.gaps.join(' · ') : '') +
+        (issues.warnings.length ? (issues.gaps.length ? '<br>' : '') + '<b>Open in a module:</b> ' + issues.warnings.join(' · ') : '');
+    }
+    // Top-bar "Sign": read-only. Shows what is open, takes you to the sign button — and stops there. It never completes the note.
+    window.signPreflightPreview = function(){
+      var dispError = window.validateRedFlagDisposition ? window.validateRedFlagDisposition() : '';
+      var reviewError = !dispError && window.screeningReviewError ? window.screeningReviewError() : '';
+      var issues = collectSignIssues(), blocker = dispError || reviewError;
+      var html = blocker ? '<b style="color:#B3261E;">Can\'t sign yet.</b> ' + blocker
+        : (issues.gaps.length || issues.warnings.length) ? issuesHtml(issues) + '<div class="field-note" style="margin:8px 0 0;">You can still sign — press "Sign &amp; Complete Note" below.</div>'
+        : '<b>Nothing outstanding.</b> Press "Sign &amp; Complete Note" below when you are ready.';
+      if(window.getActiveModuleTab && window.getActiveModuleTab() !== 'core' && window.switchModuleTab) window.switchModuleTab('core');
+      showCheck(html);
+      setTimeout(function(){ signBtn.scrollIntoView({behavior: 'smooth', block: 'center'}); signBtn.focus({preventScroll: true}); }, 30);
+    };
+    var topSign = document.getElementById('topbar-sign-btn');
+    if(topSign) topSign.addEventListener('click', function(){ window.signPreflightPreview(); });
     signBtn.addEventListener('click', function(){
       var dispError = window.validateRedFlagDisposition ? window.validateRedFlagDisposition() : '';
       if(dispError){
@@ -12231,15 +12263,9 @@ window.hideAdvancedModule = function(key) {
         window.showScreeningCard();
         return;
       }
-      var gaps = [];
-      if(!document.getElementById('region').value) gaps.push('Anatomical region');
-      if(!document.querySelector('#primary-complaint .chip.selected')) gaps.push('Primary complaint');
-      if(!document.getElementById('primary-hypothesis').value.trim()) gaps.push('Primary hypothesis (Clinical Impression)');
-      if(!document.querySelector('#goals-rows .repeatable-card')) gaps.push('At least one goal (Plan &amp; Goals)');
-      var modWarn = window.CoreModules ? window.CoreModules.signWarnings() : [];
-      if(gaps.length || modWarn.length){
-        var el = showCheck((gaps.length ? '<b>Not yet documented:</b> ' + gaps.join(' · ') : '') +
-          (modWarn.length ? (gaps.length ? '<br>' : '') + '<b>Open in a module:</b> ' + modWarn.join(' · ') : '') + '<div style="margin-top:10px; display:flex; gap:8px;">' +
+      var issues = collectSignIssues();
+      if(issues.gaps.length || issues.warnings.length){
+        var el = showCheck(issuesHtml(issues) + '<div style="margin-top:10px; display:flex; gap:8px;">' +
           '<button type="button" class="add-link" id="sign-back" style="color:var(--ink-soft);">Go back and edit</button>' +
           '<button type="button" class="add-link" id="sign-anyway" style="color:var(--clinical); font-weight:700;">Sign anyway</button></div>');
         document.getElementById('sign-back').addEventListener('click', function(){ checkPanel().style.display = 'none'; });
@@ -13897,6 +13923,21 @@ document.addEventListener('click', function(e){
   });
   host.addEventListener('click', e => { if(e.target === host) host.classList.remove('open'); });
   window.renderNotePreview = render;
+})();
+</script>
+<script>
+/* Pinned bars sit flush under each other whatever the top bar's height is (it changes with the buttons in it and at phone width). */
+(function(){
+  var tb = document.querySelector('.topbar'), bar = document.getElementById('module-tab-bar'), root = document.documentElement.style;
+  if(!tb) return;
+  function set(){
+    root.setProperty('--topbar-h', tb.offsetHeight + 'px');
+    if(bar) root.setProperty('--tabbar-h', bar.offsetHeight + 'px');
+  }
+  set();
+  if(window.ResizeObserver){ var ro = new ResizeObserver(set); ro.observe(tb, { box: 'border-box' }); if(bar) ro.observe(bar, { box: 'border-box' }); }   // border box: padding changes count too
+  window.addEventListener('resize', set);
+  window.addEventListener('load', set);
 })();
 </script>
 </body>

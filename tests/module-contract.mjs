@@ -32,9 +32,9 @@ async function toggleTreated(page, seg, plane, side) {
 let page = await fresh();
 // ---- registry shape: extended, not replaced
 const reg = await page.evaluate(() => window.MODULE_REGISTRY.map(m => ({ label: m.label, fn: m.fn, group: m.group, placement: m.placement })));
-ok('the registry still has 23 entries, each with label / fn / group', reg.length === 23 && reg.every(m => m.label && m.fn && m.group), reg.length);
+ok('the registry has 18 entries, each with label / fn / group', reg.length === 18 && reg.every(m => m.label && m.fn && m.group), reg.length);
 const count = k => reg.filter(m => m.placement === k).length;
-ok('every entry declares a placement: 11 inline · 9 tab · 3 profile', reg.every(m => ['inline', 'tab', 'profile'].includes(m.placement)) && count('inline') === 11 && count('tab') === 9 && count('profile') === 3, [count('inline'), count('tab'), count('profile')]);
+ok('every entry declares a placement: 11 inline · 4 tab · 3 profile', reg.every(m => ['inline', 'tab', 'profile'].includes(m.placement)) && count('inline') === 11 && count('tab') === 4 && count('profile') === 3, [count('inline'), count('tab'), count('profile')]);
 ok('Facial Palsy, Vestibular, Cardiothoracic are Patient Profile modules, not tabs', ['Facial Palsy', 'Vestibular', 'Cardiothoracic Assessment'].every(l => reg.find(m => m.label === l).placement === 'profile'));
 ok('the old `tab: true` flag is gone', !(await page.evaluate(() => window.MODULE_REGISTRY.some(m => 'tab' in m))));
 ok('every tab module implements the contract (FM, VM, CST, Neuro) — six neuro conditions count as one module', await page.evaluate(() => window.CoreModules.list().map(m => m.id).sort().join() === 'cst,fm,groupa,vm'), await page.evaluate(() => window.CoreModules.list().map(m => m.id)));

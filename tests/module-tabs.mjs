@@ -76,40 +76,41 @@ for (const m of [{ k: 'vm', dock: 'Visceral Manipulation', sec: 'sec-vm' }, { k:
   await page.close();
 }
 
-// ---------------- Neuro conditions: one tab, named for the condition
+// ---------------- Neuro Assessment: ONE module; the six conditions are filters inside it
 {
   const page = await fresh();
-  ok('neuro: no tab before a condition is chosen', !(await tabShown(page, 'groupa')));
+  ok('neuro: the dock offers one "Neuro Assessment", not six conditions', await page.evaluate(() => { const b = [...document.querySelectorAll('#lean-module-dock .chip')].map(c => c.textContent); return b.filter(t => /Neuro Assessment/.test(t)).length === 1 && !b.some(t => /^Stroke|^Paraplegia|^Parkinson|^MS$|^Peripheral|^Concussion/.test(t)); }));
+  ok('neuro: no tab before the module is added', !(await tabShown(page, 'groupa')));
   await page.locator('#kc-trigger').click(); await page.locator('.kc-tab[data-kc-tab="kc-neuro"]').click();
   await page.locator('#kc-neuro [data-chip="Parkinson\'s"]').click(); await page.waitForTimeout(400);
-  ok('choosing it in the picker adds the tab but stays in Section 1', (await tabShown(page, 'groupa')) && (await active(page)) === 'core');
-  ok('the tab is named for the condition', /Neuro: Parkinson's/.test(await page.textContent('#tab-btn-groupa')), await page.textContent('#tab-btn-groupa'));
+  ok('choosing a condition in the picker adds the tab but stays in Section 1', (await tabShown(page, 'groupa')) && (await active(page)) === 'core');
+  ok('one condition: the tab carries its full name', /Neuro: Parkinson's/.test(await page.textContent('#tab-btn-groupa')), await page.textContent('#tab-btn-groupa'));
   await page.locator('#kc-neuro [data-chip="MS"]').click(); await page.waitForTimeout(400);
-  ok('switching condition renames the same tab (still one neuro tab)', /Neuro: MS/.test(await page.textContent('#tab-btn-groupa')) && await page.locator('[id^="tab-btn-groupa"]').count() === 1);
+  ok('a second condition ADDS to the same tab: "Neuro: PD + MS"', /Neuro: PD \+ MS/.test(await page.textContent('#tab-btn-groupa')) && await page.locator('[id^="tab-btn-groupa"]').count() === 1, await page.textContent('#tab-btn-groupa'));
   await page.click('#tab-btn-groupa'); await page.waitForTimeout(300);
   ok('the tab shows the neuro tools in its own panel', (await active(page)) === 'groupa' && await page.evaluate(() => document.getElementById('view-groupa').contains(document.getElementById('sec-group-a')) && document.getElementById('sec-group-a').offsetParent !== null));
   await page.evaluate(() => { const b = document.querySelector('#group-a-body .segmented button'); if (b) b.click(); }); await page.waitForTimeout(400);
-  ok('neuro: a recorded item shows in the tab badge and Key Findings', await page.evaluate(() => { const b = document.querySelector('.module-tab-badge[data-badge-for="groupa"]'); return b && b.style.display !== 'none'; }));
+  ok('neuro: a recorded item shows in the tab badge', await page.evaluate(() => { const b = document.querySelector('.module-tab-badge[data-badge-for="groupa"]'); return b && b.style.display !== 'none'; }));
   await page.locator('#tab-btn-groupa .module-tab-close').click(); await page.waitForTimeout(500);
-  ok('× on the tab unsets the condition everywhere (picker, Impression line, tab)', !(await tabShown(page, 'groupa')) && (await active(page)) === 'core' && await page.evaluate(() => !document.querySelector('#kc-neuro .chip.selected')) && await page.locator('#ci-known-condition').isHidden());
-  // the dock for a neuro condition adds the tab and switches; opening the same condition again does not toggle it off
-  await fromDock(page, "Parkinson's");
-  ok('dock: a neuro condition adds the tab and switches to it', (await tabShown(page, 'groupa')) && (await active(page)) === 'groupa');
+  ok('× unsets EVERY condition (picker, Impression line, tab)', !(await tabShown(page, 'groupa')) && (await active(page)) === 'core' && await page.evaluate(() => !document.querySelector('#kc-neuro .chip.selected')) && await page.locator('#ci-known-condition').isHidden());
+  // from the dock with no condition: the module opens on its own
+  await fromDock(page, 'Neuro Assessment');
+  ok('dock: adds the tab and switches to it, with no condition chosen', (await tabShown(page, 'groupa')) && (await active(page)) === 'groupa' && /^\s*Neuro\s*\d*\s*×?\s*$/.test(await page.textContent('#tab-btn-groupa')), await page.textContent('#tab-btn-groupa'));
+  ok('...and the condition bar is there to choose from', await page.locator('#ga-cond-chips .chip').count() === 6 && await page.locator('#ga-cond-hint').isVisible());
+  await page.locator('#ga-cond-chips [data-ga-cond="MS"]').click(); await page.waitForTimeout(400);
+  ok('choosing in the bar selects the picker chip too (one source of truth)', await page.evaluate(() => document.querySelector('#kc-neuro .chip[data-chip="MS"]').classList.contains('selected')) && /Neuro: MS/.test(await page.textContent('#tab-btn-groupa')));
+  await page.locator('#ga-cond-chips [data-ga-cond="MS"]').click(); await page.waitForTimeout(400);
+  ok('deselecting the last condition keeps a module that was added by hand', (await tabShown(page, 'groupa')) && await page.evaluate(() => document.getElementById('sec-group-a').style.display !== 'none'));
   await page.evaluate(() => document.getElementById('tab-btn-core').click());
-  await fromDock(page, "Parkinson's");
-  ok('dock: choosing the same condition again keeps it (it does not toggle off)', (await tabShown(page, 'groupa')) && (await active(page)) === 'groupa' && await page.evaluate(() => !!document.querySelector('#kc-neuro .chip.selected')));
-  await page.evaluate(() => document.getElementById('tab-btn-core').click());
-  // unselecting in the picker removes the tab
-  await page.locator('#kc-trigger').click().catch(() => {});
-  await page.evaluate(() => document.querySelector('#kc-neuro .chip.selected').click()); await page.waitForTimeout(400);
-  ok('unselecting the condition in the picker removes the tab', !(await tabShown(page, 'groupa')));
+  await fromDock(page, 'Neuro Assessment');
+  ok('dock: opening it again just switches to it (nothing toggled off)', (await active(page)) === 'groupa');
   await page.close();
 }
 
 // ---------------- several tabs at once, keyboard, phone, signed
 {
   const page = await fresh();
-  await fromDock(page, 'Visceral Manipulation'); await fromDock(page, 'Craniosacral'); await fromDock(page, "Parkinson's");
+  await fromDock(page, 'Visceral Manipulation'); await fromDock(page, 'Craniosacral'); await fromDock(page, 'Neuro Assessment');
   ok('several module tabs can be open together; exactly one is active', await page.evaluate(() => document.querySelectorAll('#module-tab-bar .module-tab[role="tab"]:not([style*="display: none"])').length >= 4 && document.querySelectorAll('#module-tab-bar .module-tab.active').length === 1));
   ok('"+ Module" is still the last control in the bar', await page.evaluate(() => document.getElementById('module-tab-bar').lastElementChild.id === 'module-add-btn'));
   await page.focus('#tab-btn-groupa'); await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(300);

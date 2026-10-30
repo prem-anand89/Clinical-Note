@@ -18,7 +18,11 @@ async function fresh() {
 }
 const toCore = async page => { await page.evaluate(() => document.getElementById('tab-btn-core').click()); await page.waitForTimeout(150); };
 const toNeuro = async page => { await page.evaluate(() => document.getElementById('tab-btn-groupa').click()); await page.waitForTimeout(200); };
-const pick = async (page, cond) => { await toCore(page); if (await page.locator('#known-condition-field').isHidden()) await page.locator('#kc-trigger').click(); await page.locator('.kc-tab[data-kc-tab="kc-neuro"]').click(); await page.locator('#kc-neuro [data-chip="' + cond + '"]').click(); await page.waitForTimeout(400); };
+// conditions are independent toggles (several can apply): pick adds one, unpick removes one
+const toggle = async (page, cond) => { await toCore(page); if (await page.locator('#known-condition-field').isHidden()) await page.locator('#kc-trigger').click(); await page.locator('.kc-tab[data-kc-tab="kc-neuro"]').click(); await page.locator('#kc-neuro [data-chip="' + cond + '"]').click(); await page.waitForTimeout(400); };
+const selectedConds = page => page.evaluate(() => [...document.querySelectorAll('#kc-neuro .chip.selected')].map(c => c.dataset.chip));
+const pick = async (page, cond) => { if (!(await selectedConds(page)).includes(cond)) await toggle(page, cond); };
+const unpick = async (page, cond) => { if ((await selectedConds(page)).includes(cond)) await toggle(page, cond); };
 const shown = page => page.evaluate(() => [...document.querySelectorAll('#group-a-body > .ga-slot')].filter(s => s.style.display !== 'none').map(s => s.dataset.neuroTool));
 const count = (page, tool) => page.evaluate(t => document.querySelectorAll('.ga-slot[data-neuro-tool="' + t + '"]').length, tool);
 const coordRow = page => page.locator('.ga-slot[data-neuro-tool="coordination_cerebellar"] .obj-row').first();
@@ -31,27 +35,36 @@ ok('slots follow the registry order', await page.evaluate(() => { const ids = [.
 ok('exactly one slot has no top rule (the first visible one)', await page.evaluate(() => document.querySelectorAll('#group-a-body > .ga-slot.ga-first').length === 1 && document.querySelector('#group-a-body > .ga-slot.ga-first').dataset.neuroTool === 'reflexes'));
 ok('the Reflexes heading keeps its original wording', /0 \(absent\) – 4\+ \(clonus\), L\/R compared/.test(await page.textContent('.ga-slot[data-neuro-tool="reflexes"] .card-heading')));
 
-// record coordination, then switch condition: nothing is lost, shared tools appear once
+// add a second condition: tools are the UNION, shared ones appear once and keep their entries
 await toNeuro(page); await coordRow(page).locator('.segmented button[data-val="Impaired"]').click();
 await pick(page, 'MS');
 s = await shown(page);
-ok('switching to MS keeps the coordination grade', await coordRow(page).locator('.segmented button.selected').getAttribute('data-val') === 'Impaired');
+ok("Parkinson's + MS: the union of both conditions' tools", ['reflexes', 'tone_spasticity', 'coordination_cerebellar', 'hoehn_yahr', 'sensory_dermatomal', 'fatigue_relapse_ms'].every(t => s.includes(t)) && s.length === 6, s);
 ok('coordination (suggested by both) exists once', await count(page, 'coordination_cerebellar') === 1);
-ok('MS adds its own tools and drops the empty Parkinson-only ones', s.includes('sensory_dermatomal') && s.includes('fatigue_relapse_ms') && !s.includes('hoehn_yahr') && !s.includes('tone_spasticity'), s);
+await toNeuro(page);
+ok('...and keeps the grade entered earlier', await coordRow(page).locator('.segmented button.selected').getAttribute('data-val') === 'Impaired');
+ok('the tab is named "Neuro: PD + MS"', /Neuro: PD \+ MS/.test(await page.textContent('#tab-btn-groupa')), await page.textContent('#tab-btn-groupa'));
 
-// data keeps a tool visible even when the suggesting condition is gone
+// remove one condition: its empty tools go, shared / used tools stay
+await unpick(page, "Parkinson's");
+s = await shown(page);
+ok("unselecting Parkinson's drops its empty tools (tone, Hoehn & Yahr) but keeps what MS still suggests", !s.includes('tone_spasticity') && !s.includes('hoehn_yahr') && s.includes('coordination_cerebellar') && s.includes('sensory_dermatomal'), s);
+ok('...and the tab goes back to the full condition name', /Neuro: MS/.test(await page.textContent('#tab-btn-groupa')));
+
+// data keeps a tool visible even when nothing suggests it any more
 await pick(page, 'Stroke / TBI'); await toNeuro(page);
 await page.locator('.ga-slot[data-neuro-tool="tone_spasticity"] input[type=text]').first().fill('R elbow flexors');
-await pick(page, 'Concussion');
+await unpick(page, 'Stroke / TBI');
 s = await shown(page);
-ok('a tool holding data stays visible after the condition that suggested it is replaced', s.includes('tone_spasticity') && s.includes('coordination_cerebellar') && s.includes('symptom_checklist_concussion'), s);
-await toNeuro(page);
+ok('a tool holding data stays visible after the condition that suggested it is unselected', s.includes('tone_spasticity'), s);
 ok('...and its entry is still there', await page.locator('.ga-slot[data-neuro-tool="tone_spasticity"] input[type=text]').first().inputValue() === 'R elbow flexors');
 ok('tools with no data that nothing suggests are hidden (motor UMN, Fugl-Meyer)', !s.includes('motor_umn') && !s.includes('fugl_meyer'), s);
+await pick(page, 'Concussion'); await pick(page, 'Stroke / TBI');
+ok('cognitive screen (stroke + concussion) is built once', await count(page, 'cognitive_screen_light') === 1);
 
-// toggling the condition off in the picker hides the module but forgets nothing
-await toCore(page); await page.locator('#kc-neuro [data-chip="Concussion"]').click(); await page.waitForTimeout(400);
-ok('unselecting the condition removes the tab (section hidden)', await page.evaluate(() => document.getElementById('sec-group-a').style.display === 'none'));
+// emptying the picker removes the module; picking again brings the entries back
+await unpick(page, 'Stroke / TBI'); await unpick(page, 'Concussion'); await unpick(page, 'MS');
+ok('unselecting every condition removes the tab (section hidden)', await page.evaluate(() => document.getElementById('sec-group-a').style.display === 'none'));
 await pick(page, 'MS'); await toNeuro(page);
 ok('picking a condition again brings the earlier entries back', await coordRow(page).locator('.segmented button.selected').getAttribute('data-val') === 'Impaired');
 await page.close();
@@ -87,6 +100,15 @@ ok('changing region does not rebuild the worksheet', await page.evaluate(() => d
 await pick(page, "Parkinson's");
 ok('after switching condition the graded worksheet stays visible and keeps its entry', (await shown(page)).includes('isncsci') && await page.evaluate(() => document.querySelectorAll('.ga-slot[data-neuro-tool="isncsci"] button.selected').length) === 1, await shown(page));
 ok('the module badge counts the ISNCSCI entry', await page.evaluate(() => window.CoreModules.badge('groupa')) >= 1);
+await page.close();
+
+// SCI together with another condition: ISNCSCI plus ONE reflex screen (the fuller one), not two
+page = await fresh();
+await pick(page, 'Paraplegia / SCI'); await pick(page, "Parkinson's");
+s = await shown(page);
+ok('SCI + Parkinson\'s: ISNCSCI, the UMN reflex screen once (no supplementary duplicate), tone, coordination, Hoehn & Yahr', s.includes('isncsci') && s.includes('reflexes') && !s.includes('reflexes_sci') && s.includes('tone_spasticity') && s.includes('hoehn_yahr'), s);
+await unpick(page, "Parkinson's");
+ok('back to SCI alone: the supplementary reflexes return', (await shown(page)).join() === 'isncsci,reflexes_sci', await shown(page));
 await page.close();
 
 // explicit Remove forgets everything

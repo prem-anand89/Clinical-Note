@@ -734,3 +734,13 @@ Plan: `CLAUDE_HANDOFF_NEURO_FORM.md` (owner decisions: multi-condition, ISNCSCI 
 - **Bug fixed on the way:** the preview printed a stray "Create PSFS: Parkinson's" line — the generic collector was reading the Known diagnosis chips and borrowing the wrong label. The picker is now excluded from the collector (it prints on its own "Known condition:" line).
 - **Known gap for N4:** the ISNCSCI grid does not appear in the preview/PDF (the collector only reads the controls it knows).
 - **Tests:** new `tests/neuro-form.mjs`.
+
+## Neuro Assessment — N2: one module, several conditions (30 Oct)
+- **One module.** The six neuro entries in the module registry (and in the sidebar's Neuro group, and in the dock) are replaced by **one "Neuro Assessment"** — registry 23 → 18 entries (11 inline · 4 tab · 3 profile). Heading is now "Neuro Assessment".
+- **Conditions are independent toggles.** The picker's Neuro chips are multi-select (before: one at a time); each condition adds its tools to the one form — the **union** of what each suggests, every shared tool once (Parkinson's + MS: coordination appears once). The tab is named **"Neuro: Parkinson's"** for one condition and **"Neuro: PD + MS"** for several.
+- **Condition bar inside the module** (six chips, mirrors the picker — the picker's chips stay the single source of truth), so **the dock / sidebar can add the module with no condition chosen**; a module added by hand stays even if every condition is deselected. Picking in Section 1 adds the tab without leaving it.
+- **× / Remove unsets every condition** and forgets what was entered; unselecting conditions one by one only hides tools that hold no data.
+- **SCI + another condition:** ISNCSCI plus the fuller UMN reflex screen once — the supplementary SCI reflexes are not shown a second time (back to SCI alone brings them back).
+- The Key Findings line, badge and print block name all selected conditions ("Neuro assessment (Parkinson's, MS)").
+- When many tabs scroll the bar sideways, switching tab brings the active one into view.
+- **Tests:** `neuro-form` rewritten for multi-select (union, shared once, data keeps tools visible, SCI + PD); `module-tabs` neuro block rewritten (one dock entry, bar ↔ picker, manual module); `step3` / `module-contract` / `module-popover` now expect 18.

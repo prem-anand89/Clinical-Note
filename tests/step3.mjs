@@ -34,7 +34,7 @@ await blocks.nth(0).locator('.wnl-toggle').click();
 
 // --- module registry
 const reg = await page.evaluate(() => window.MODULE_REGISTRY.length);
-ok('registry has 23 modules', reg === 23, reg);
+ok('registry has 18 modules (the six neuro conditions are one Neuro Assessment)', reg === 18, reg);
 const missing = await page.evaluate(() => window.MODULE_REGISTRY.filter(m => typeof window[m.fn] !== 'function').map(m => m.fn));
 ok('every opener exists globally', missing.length === 0, missing);
 const sidebarLabels = await page.evaluate(() => [...document.querySelectorAll('.outline-item[onclick]')].filter(el => /openTier2Module|openAdvancedModule|openConditionModule|openSportsProfile/.test(el.getAttribute('onclick'))).map(el => el.textContent.replace(/[+✓]/g, '').replace(/\s+/g, ' ').trim()));
@@ -42,7 +42,7 @@ const regLabels = await page.evaluate(() => window.MODULE_REGISTRY.map(m => m.la
 ok('registry matches sidebar entries', JSON.stringify([...sidebarLabels].sort()) === JSON.stringify([...regLabels].sort()), { sidebarLabels, regLabels });
 // open a module through the dock
 const dockBtn = page.locator('#lean-module-dock [data-dock-idx]').first();
-ok('dock renders from registry', (await page.locator('#lean-module-dock [data-dock-idx]').count()) === 23);
+ok('dock renders from registry', (await page.locator('#lean-module-dock [data-dock-idx]').count()) === 18);
 await page.evaluate(() => document.getElementById('lean-module-dock').classList.remove('lean-tucked'));
 await page.locator('#lean-module-dock [data-dock-idx]', { hasText: 'Vitals' }).dispatchEvent('click');
 ok('dock click opens module without error', errors.length === 0, errors);

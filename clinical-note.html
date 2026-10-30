@@ -394,6 +394,9 @@
   .kc-group{ padding:12px 14px 14px; border-left:4px solid transparent; }
   .kc-g-neuro{ border-left-color:#7b64b4; } .kc-g-ortho{ border-left-color:var(--clinical); } .kc-g-postop{ border-left-color:#c98a2b; } .kc-g-other{ border-left-color:#7c8996; }
   /* neuro tool slots: a hairline between visible tools, none above the first */
+  .ga-conds{ margin:0 0 14px; }
+  .ga-conds-lbl{ display:block; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
+  .ga-conds .chip.selected{ background:#7b64b4; border-color:#7b64b4; }
   .ga-slot{ margin-top:18px; padding-top:18px; border-top:1px solid var(--line-soft); }
   .ga-slot.ga-first{ margin-top:0; padding-top:0; border-top:none; }
   .kc-hint{ font-size:12px; color:var(--ink-faint); margin:0 0 10px; }
@@ -1464,12 +1467,7 @@
 
     <div class="outline-group collapsed">
       <div class="tier-label" onclick="this.parentElement.classList.toggle('collapsed')"><span>Neuro</span><svg class="tier-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><polyline points="6 9 12 15 18 9"></polyline></svg></div>
-      <div class="outline-item stub" id="nav-stroke-tbi" onclick="openConditionModule('stroke-tbi')">Stroke / TBI<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-paraplegia-sci" onclick="openConditionModule('paraplegia-sci')">Paraplegia / SCI<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-parkinsons" onclick="openConditionModule('parkinsons')">Parkinson's<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-ms" onclick="openConditionModule('ms')">MS<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-peripheral-neuropathy" onclick="openConditionModule('peripheral-neuropathy')">Peripheral Neuropathy<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-concussion" onclick="openConditionModule('concussion')">Concussion<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
+      <div class="outline-item stub" id="nav-neuro" onclick="openConditionModule('neuro')">Neuro Assessment<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-facial-palsy" onclick="openConditionModule('facial-palsy')">Facial Palsy<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-vestibular" onclick="openConditionModule('vestibular')">Vestibular<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
     </div>
@@ -1652,7 +1650,7 @@
             <button type="button" class="kc-tab kc-other-tab" role="tab" data-kc-tab="kc-other">Other<span class="kc-count" style="display:none;"></span></button>
           </div>
           <div class="kc-group kc-g-neuro" data-kc-group="kc-neuro">
-            <div class="kc-hint">One at a time — opens the matching neuro assessment.</div>
+            <div class="kc-hint">Choose any that apply — each adds its tools to the one Neuro Assessment.</div>
             <div class="chip-row kc-chip-row" id="kc-neuro">
               <button type="button" class="chip" data-chip="Stroke / TBI">Stroke / TBI</button>
               <button type="button" class="chip" data-chip="Paraplegia / SCI">Paraplegia / SCI</button>
@@ -2832,7 +2830,7 @@
     ========================================================== -->
     <section class="section" id="sec-group-a" style="display:none;">
       <div class="section-title">
-        <h2 style="font-size:15px;">Neuro Assessment (Group A)</h2>
+        <h2 style="font-size:15px;">Neuro Assessment</h2>
         <span class="tier-tag" style="background:var(--context-dim); color:var(--context);">Advanced Module · Clinic tier</span>
         <button type="button" id="group-a-hide" style="margin-left:auto; background:none; border:none; color:var(--ink-faint); font-size:12px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:4px;">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2840,6 +2838,18 @@
         </button>
       </div>
       <div class="field-note" style="margin:-6px 2px 14px;">Tools shown are condition-mapped, not all tools always (§8.2). Live/master data lives at the episode level (<code>neuro_spinal_assessments</code>) — each note save snapshots current state into that visit's record; prior values shown for comparison, editable for today.</div>
+      <div class="ga-conds" id="ga-condition-bar">
+        <span class="ga-conds-lbl">Conditions</span>
+        <div class="chip-row" id="ga-cond-chips">
+          <button type="button" class="chip" data-ga-cond="Stroke / TBI">Stroke / TBI</button>
+          <button type="button" class="chip" data-ga-cond="Paraplegia / SCI">Paraplegia / SCI</button>
+          <button type="button" class="chip" data-ga-cond="Parkinson's">Parkinson's</button>
+          <button type="button" class="chip" data-ga-cond="MS">MS</button>
+          <button type="button" class="chip" data-ga-cond="Peripheral Neuropathy">Peripheral Neuropathy</button>
+          <button type="button" class="chip" data-ga-cond="Concussion">Concussion</button>
+        </div>
+        <div class="field-note" id="ga-cond-hint" style="margin:8px 0 0;">Choose every condition that applies — each adds its tools to this one assessment.</div>
+      </div>
       <div class="card" id="group-a-body"></div>
     </section>
 
@@ -7488,7 +7498,7 @@
   regionSelect.addEventListener('change', function(){
     var nsBody = document.getElementById('obj-neuro-screen-body');
     if(nsBody && nsBody.style.display !== 'none' && window.__refreshNeuroScreen) window.__refreshNeuroScreen();
-    if(groupASection.style.display !== 'none' && knownConditionValue) syncNeuroForm();   // region only adds missing reflex rows
+    if(groupASection.style.display !== 'none') syncNeuroForm();   // region only adds missing reflex rows
   });
 
   // ==========================================================
@@ -7520,9 +7530,16 @@
   });
   // Remove = unset the condition (so the picker, the Impression line and the tab all agree), not just hide the section
   document.getElementById('group-a-hide').addEventListener('click', function(){
-    var chip = document.querySelector('#kc-neuro .chip.selected');
-    if(chip) chip.click(); else hideGroupA();
+    neuroManual = false;
+    document.querySelectorAll('#kc-neuro .chip.selected').forEach(function(c){ c.click(); });   // each click runs the real handler
+    applyNeuroState();   // also covers a module added by hand with no condition
     resetNeuroForm();
+  });
+  document.querySelectorAll('#ga-cond-chips .chip').forEach(function(b){
+    b.addEventListener('click', function(){
+      var chip = document.querySelector('#kc-neuro .chip[data-chip="' + b.getAttribute('data-ga-cond') + '"]');
+      if(chip) chip.click();   // the picker's chip is the single source of truth
+    });
   });
 
   function collapseMSK(conditionLabel){
@@ -7540,13 +7557,37 @@
     expandMSK();
     if(window.ModuleTabs) window.ModuleTabs.close('groupa');
   }
-  function showGroupA(condition){
+  var NEURO_SHORT = { 'Stroke / TBI': 'Stroke', 'Paraplegia / SCI': 'SCI', "Parkinson's": 'PD', 'MS': 'MS', 'Peripheral Neuropathy': 'PN', 'Concussion': 'Concussion' };
+  // one condition keeps its full name ("Neuro: Parkinson's"); several are abbreviated ("Neuro: PD + MS")
+  function neuroTabLabel(){
+    if(!neuroSet.length) return 'Neuro';
+    return 'Neuro: ' + (neuroSet.length === 1 ? neuroSet[0] : neuroSet.map(function(c){ return NEURO_SHORT[c] || c; }).join(' + '));
+  }
+  function syncNeuroBar(){
+    document.querySelectorAll('#ga-cond-chips .chip').forEach(function(b){ b.classList.toggle('selected', neuroSet.indexOf(b.getAttribute('data-ga-cond')) > -1); });
+    var hint = document.getElementById('ga-cond-hint'); if(hint) hint.style.display = neuroSet.length ? 'none' : '';
+  }
+  function showGroupA(){
     groupASection.style.display = 'block';
     syncNeuroForm();
-    collapseMSK(condition);
-    // the neuro tools live in their own tab, named for the condition; choosing it in the picker adds the tab without leaving Section 1
-    if(window.ModuleTabs){ window.ModuleTabs.label('groupa', 'Neuro: ' + condition); window.ModuleTabs.open('groupa', {switch: false}); }
+    if(neuroSet.length) collapseMSK(neuroSet.join(' + ')); else expandMSK();
+    // the neuro tools live in one tab; choosing a condition in the picker adds the tab without leaving Section 1
+    if(window.ModuleTabs){ window.ModuleTabs.label('groupa', neuroTabLabel()); window.ModuleTabs.open('groupa', {switch: false}); }
   }
+  // single place that decides whether the module is on, from the chosen conditions and whether it was added by hand
+  function applyNeuroState(){
+    knownConditionValue = neuroSet[0] || '';
+    var on = neuroSet.length > 0 || neuroManual;
+    setNavAdded(document.getElementById('nav-neuro'), on);
+    if(on) showGroupA(); else hideGroupA();
+    syncNeuroBar();
+  }
+  window.openNeuroModule = function(opts){
+    opts = opts || {};
+    if(!neuroSet.length) neuroManual = true;
+    applyNeuroState();
+    if(opts.switch !== false && window.ModuleTabs) window.ModuleTabs.open('groupa', {switch: true});
+  };
 
   function makeGroupAGradeRow(label, options){
     var row = document.createElement('div');
@@ -8073,21 +8114,27 @@
   var NEURO_SPECIAL = {
     isncsci:      { conditions: ['Paraplegia / SCI'], build: buildIsncsciWorksheet },
     reflexes:     { conditions: GROUP_A_CONDITIONS.filter(function(c){ return c !== 'Paraplegia / SCI'; }), build: buildReflexesOnlyBlock, refresh: refreshReflexRows },   // UMN screen: every condition but SCI
-    reflexes_sci: { conditions: ['Paraplegia / SCI'], build: buildSciReflexBlock }
+    reflexes_sci: { conditions: ['Paraplegia / SCI'], build: buildSciReflexBlock, supersededBy: 'reflexes' }   // SCI + another condition: the fuller UMN reflex screen covers it
   };
   var NEURO_TOOLS = NEURO_TOOL_ORDER.map(function(id){
     if(NEURO_SPECIAL[id]) return Object.assign({ id: id }, NEURO_SPECIAL[id]);
     return { id: id, build: GROUP_A_TOOL_BUILDERS[id], conditions: GROUP_A_CONDITIONS.filter(function(c){ return (GROUP_A_TOOL_MAP[c] || []).indexOf(id) > -1; }) };
   });
   var neuroSlots = {};
+  var neuroSet = [];          // selected neuro conditions, in the order they were chosen (the picker's chips are the visual state)
+  var neuroManual = false;    // the module was added from the dock / sidebar, so it stays even with no condition chosen
   // Lean.hasData does not see every control (the ISNCSCI grid is plain buttons), so any selected button counts here
   function neuroHasData(slot){ return !!((window.Lean && window.Lean.hasData(slot)) || slot.querySelector('button.selected')); }
-  function neuroConditions(){ return knownConditionValue ? [knownConditionValue] : []; }
+  function neuroConditions(){ return neuroSet.slice(); }
   function syncNeuroForm(){
     var conds = neuroConditions(), firstShown = null;
+    var isWanted = function(t){ return t.conditions.some(function(c){ return conds.indexOf(c) > -1; }); };
     NEURO_TOOLS.forEach(function(tool){
       var slot = neuroSlots[tool.id];
-      var wanted = tool.conditions.some(function(c){ return conds.indexOf(c) > -1; });
+      var wanted = isWanted(tool);
+      // a tool covered by a fuller one that is showing is not built or shown twice (unless it already holds data)
+      var cover = tool.supersededBy && NEURO_TOOLS.filter(function(t){ return t.id === tool.supersededBy && isWanted(t); })[0];
+      if(cover && !(slot && neuroHasData(slot))) wanted = false;
       if(!slot && wanted && tool.build){
         slot = neuroSlots[tool.id] = document.createElement('div');
         slot.className = 'ga-slot'; slot.setAttribute('data-neuro-tool', tool.id);
@@ -8397,8 +8444,8 @@
   // exclusivity rule (the nav sidebar's Neuro/Cardiothoracic items just simulate a
   // click here, so there is exactly one code path per condition, not two that can
   // drift out of sync):
-  //  - Group A conditions (#kc-neuro): mutually exclusive — they share one physical
-  //    section (sec-group-a) that can only render one condition's tools at a time.
+  //  - Group A conditions (#kc-neuro): independent toggles — several can apply; they share one
+  //    Neuro Assessment (sec-group-a) whose tools are the union of what each suggests.
   //  - Non-op templates (#kc-ortho): mutually exclusive — only one template applies.
   //  - Facial Palsy/Vestibular/Cardiothoracic (#kc-other): independent toggles, each
   //    its own standalone card — a patient can plausibly need more than one.
@@ -8458,20 +8505,13 @@
     setNavAdded(document.getElementById(def.navId), false);
   }
 
+  // Neuro conditions are independent toggles: a patient can have several, and each adds its tools to the one Neuro Assessment.
   document.querySelectorAll('#kc-neuro .chip').forEach(function(chip){
     chip.addEventListener('click', function(){
-      var val = chip.getAttribute('data-chip');
-      var wasSelected = chip.classList.contains('selected');
-      document.querySelectorAll('#kc-neuro .chip').forEach(function(c){ c.classList.remove('selected'); });
-      Object.keys(GROUP_A_KEY_LABELS).forEach(function(k){ setNavAdded(document.getElementById('nav-' + k), false); });
-      hideGroupA();
-      knownConditionValue = '';
-      if(!wasSelected){
-        chip.classList.add('selected');
-        knownConditionValue = val;
-        showGroupA(val);
-        setNavAdded(document.getElementById('nav-' + GROUP_A_LABEL_TO_KEY[val]), true);
-      }
+      var val = chip.getAttribute('data-chip'), i = neuroSet.indexOf(val);
+      if(i > -1){ neuroSet.splice(i, 1); chip.classList.remove('selected'); }
+      else { neuroSet.push(val); chip.classList.add('selected'); }
+      applyNeuroState();
       fireKnownConditionTriggers();
     });
   });
@@ -11453,6 +11493,7 @@ window.openConditionModule = function(key) {
     'peripheral-neuropathy': 'Peripheral Neuropathy',
     'concussion': 'Concussion'
   };
+  if (key === 'neuro') { if (window.openNeuroModule) window.openNeuroModule({switch: true}); return; }
   var groupALabel = groupAMap[key];
   if (groupALabel) {
     var chip = document.querySelector('#kc-neuro .chip[data-chip="' + groupALabel + '"]');
@@ -11605,6 +11646,9 @@ window.openTier2Module = function(key) {
     } else if (window.syncFmCapsule) {
       window.syncFmCapsule();
     }
+    // with many tabs the bar scrolls sideways: bring the active one into view
+    var activeTab = document.querySelector('#module-tab-bar .module-tab.active');
+    if (activeTab && activeTab.scrollIntoView) activeTab.scrollIntoView({ inline: 'center', block: 'nearest' });
     window.scrollTo(0, scrollPositions[key] || 0);
   };
 
@@ -13209,7 +13253,7 @@ document.addEventListener('click', function(e){
     badge() { return this.count(); },
     printBlock() { const e = this.el(); return e && window.__previewSection ? window.__previewSection(e, nameFn ? nameFn() : title) : ''; }
   });
-  const neuroName = () => { const c = document.querySelector('#kc-neuro .chip.selected'); return 'Neuro assessment' + (c ? ' (' + c.getAttribute('data-chip') + ')' : ''); };
+  const neuroName = () => { const c = $$('#kc-neuro .chip.selected').map(b => b.getAttribute('data-chip')); return 'Neuro assessment' + (c.length ? ' (' + c.join(', ') + ')' : ''); };
   const GROUP_A = sectionModule('groupa', 'sec-group-a', 'Neuro', 'Neuro assessment', 'sec-objective', neuroName);
   window.MODULE_REGISTRY = [
     { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals', placement: 'inline' },
@@ -13221,12 +13265,7 @@ document.addEventListener('click', function(e){
     { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science', placement: 'inline' },
     { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile', placement: 'inline' },
-    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi', placement: 'tab', ...GROUP_A },
-    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci', placement: 'tab', ...GROUP_A },
-    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons', placement: 'tab', ...GROUP_A },
-    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms', placement: 'tab', ...GROUP_A },
-    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy', placement: 'tab', ...GROUP_A },
-    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion', placement: 'tab', ...GROUP_A },
+    { group: 'Condition modules', label: 'Neuro Assessment', fn: 'openConditionModule', arg: 'neuro', placement: 'tab', ...GROUP_A },   // the six neuro conditions are filters inside this one module
     { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy', placement: 'profile' },
     { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular', placement: 'profile' },
     { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic', placement: 'profile' },

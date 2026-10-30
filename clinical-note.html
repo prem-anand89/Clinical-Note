@@ -180,6 +180,7 @@
   .kf-pill.kf-subj{ background:var(--surface); }
   .kf-pill.kf-rom{ background:var(--amber-dim); border-color:#E9D3AC; color:#6b4515; }
   .kf-pill.kf-mmt{ background:var(--rust-dim); border-color:#F3B7B4; color:#8a1d17; }
+  .kf-pill.kf-mod{ background:var(--clinical-dim); border-color:#c6dcd9; color:var(--clinical); }
   .kf-pill.kf-test{ background:#ece6f6; border-color:#d8cdee; color:#4b3a78; }
   .kf-more{ font-size:12px; color:var(--ink-faint); }
   .kf-flash{ animation:kfFlash 1.4s ease; }
@@ -4482,14 +4483,7 @@
     if(yellowHits.length > 0){
       lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--context);font-weight:600;margin-top:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>Psychosocial (yellow) flags noted: ' + yellowHits.join(', ') + '</div>');
     }
-    var fmd = typeof window.getFmData === 'function' ? window.getFmData() : null;
-    if(fmd && fmd.enabled){
-      var hypEl = document.getElementById('fm-hyp-diag');
-      var hypTxt = hypEl ? hypEl.textContent.trim() : '';
-      var nTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; }).length;
-      lines.push('<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--clinical);font-weight:600;margin-top:6px;">FM: ' +
-        (hypTxt && hypTxt !== 'None' ? hypTxt : 'no pattern yet') + ' · ' + nTreated + ' point' + (nTreated === 1 ? '' : 's') + ' treated</div>');
-    }
+    // module lines (FM today) live in the Key Findings strip — see CoreModules.summaries()
     if(lines.length === 0){ el.style.display = 'none'; el.innerHTML = ''; return; }
     el.style.display = 'block';
     el.innerHTML = '<div style="background:var(--surface); border:1px solid var(--line-soft); border-radius:var(--radius-md); padding:10px 14px;">' + lines.join('') + '</div>';
@@ -11554,8 +11548,8 @@ window.openTier2Module = function(key) {
   // Sync FM Capsule
   // Treating a point in FM ticks "Fascial Manipulation (FM)" under Intervention (marked data-auto so it can
   // be un-ticked again if the points are cleared). A manual tap on the chip makes it the therapist's.
-  function syncFmInterventionChip(treatedCount) {
-    var chip = document.querySelector('#manual-therapy-chips .chip[data-chip="Fascial Manipulation (FM)"]');
+  function syncModuleChip(spec, treatedCount) {
+    var chip = document.querySelector('#manual-therapy-chips .chip[data-chip="' + spec.name + '"]');
     if (!chip || document.body.classList.contains('note-locked')) return;
     if (!chip.dataset.autoWired) {
       chip.dataset.autoWired = '1';
@@ -11568,26 +11562,35 @@ window.openTier2Module = function(key) {
     }
     var on = chip.classList.contains('selected');
     if (treatedCount === 0) chip.removeAttribute('data-manual-off');
-    if (treatedCount > 0 && !on && !chip.hasAttribute('data-manual-off')) { chip.classList.add('selected'); chip.setAttribute('data-auto', 'fm'); }
-    else if (treatedCount === 0 && on && chip.getAttribute('data-auto') === 'fm') { chip.classList.remove('selected'); chip.removeAttribute('data-auto'); }
+    if (treatedCount > 0 && !on && !chip.hasAttribute('data-manual-off')) { chip.classList.add('selected'); chip.setAttribute('data-auto', spec.auto); }
+    else if (treatedCount === 0 && on && chip.getAttribute('data-auto') === spec.auto) { chip.classList.remove('selected'); chip.removeAttribute('data-auto'); }
     else return;
     if (window.Lean && window.Lean.refresh) window.Lean.refresh();
   }
+  // every tab module that declares an interventionChip keeps its chip in step with what it has treated today
+  function syncModuleChips() {
+    var mods = window.CoreModules ? window.CoreModules.list() : [];
+    mods.forEach(function(m) {
+      if (m.interventionChip && m.treatedCount) syncModuleChip(m.interventionChip, m.treatedCount());
+    });
+  }
+  window.syncModuleChips = syncModuleChips;
 
   window.syncFmCapsule = function() {
     var cap = document.getElementById('fm-capsule-card');
     if (!cap) return;
     var fmd = typeof window.getFmData === 'function' ? window.getFmData() : { enabled: false, pv: [], hypothesis: null, moVe: [] };
     if (typeof window.updateClinicalImpressionCrossRefs === 'function') window.updateClinicalImpressionCrossRefs();
+    setTimeout(function(){ if (window.Lean && window.Lean.refresh) window.Lean.refresh(); }, 0);   // module lines in the Key Findings strip
     if (!fmd.enabled) {
-      syncFmInterventionChip(0);
+      syncModuleChips();
       cap.style.display = 'none';
       return;
     }
     cap.style.display = 'block';
 
     var todayTreated = (fmd.pv || []).filter(function(c){ return !c.isPrior && c.treated; });
-    syncFmInterventionChip(todayTreated.length);
+    syncModuleChips();
     var badge = document.getElementById('fm-capsule-badge');
     var emptyRow = document.getElementById('fm-capsule-empty');
     var treatedRow = document.getElementById('fm-capsule-treated');
@@ -12006,8 +12009,10 @@ window.hideAdvancedModule = function(key) {
       if(!document.querySelector('#primary-complaint .chip.selected')) gaps.push('Primary complaint');
       if(!document.getElementById('primary-hypothesis').value.trim()) gaps.push('Primary hypothesis (Clinical Impression)');
       if(!document.querySelector('#goals-rows .repeatable-card')) gaps.push('At least one goal (Plan &amp; Goals)');
-      if(gaps.length){
-        var el = showCheck('<b>Not yet documented:</b> ' + gaps.join(' · ') + '<div style="margin-top:10px; display:flex; gap:8px;">' +
+      var modWarn = window.CoreModules ? window.CoreModules.signWarnings() : [];
+      if(gaps.length || modWarn.length){
+        var el = showCheck((gaps.length ? '<b>Not yet documented:</b> ' + gaps.join(' · ') : '') +
+          (modWarn.length ? (gaps.length ? '<br>' : '') + '<b>Open in a module:</b> ' + modWarn.join(' · ') : '') + '<div style="margin-top:10px; display:flex; gap:8px;">' +
           '<button type="button" class="add-link" id="sign-back" style="color:var(--ink-soft);">Go back and edit</button>' +
           '<button type="button" class="add-link" id="sign-anyway" style="color:var(--clinical); font-weight:700;">Sign anyway</button></div>');
         document.getElementById('sign-back').addEventListener('click', function(){ checkPanel().style.display = 'none'; });
@@ -12613,7 +12618,7 @@ document.addEventListener('click', function(e){
      Saved data is untouched: tucked fields stay in the DOM with their ids. */
   const $ = (s, r) => (r || document).querySelector(s);
   const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
-  const L = window.Lean = { cfg: {}, groups: [], hooks: [] };
+  const L = window.Lean = { cfg: {}, groups: [], hooks: [], bars: {} };
 
   /* ---------- helpers ---------- */
   const val = id => { const e = document.getElementById(id); return e ? (e.value || '').trim() : ''; };
@@ -12670,6 +12675,7 @@ document.addEventListener('click', function(e){
     const row = document.createElement('div');
     row.className = 'lean-more';
     row.id = 'lean-more-' + (cfg.id || sectionId);
+    L.bars[cfg.id || sectionId] = { row: row, section: sectionId };
     anchor.insertAdjacentElement(cfg.where || 'afterend', row);
     cfg.groups.forEach(g => {
       g._btn = document.createElement('button');
@@ -12677,10 +12683,27 @@ document.addEventListener('click', function(e){
       g._open = false;
       g._btn.addEventListener('click', () => { if(g._open && groupHasData(g)) return; setOpen(g, !g._open); schedule(); });
       row.appendChild(g._btn);
+      g._section = sectionId; g._bar = cfg.id || sectionId;
       L.groups.push(g);
     });
     return row;
   };
+  // Add one more "+" chip to an existing bar — the whole cost of adding a Core add-on:
+  //   Lean.addon('obj-more', { id: 'o-new', label: 'Something', targets: ['#card-something'] })
+  L.addon = function(barId, g){
+    const bar = L.bars[barId];
+    if(!bar) return null;
+    g._btn = document.createElement('button');
+    g._btn.type = 'button'; g._btn.className = 'lean-chip'; g._btn.textContent = '+ ' + g.label; g._btn.dataset.leanGroup = g.id;
+    g._open = false; g._section = bar.section; g._bar = barId;
+    g._btn.addEventListener('click', () => { if(g._open && groupHasData(g)) return; setOpen(g, !g._open); schedule(); });
+    bar.row.appendChild(g._btn);
+    L.groups.push(g);
+    schedule();
+    return g;
+  };
+  // every Core add-on: what it is called, where it lives, and whether data opens it by itself
+  L.addons = () => L.groups.filter(g => g._bar && g.label).map(g => ({ id: g.id, label: g.label, section: g._section, bar: g._bar, tucked: true, autoOpensOnData: true }));
   // a group that is opened by something other than a chip (e.g. a gate button)
   L.group = g => { g._btn = document.createElement('button'); g._open = false; g.label = g.label || ''; L.groups.push(g); return g; };
   L.reveal = id => { const g = L.groups.filter(x => x.id === id)[0]; if(g && !g._open) setOpen(g, true); };
@@ -13064,29 +13087,50 @@ document.addEventListener('click', function(e){
   // One module dock, built from a config (window.MODULE_REGISTRY), not from the sidebar's DOM, so the
   // sidebar can become navigation-only. Each entry calls the same global opener the sidebar uses.
   window.MODULE_REGISTRY = [
-    { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals' },
-    { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart' },
-    { group: 'Clinical & functional tools', label: 'Functional Status (PSFS)', fn: 'openTier2Module', arg: 'psfs' },
-    { group: 'Clinical & functional tools', label: 'Gait & Posture', fn: 'openTier2Module', arg: 'gait' },
-    { group: 'Clinical & functional tools', label: 'Palpation', fn: 'openTier2Module', arg: 'palpation' },
-    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires' },
-    { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms' },
-    { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science' },
-    { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile' },
-    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi' },
-    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci' },
-    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons' },
-    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms' },
-    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy' },
-    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion' },
-    { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy' },
-    { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular' },
-    { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic' },
-    { group: 'Manual & movement frameworks', label: 'Fascial Manipulation (FM)', fn: 'openAdvancedModule', arg: 'fascial-manipulation', tab: true },
-    { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm' },
-    { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst' },
-    { group: 'Manual & movement frameworks', label: 'NeuroKinetic Therapy (NKT)', fn: 'openAdvancedModule', arg: 'nkt' },
-    { group: 'Manual & movement frameworks', label: 'Dynamic Neuromuscular Stabilization (DNS)', fn: 'openAdvancedModule', arg: 'dns' }
+    { group: 'Clinical & functional tools', label: 'Vitals & Measurements', fn: 'openTier2Module', arg: 'vitals', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Body Chart', fn: 'openTier2Module', arg: 'body-chart', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Functional Status (PSFS)', fn: 'openTier2Module', arg: 'psfs', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Gait & Posture', fn: 'openTier2Module', arg: 'gait', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Palpation', fn: 'openTier2Module', arg: 'palpation', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Questionnaires', fn: 'openTier2Module', arg: 'questionnaires', placement: 'tab' },
+    { group: 'Clinical & functional tools', label: 'VOMS (Vestibular/Oculomotor)', fn: 'openTier2Module', arg: 'voms', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Pain Science', fn: 'openTier2Module', arg: 'pain-science', placement: 'inline' },
+    { group: 'Clinical & functional tools', label: 'Sports Profile', fn: 'openSportsProfile', placement: 'inline' },
+    { group: 'Condition modules', label: 'Stroke / TBI', fn: 'openConditionModule', arg: 'stroke-tbi', placement: 'tab' },
+    { group: 'Condition modules', label: 'Paraplegia / SCI', fn: 'openConditionModule', arg: 'paraplegia-sci', placement: 'tab' },
+    { group: 'Condition modules', label: "Parkinson's", fn: 'openConditionModule', arg: 'parkinsons', placement: 'tab' },
+    { group: 'Condition modules', label: 'MS', fn: 'openConditionModule', arg: 'ms', placement: 'tab' },
+    { group: 'Condition modules', label: 'Peripheral Neuropathy', fn: 'openConditionModule', arg: 'peripheral-neuropathy', placement: 'tab' },
+    { group: 'Condition modules', label: 'Concussion', fn: 'openConditionModule', arg: 'concussion', placement: 'tab' },
+    { group: 'Condition modules', label: 'Facial Palsy', fn: 'openConditionModule', arg: 'facial-palsy', placement: 'profile' },
+    { group: 'Condition modules', label: 'Vestibular', fn: 'openConditionModule', arg: 'vestibular', placement: 'profile' },
+    { group: 'Condition modules', label: 'Cardiothoracic Assessment', fn: 'openConditionModule', arg: 'cardiothoracic', placement: 'profile' },
+    // placement: 'inline' = opens inside its Core section · 'tab' = its own workspace tab · 'profile' = Patient Profile (launch card only here).
+    // A tab module talks to Core through exactly three things (see CoreModules below): summaryLine -> the Key Findings strip,
+    // interventionChip -> auto-tick under Intervention, printBlock -> the preview/PDF. Only FM is wired today; the other
+    // 'tab' entries move over one per commit and are simply skipped until they define these.
+    { group: 'Manual & movement frameworks', label: 'Fascial Manipulation (FM)', fn: 'openAdvancedModule', arg: 'fascial-manipulation', placement: 'tab',
+      id: 'fm', tabKey: 'fm', payloadKey: 'fm',
+      enabled: () => !!(window.getFmData && window.getFmData().enabled),
+      treatedCount: () => { const d = window.getFmData && window.getFmData(); return d && d.enabled ? (d.pv || []).filter(c => !c.isPrior && c.treated).length : 0; },
+      summaryLine() {
+        const d = window.getFmData && window.getFmData(); if(!d || !d.enabled) return '';
+        const hypEl = document.getElementById('fm-hyp-diag'), hyp = hypEl ? hypEl.textContent.trim() : '', n = this.treatedCount();
+        return 'FM: ' + (hyp && hyp !== 'None' ? hyp : 'no pattern yet') + ' · ' + n + ' point' + (n === 1 ? '' : 's') + ' treated';
+      },
+      interventionChip: { name: 'Fascial Manipulation (FM)', auto: 'fm' },
+      badge() { const d = window.getFmData && window.getFmData(); return d && d.enabled ? (d.pv || []).filter(c => !c.isPrior && c.grade).length : 0; },
+      printSlot: 'sec-objective',   // keeps FM where it prints today; the default slot is 'end' (after Core, in tab order)
+      printBlock() { return window.__fmPrintBlock ? window.__fmPrintBlock() : ''; },
+      signWarning() {
+        if(!this.enabled()) return '';
+        const open = $$('#fm-seq-builder .seq-step').filter(st => !st.querySelector('.step-treat.on')).length;
+        return open ? 'FM: ' + open + ' planned point' + (open === 1 ? '' : 's') + ' not marked treated' : '';
+      } },
+    { group: 'Manual & movement frameworks', label: 'Visceral Manipulation (VM)', fn: 'openAdvancedModule', arg: 'vm', placement: 'tab' },
+    { group: 'Manual & movement frameworks', label: 'Craniosacral Therapy (CST)', fn: 'openAdvancedModule', arg: 'cst', placement: 'tab' },
+    { group: 'Manual & movement frameworks', label: 'NeuroKinetic Therapy (NKT)', fn: 'openAdvancedModule', arg: 'nkt', placement: 'inline' },
+    { group: 'Manual & movement frameworks', label: 'Dynamic Neuromuscular Stabilization (DNS)', fn: 'openAdvancedModule', arg: 'dns', placement: 'inline' }
   ];
   (function(){
     const dock = $('#lean-module-dock');
@@ -13102,6 +13146,19 @@ document.addEventListener('click', function(e){
       try { window[m.fn](m.arg); } catch(err) { console.warn('dock action failed', err); }
     });
   })();
+  /* ---- The Core <-> module contract ----
+     Core never shows a module's fields. A tab module reaches Core through three things only, read from its registry entry:
+       summaryLine()      one line in the Key Findings strip (Impression)
+       interventionChip   its chip under Intervention is ticked while the module has treated something today
+       printBlock()       its block in the preview / PDF (printSlot: a Core section id, default 'end' = after Core)
+     plus an optional signWarning() — shown in the sign check as a warning, never a block. */
+  window.CoreModules = {
+    list: () => window.MODULE_REGISTRY.filter(m => m.placement === 'tab' && m.id),
+    summaries: () => window.CoreModules.list().filter(m => m.summaryLine).map(m => ({ id: m.id, tabKey: m.tabKey, text: m.summaryLine() })).filter(x => x.text),
+    signWarnings: () => window.CoreModules.list().filter(m => m.signWarning).map(m => m.signWarning()).filter(Boolean),
+    printBlocks: slot => window.CoreModules.list().filter(m => m.printBlock && m.enabled && m.enabled() && (m.printSlot || 'end') === slot).map(m => m.printBlock()).filter(Boolean),
+    badge: id => { const m = window.CoreModules.list().filter(x => x.id === id)[0]; return m && m.badge ? m.badge() : 0; }
+  };
   L.notes($('#sec-objective'), 'objective-notes', 'Examination notes');
 
 
@@ -13173,6 +13230,8 @@ document.addEventListener('click', function(e){
         const name = nameOf(row);
         if(name && $('.segmented button.selected[data-val="Positive"]', row)) out.push({ kind: 'test', text: name + ' positive', el: row });
       });
+      // specialty modules: one line each, from the registry (never their fields)
+      if(window.CoreModules) window.CoreModules.summaries().forEach(m => out.push({ kind: 'mod', text: m.text, tab: m.tabKey }));
       return out;
     }
     let items = [], lastKey = '';
@@ -13194,7 +13253,9 @@ document.addEventListener('click', function(e){
     }
     strip.addEventListener('click', e => {
       const b = e.target.closest('.kf-pill'); if(!b) return;
-      const it = items[Number(b.dataset.kf)]; if(!it || !it.el || !it.el.isConnected) return;
+      const it = items[Number(b.dataset.kf)]; if(!it) return;
+      if(it.tab){ if(window.switchModuleTab) window.switchModuleTab(it.tab); window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      if(!it.el || !it.el.isConnected) return;
       if(window.getActiveModuleTab && window.getActiveModuleTab() !== 'core' && window.switchModuleTab) window.switchModuleTab('core');
       const sec = it.el.closest('.section'); if(sec) sec.classList.remove('sec-lean-collapsed');
       it.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -13476,7 +13537,7 @@ document.addEventListener('click', function(e){
       if(id === 'sec-history' && F.noRelevantHistory) extra.push({ label: 'History', text: 'No relevant history (confirmed)' });
       if(id === 'sec-objective' && F.screenedNoOtherDeficits) extra.push({ label: 'Screening', text: 'Screened, no other deficits' });
       if(id === 'sec-objective' && window.getPinnedFindings){ const p = window.getPinnedFindings(); if(p.length) extra.push({ label: 'Pinned for follow-up', text: p.map(x => x.region + ' ' + x.name).join('; ') }); }
-      if(id === 'sec-objective' && window.getFmData && window.getFmData().enabled) extra.push({ html: fmBlock() });
+      if(window.CoreModules) window.CoreModules.printBlocks(id).forEach(html => extra.push({ html: html }));
       if(id === 'sec-plan-goals' && window.getHepRows){
         window.getHepRows().filter(r => r.name).forEach(r => extra.push({ label: 'HEP', text: [r.name, [r.sets, r.reps].filter(Boolean).join('×'), r.hold && r.hold + ' s hold', r.frequency, r.cue].filter(Boolean).join(' · ') }));
       }
@@ -13485,8 +13546,10 @@ document.addEventListener('click', function(e){
       if(!all.length){ h += '<div class="np-empty">Nothing recorded</div>'; return; }
       all.forEach(l => { h += l.html ? l.html : l.h ? '<h4>' + esc(l.h) + '</h4>' : '<div class="np-line"><b>' + esc(l.label || '') + (l.label ? ':' : '') + '</b> ' + esc(l.text) + '</div>'; });
     });
+    if(window.CoreModules) window.CoreModules.printBlocks('end').forEach(html => { h += html; });   // modules without a Core slot print after Core, in tab order
     return h;
   }
+  window.__fmPrintBlock = fmBlock;
   const host = document.createElement('div'); host.id = 'note-preview';
   host.innerHTML = '<div class="np-sheet"><div class="np-bar"><button type="button" id="np-close">Close</button><button type="button" id="np-print">Print</button></div><div id="np-body"></div></div>';
   document.body.appendChild(host);

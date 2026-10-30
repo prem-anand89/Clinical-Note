@@ -172,8 +172,9 @@ const segRows = page => page.evaluate(() => Array.from(document.querySelectorAll
   ok('1e: grading without treating does not select the FM chip', !(await isOn()));
   await setTreated();
   ok('1e: treating a point selects the FM Intervention chip', await isOn());
-  const refs = await page.evaluate(() => document.getElementById('ci-cross-refs').textContent.replace(/\s+/g, ' ').trim());
-  ok('1e: Clinical Impression cross-refs mention FM and the treated count', /FM:/.test(refs) && /1 point treated/.test(refs), refs);
+  await page.waitForTimeout(400);
+  const refs = await page.evaluate(() => document.getElementById('ci-key-findings').textContent.replace(/\s+/g, ' ').trim());
+  ok('1e: Clinical Impression Key Findings strip mentions FM and the treated count', /FM:/.test(refs) && /1 point treated/.test(refs), refs);
   await setTreated(); // toggle treated off
   ok('1e: un-treating clears the auto-selected chip', !(await isOn()));
   await setTreated(); // treated again -> auto on

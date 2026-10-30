@@ -688,3 +688,13 @@ No visible change; fewer ways for a "+" chip to leave a card half-open.
 - **Display only:** no inputs. Each pill **jumps to the row it came from** (switching back to Core and expanding a collapsed section if needed) with a brief highlight.
 - **Signed notes:** pills (and the FM jump chips, the Impression "change in Section 1" link) are reading aids and still work under the lock; nothing is editable through them. *Correction:* the lock was blocking the FM jump chips on a signed note — fixed and now tested.
 - **Tests:** new `tests/key-findings.mjs`; `core-layout-step6a7a` gains a signed-note jump-chip check.
+
+## Core layout — Step 5: module registry and the Core contract (30 Oct)
+No visible change for FM; adding a module no longer means editing Core.
+- **`MODULE_REGISTRY` extended, not replaced** (still 23 entries; label / fn / group untouched so the dock and `step3` keep working). Every entry now has a **`placement`** — 10 inline · 10 tab · 3 profile (Facial Palsy, Vestibular, Cardiothoracic stay Patient-Profile modules). The unused `tab: true` flag is gone. *Palpation is provisionally inline pending the owner's call.*
+- **`CoreModules`** — a tab module reaches Core through exactly three things, read from its registry entry: `summaryLine()` (a pill in the Key Findings strip), `interventionChip` (auto-tick under Intervention; the FM sync is generalised to `syncModuleChip`, still `data-auto` / `data-manual-off`) and `printBlock()` (preview/PDF, in `printSlot` — FM keeps its place inside Objective; a module with no slot prints after Core). Plus optional `signWarning()` and `badge()` (badge is rendered in step 6b).
+- **FM migrated:** its line moved from the Impression cross-references into the strip as a module pill that opens the FM tab; its chip, print block and a new sign warning ("FM: 2 planned points not marked treated") all go through the registry.
+- **Sign check:** open module items are listed as a **warning only** ("Open in a module: …") — "Sign anyway" is always offered, never blocked.
+- **Core add-ons:** `Lean.addon(barId, {id, label, targets, …})` adds one "+" chip to a section's bar; `Lean.addons()` lists every add-on with its section. *Deviation from the plan:* the existing `L.more` bars were not rebuilt from a data list (their configs carry closures); new add-ons are one call, existing ones are unchanged.
+- `PAYLOAD_SHAPE_DRAFT.md`: proposed `core` + `modules: { fm?, … }` port shape, each module versioned separately.
+- **Tests:** new `tests/module-contract.mjs` (registry shape, FM through the contract, a temporary second module with no Core change, slots, sign warning, badge, add-ons); `fm-step1-wiring` now reads the strip.

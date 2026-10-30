@@ -130,3 +130,21 @@ Each ROM side has an optional `full: true` flag instead of degree values (the de
 
 ## Session note: fascial points
 `fmTreated: { segment: string; side: string | null; plane: string }[]` — points from the assessment's FM grid marked treated today (only present for FM patients; ids are segment + side + plane, never a column index).
+
+## Core + modules (module contract, Step 5 of the layout plan)
+Proposed port shape — Core and each tab module are versioned separately so `upgrade()` runs per module instead of one ever-growing v1.x:
+```ts
+CoreAssessmentPayload {
+  version: '1.4'                       // Core only
+  core: { chiefComplaint, history, safety, objective, impression, intervention, plan, pins, ... }
+  modules?: {                          // present only for modules added to this note
+    fm?:  { version: '1.0', segments, history, pv, hypothesis, sequence, moVe }   // = getFmData()
+    vm?:  { version: '1.0', ... }      // moves over one per commit (tab placement)
+    cst?: { version: '1.0', ... }
+    // questionnaires, neuro Group A conditions — same pattern
+  }
+}
+```
+- Each registry entry names its slot with `payloadKey` (FM: `fm`). Patient-Profile modules (`placement: 'profile'` — Facial Palsy, Vestibular, Cardiothoracic) are **not** in the visit payload.
+- Core ↔ module contract: a tab module reaches Core only through `summaryLine()` (Key Findings strip), `interventionChip` (auto-tick, `data-auto="<id>"`), `printBlock()` (preview/PDF, optional `printSlot`; FM keeps `sec-objective`, default is after Core in tab order) and an optional `signWarning()` (warning only). The Core payload never contains a module's fields.
+- Port: registry → `src/features/patients/unifiedNote/modules/registry.ts`; each tab a lazy-loaded component.

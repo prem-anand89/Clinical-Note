@@ -671,3 +671,9 @@ No visible change; fewer ways for a "+" chip to leave a card half-open.
 - Sidebar jumps, data auto-open, template auto-open (Load management) and the conditions-card summary all call the same function.
 - Screening keeps its own `onOpen` (it is a custom accordion, not a "+ Add" body).
 - **Tests:** new `tests/open-card.mjs` — every "+" chip opens its card in one click (expanded, body open), second tap hides, add/collapse buttons, header toggle, data auto-open, chip stays in step, template reveal, sidebar jump, signed-note lock, and source guards against synthetic clicks.
+
+## Core layout — Step 3: ROM "+ Passive / End-feel" (30 Oct)
+- Each ROM side now shows **Active°, Full / WNL and ⚡ Pain** by default; **Passive° and End-feel** sit behind one "+ Passive / End-feel" chip per side (a typical movement row loses about half its controls).
+- It **opens by itself** when Passive° or End-feel holds a value — typed, picked, or written by code (checked on every refresh) — and then cannot be hidden, so an entered value is never out of sight.
+- The fields stay in the DOM (hidden by a stylesheet rule), so saved data, the row summary, ⭐ pins and the preview/PDF read them exactly as before; Full / WNL still clears and disables both degree boxes.
+- **Tests:** new `tests/rom-passive.mjs` (hidden by default, per-side open/close, cannot hide data, end-feel alone, code-written value, WNL, pin snapshot, preview prints while closed, 390 px). `step3`, `pins`, `preview` unchanged and passing.

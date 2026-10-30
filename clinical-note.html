@@ -519,6 +519,12 @@
 
   .obj-row .side-tag{ font-size:10px; font-weight:700; color:var(--ink-faint); margin-right:3px; }
   .side-block{ display:flex; align-items:center; gap:6px; padding:6px; border-radius:7px; transition:all .15s ease; flex-wrap:wrap; }
+  /* Passive° and End-feel are tucked behind one chip per side; they stay in the DOM (saved data, summaries, preview, pins
+     all read them) and open by themselves the moment either holds a value. */
+  .rom-passive-wrap{ display:inline-flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .rom-passive-wrap:not(.open){ display:none; }
+  .rom-passive-toggle{ font-size:11px; font-weight:600; padding:5px 9px; border-radius:7px; border:1.5px dashed var(--line); background:none; color:var(--clinical); cursor:pointer; white-space:nowrap; }
+  .rom-passive-toggle:hover, .rom-passive-toggle.open{ border-style:solid; border-color:var(--clinical); }
   .endfeel-select{ font-size:11px; padding:5px 7px; border-radius:7px; width:auto; max-width:118px; }
   .pain-toggle{
     font-size:11px; font-weight:700; padding:5px 9px; border-radius:7px;
@@ -5621,8 +5627,11 @@
       var tag = s === 'Value' ? '' : '<span class="side-tag">' + s + '</span>';
       return '<div class="side-block" data-side="' + s + '">' + tag +
         '<span class="deg-pair"><input type="number" inputmode="numeric" class="deg-input" placeholder="0"><span class="deg-unit">Active°</span></span>' +
+        '<button type="button" class="rom-passive-toggle" aria-expanded="false">+ Passive / End-feel</button>' +
+        '<span class="rom-passive-wrap">' +
         '<span class="deg-pair"><input type="number" inputmode="numeric" class="deg-input" placeholder="0"><span class="deg-unit">Passive°</span></span>' +
         '<select class="select-input endfeel-select"><option value="">End-feel…</option><option>Capsular</option><option>Bony</option><option>Springy block</option><option>Empty (pain)</option><option>Muscular</option></select>' +
+        '</span>' +
         '<button type="button" class="wnl-toggle" aria-pressed="false" title="Full range, within normal limits (recorded as a flag, not a number)">Full / WNL</button>' +
         '<button type="button" class="pain-toggle">⚡ Pain</button>' +
         '<input type="text" class="text-input pain-note" placeholder="e.g. painful arc 60–120°" style="display:none;">' +
@@ -5658,6 +5667,28 @@
         });
       });
     });
+    // + Passive / End-feel: one chip per side. Opens by itself when either field holds a value, and then stays open.
+    function passiveHasData(sb){
+      var ins = sb.querySelectorAll('.deg-input'), ef = sb.querySelector('.endfeel-select');
+      return !!((ins[1] && ins[1].value !== '') || (ef && ef.value));
+    }
+    function setPassive(sb, open){
+      var w = sb.querySelector('.rom-passive-wrap'), t = sb.querySelector('.rom-passive-toggle');
+      if(!w || !t) return;
+      w.classList.toggle('open', open); t.classList.toggle('open', open);
+      t.setAttribute('aria-expanded', open ? 'true' : 'false');
+      t.textContent = (open ? '− ' : '+ ') + 'Passive / End-feel';
+    }
+    row.querySelectorAll('.rom-passive-toggle').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var sb = btn.closest('.side-block'), isOpen = sb.querySelector('.rom-passive-wrap').classList.contains('open');
+        if(isOpen && passiveHasData(sb)) return;   // never hide a value that was entered
+        setPassive(sb, !isOpen);
+      });
+    });
+    row.addEventListener('input', function(e){ var sb = e.target.closest && e.target.closest('.side-block'); if(sb && passiveHasData(sb)) setPassive(sb, true); });
+    row.addEventListener('change', function(e){ var sb = e.target.closest && e.target.closest('.side-block'); if(sb && passiveHasData(sb)) setPassive(sb, true); });
+    row.__syncPassive = function(){ row.querySelectorAll('.side-block').forEach(function(sb){ if(passiveHasData(sb)) setPassive(sb, true); }); };
     row.querySelectorAll('.pain-toggle').forEach(function(btn){
       btn.addEventListener('click', function(){
         var note = btn.nextElementSibling;
@@ -12974,6 +13005,7 @@ document.addEventListener('click', function(e){
   ['rom-rows', 'mmt-rows', 'specialtest-rows', 'funcscreen-rows'].forEach(id => { const c = $('#' + id); if(c && c.closest('.card')) c.closest('.card').classList.add('lean-compact'); });
   const obsCard = $('#card-obs-palp'); if(obsCard) obsCard.classList.add('lean-compact');
   // "Method & equipment" only matters once a row exists
+  L.hooks.push(() => $$('.obj-row').forEach(r => { if(r.__syncPassive) r.__syncPassive(); }));   // values set by code (carry-forward, import) still open their Passive / End-feel
   L.hooks.push(() => ['rom', 'mmt'].forEach(k => {
     const d = $('.method-details[data-method="' + k + '"]'), rows = $('#' + k + '-rows');
     if(d && rows) d.classList.toggle('lean-hide', rows.children.length === 0);

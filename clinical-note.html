@@ -52,7 +52,7 @@
     font-size:14px;
     line-height:1.45;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
+    overflow-x:clip;
   }
   h1,h2,h3,.display{ font-family:'Fraunces', Georgia, serif; }
 
@@ -172,12 +172,25 @@
   /* ================= MAIN COLUMN ================= */
   .main{ flex:1 1 auto; min-width:0; padding:28px 20px 120px; }
   .note-head{ margin-bottom:22px; }
+  .fm-jump{ position:sticky; top:105px; z-index:20; display:flex; gap:6px; overflow-x:auto; padding:8px 0; margin:0 0 12px; background:var(--surface); border-bottom:1px solid var(--line-soft); scrollbar-width:none; }
+  .fm-jump::-webkit-scrollbar{ display:none; }
+  #view-fm .card{ scroll-margin-top:160px; }
+  #fm-pv-table tbody tr, #fm-seg-table tbody tr, #view-fm .pv-cell, #view-fm .seq-step{ scroll-margin-top:160px; }
+  .fm-jump-chip{ flex:0 0 auto; border:1px solid var(--line); background:#fff; color:var(--ink-soft); border-radius:999px; padding:6px 12px; font-size:12.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .fm-jump-chip:hover{ border-color:var(--clinical); color:var(--clinical); }
   .note-head .eyebrow{
     font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase;
     color:var(--clinical); margin-bottom:6px;
   }
   .note-head h1{ font-family:'Fraunces', Georgia, serif; font-size:24px; font-weight:600; margin:0 0 4px; letter-spacing:-0.01em; }
   .note-head p{ margin:0; color:var(--ink-soft); font-size:13.5px; }
+  /* compact patient episode banner: one line — title, patient, preview button on the right */
+  .note-head{ display:flex; flex-wrap:wrap; align-items:center; gap:4px 14px; margin-bottom:16px; }
+  .note-head .eyebrow{ display:none; }
+  .note-head h1{ font-size:19px; margin:0; }
+  .note-head .preview-open{ margin:0 0 0 auto; padding:6px 12px; }
+  .note-head .frozen-note{ flex:1 0 100%; }
+  .main .build-note{ display:none; }
 
   .build-note{
     display:flex; gap:10px; align-items:flex-start;
@@ -3751,6 +3764,14 @@
         <h2 style="font-size:15px;">Fascial Manipulation (FM)</h2>
         <span class="tier-tag" style="background:var(--context-dim); color:var(--context);">Advanced Module · Specialty tier</span>
       </div>
+      <nav class="fm-jump" id="fm-jump" aria-label="Jump to FM card">
+        <button type="button" class="fm-jump-chip" data-jump="fm-seg-table">1 Segments</button>
+        <button type="button" class="fm-jump-chip" data-jump="fm-internal-dysf-card">↳ Internal</button>
+        <button type="button" class="fm-jump-chip" data-jump="fm-hist-table">2 History</button>
+        <button type="button" class="fm-jump-chip" data-jump="fm-pv-table">3 Grid</button>
+        <button type="button" class="fm-jump-chip" data-jump="fm-hyp-banner">4 Sequence</button>
+        <button type="button" class="fm-jump-chip" data-jump="fm-move-table">5 Re-check</button>
+      </nav>
       <div id="fm-trigger-reason" class="field-note" style="display:none; margin:-6px 0 14px; padding:8px 12px; background:var(--context-dim); color:var(--context); border-radius:var(--radius-sm); font-weight:600;"></div>
 
       <!-- 1. Segment Assessment -->
@@ -11286,6 +11307,13 @@ window.openTier2Module = function(key) {
     return currentTab;
   };
 
+  document.addEventListener('click', function(ev){
+    var chip = ev.target.closest && ev.target.closest('.fm-jump-chip');
+    if(!chip) return;
+    var tgt = document.getElementById(chip.getAttribute('data-jump'));
+    var card = tgt && (tgt.closest('.card') || tgt);
+    if(card) card.scrollIntoView({behavior: 'smooth', block: 'start'});
+  });
   window.switchModuleTab = function(key) {
     if (!key) return;
     if (key === currentTab) return;

@@ -24,7 +24,7 @@ async function fresh(segs, width = 1280) {
 async function grade(page, seg, plane, side, g) {
   const idx = await page.evaluate(s => Array.from(document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)')).findIndex(tr => (tr.querySelector('.pv-seg-name') || {}).value === s), seg);
   const cell = page.locator('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)').nth(idx).locator(`.pv-cell[data-plane="${plane}"][data-side="${side}"]`);
-  await cell.scrollIntoViewIfNeeded(); await cell.click(); await page.waitForTimeout(80);
+  await cell.scrollIntoViewIfNeeded(); await page.waitForTimeout(250); await cell.click(); await page.waitForTimeout(80);
   await page.locator(`#pv-picker button[data-grade="${g}"]`).click(); await page.waitForTimeout(80);
 }
 const cellState = (page, seg, plane, side) => page.evaluate(([s, p, d]) => { const c = window.__fmFindPvCell(p, s, d); return c ? { grade: c.getAttribute('data-grade'), treated: c.getAttribute('data-treated') } : null; }, [seg, plane, side]);
@@ -62,7 +62,7 @@ const addStep = async (page, plane, seg, side) => {
   ok('the auto-ticked FM chip clears when nothing is treated', !(await page.evaluate(() => document.querySelector('#manual-therapy-chips [data-chip="Fascial Manipulation (FM)"]').classList.contains('selected'))));
   // two-way: treat in Card 3 with the real picker, the pill follows
   const cell = page.locator('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)').nth(1).locator('.pv-cell[data-plane="RE-LA"][data-side="rt"]');
-  await cell.scrollIntoViewIfNeeded(); await cell.click(); await page.waitForTimeout(100);
+  await cell.scrollIntoViewIfNeeded(); await page.waitForTimeout(250); await cell.click(); await page.waitForTimeout(100);
   await page.locator('#pv-picker [data-act="treated"]').click(); await page.waitForTimeout(400);
   ok('treating in Card 3 turns the matching pill\'s ✓ on', await pill(page, 1).locator('.step-treat').evaluate(b => b.classList.contains('on')), await count(page));
   await page.close();

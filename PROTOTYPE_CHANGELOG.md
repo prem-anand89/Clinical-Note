@@ -642,3 +642,10 @@ Blank note: **16 → 13 visible cards**. No field removed; every id kept (see `C
 - **Impression:** "Deep reasoning & ICF" is now three chips — Differential & evidence · Impairments & ICF · Contributing factors.
 - Pain card needed no change (it already hides when Pain is not selected).
 - **Tests:** new `tests/core-layout-step1.mjs`; existing suites unchanged and passing.
+
+## Core layout — Steps 6a and 7a (30 Oct)
+- **FM tab jump chips:** a sticky row under the tab bar — `1 Segments · ↳ Internal · 2 History · 3 Grid · 4 Sequence · 5 Re-check`. Each scrolls its card into view below the pinned bars (scrolls sideways on phones). Works at every width, so iPad users don't need the sidebar (which is hidden on the FM tab at ≤1360 px).
+- **Compact patient banner:** one line — "New Visit · Priya Reddy · Patient ID: 00214 · First visit…" with Preview on the right. The eyebrow and the prototype build note are hidden. Preview stays in the banner until step 7b.
+- **Bug fix found on the way:** `body{overflow-x:hidden}` made the body its own scroll container, so the sticky top bar, module tab bar and sidebar never actually stuck. Changed to `overflow-x:clip` (no scroll container, still no sideways scroll). They now pin as designed.
+- Scroll margins keep cells, cards and sequence pills clear of the pinned bars when scrolled into view.
+- **Tests:** new `tests/core-layout-step6a7a.mjs`; `fm-seq-treat` waits for the cell scroll to settle.

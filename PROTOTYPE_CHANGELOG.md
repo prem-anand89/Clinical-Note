@@ -605,3 +605,13 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - **Cleaner labels in the preview/PDF:** labels and card headings no longer pull in their hint text and toggle buttons ("Primary hypothesis", not "Primary hypothesis deliberate exception to structured-first"), and the moved Known Condition row no longer shows as a stray group heading.
 - **Tests:** new `tests/print-pdf.mjs` generates real PDFs with headless Chrome and checks page count, header on every page, page numbers, draft vs completed, the blank-page fix, title restore, the FM table header and that no heading is stranded at a page bottom. All 21 suites pass.
 - **Not included:** a downloadable-PDF button or signer identity (TheraNet port, reusing `NotePrintPage.tsx`).
+
+## FM: detected patterns move to Card 4 as tappable chips (30 Oct)
+- **Why:** Card 3's "Density & Pattern Intelligence" box and Card 4's banner said the same thing twice, and a tap on the banner only added the top-graded cells, never the pattern's own points. With two candidate lines (for example an RL and an AM diagonal on the same side) there was no way to choose.
+- **Card 4:** a new "Detected patterns" row under the banner. Each chip is one pattern (≥2 segments graded 2 or higher on one plane and side) with its segment count and segment codes. **Tapping a chip adds that pattern's own points to the treatment sequence** (skipping any already there); a pattern whose points are all in the sequence shows as selected. The hypothesis banner then follows the sequence as before. The banner's "Suggested: …, tap to add" now adds the top pattern's points too.
+- **Order:** most segments first, then strongest grade (previously arbitrary). Two candidate lines are listed neutrally; nothing is labelled primary, counter or antagonist (that wording needs an FM clinician to confirm the pairs first).
+- **Card 3:** keeps "Highest findings" (tap to scroll to the cell) and the Treated / Untreated / points-evaluated line. The pattern list and the quiet prompts (planes both densified, segment also in FM History) moved to Card 4's pattern panel.
+- **Verified, not a bug:** grade 1 never counts toward a pattern and each segment counts once. The "AM diagonal counted a grade-1 cell" report could not be reproduced; `tests/fm-patterns.mjs` now locks that in with the reported grid.
+- **Data:** `window.__fmDetectedPatterns` entries gain `key`, `segs`, `points`, `top`; stored note data is unchanged.
+- **Tests:** new `tests/fm-patterns.mjs` (20 checks incl. a signed note); `fm-density` reads the new panel. All 22 suites pass.
+- **Deferred (needs FM clinician):** labelling antagonist diagonal pairs (AM–RL, AL–RM), marking one "primary", an "include antagonist diagonal" chip.

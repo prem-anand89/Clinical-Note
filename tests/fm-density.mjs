@@ -23,7 +23,8 @@ const grade = async (row, g, side) => {
   await c.scrollIntoViewIfNeeded(); await c.click(); await page.waitForTimeout(100);
   await page.locator('#pv-picker button[data-grade="' + g + '"]').click();
 };
-const dens = async () => (await page.textContent('#fm-density-summary')).replace(/\s+/g, ' ');
+// Card 3's box (highest findings, totals) plus Card 4's pattern panel (detected patterns)
+const dens = async () => ((await page.textContent('#fm-density-summary')) + ' ' + (await page.textContent('#fm-pattern-panel'))).replace(/\s+/g, ' ');
 
 // rows 0,1 = GE, HU (prototype mock rows). Same plane, two different segments -> a pattern
 await grade(0, '2'); await grade(1, '2');

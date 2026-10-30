@@ -1009,6 +1009,10 @@
   .fm-role-badge[data-role="PaConc"] { background:var(--context-dim); color:var(--context); }
   .fm-role-badge[data-role="Int"] { background:var(--amber-dim); color:var(--amber); }
   .pv-seg-col .fm-role-badge { position:absolute; left:0; top:0; margin:0; padding:0 4px; font-size:8px; line-height:12px; pointer-events:none; }
+  .fm-pattern-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; font-size:12.5px; }
+  .fm-pattern-chip .pat-dot { width:7px; height:7px; border-radius:50%; background:var(--clinical); flex:0 0 auto; }
+  .fm-pattern-chip .pat-count { background:var(--clinical-dim); color:var(--clinical); font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px; }
+  .fm-pattern-chip .pat-segs { color:var(--ink-faint); font-size:11.5px; }
   .fm-ctx-pill { display:inline-block; padding:3px 10px; border-radius:var(--radius-pill); background:var(--surface); border:1px solid var(--line); color:var(--ink-soft); font-size:12px; font-weight:600; }
 
   #fm-seq-picker {
@@ -3993,6 +3997,14 @@
             <span class="hyp-badge" id="fm-hyp-badge" style="display:none;"></span>
             <span class="hyp-meta" id="fm-hyp-meta">Palpate and grade points in Card 3 to derive pattern</span>
           </div>
+        </div>
+
+        <!-- Detected patterns (from Card 3): tap a chip to add that pattern's points to the sequence -->
+        <div id="fm-pattern-panel" style="margin:0 0 14px;">
+          <div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Detected patterns <span style="text-transform:none; letter-spacing:0; font-weight:500;">tap one to add its points to the sequence</span></div>
+          <div class="chip-row" id="fm-pattern-chips"></div>
+          <div id="fm-pattern-empty" style="font-size:12px; color:var(--ink-faint);">No clear diagonal or sequence yet (needs ≥2 segments graded 2 or higher on the same plane).</div>
+          <div id="fm-density-hints" style="margin-top:6px; font-size:12px; color:var(--ink-faint); line-height:1.5;"></div>
         </div>
 
         <!-- 2. Clean Planned Sequence -->
@@ -8713,6 +8725,7 @@ setupSegmented('patient-progress');
         let highestIndex = 0;
         let findings = [];
         let planeCounts = {}; // Track planes
+        let planePts = {};    // plane/side -> { plane, side, kind, pts: { SEG: strongest grade index } }
         let totalTreated = 0;
         let totalPoints = 0;
         let totalUntreatedHigh = 0; // Grade >= 2
@@ -8741,7 +8754,12 @@ setupSegmented('patient-progress');
             let fullPlane = `${plane} (${side}) ${kind}`;
             
             // A pattern needs grade 2 or higher on that plane (grade 1 is too faint to count).
-            if (idx >= 2) { (planeCounts[fullPlane] = planeCounts[fullPlane] || new Set()).add(String(seg).trim().toUpperCase()); }
+            if (idx >= 2) {
+                const segUp = String(seg).trim().toUpperCase();
+                (planeCounts[fullPlane] = planeCounts[fullPlane] || new Set()).add(segUp);
+                const po = planePts[fullPlane] = planePts[fullPlane] || { plane, side, kind, pts: {} };
+                po.pts[segUp] = Math.max(po.pts[segUp] || 0, idx);
+            }
             
             if (idx > highestIndex) {
                 highestIndex = idx;
@@ -8759,6 +8777,8 @@ setupSegmented('patient-progress');
         if (highestIndex === 0) {
             window.__fmDetectedPatterns = [];
             if (window.updateFmDiagonal) window.updateFmDiagonal();
+            if (window.__fmRenderPatternPanel) window.__fmRenderPatternPanel();
+            const hintsClear = document.getElementById('fm-density-hints'); if (hintsClear) hintsClear.innerHTML = '';
             summaryDiv.innerHTML = "<span style='color:var(--ink-faint); font-size:12.5px;'>No palpation data entered yet. Tap cells in the grid above to record densifications. When ≥2 segments on a plane reach grade 2+, the sequence or diagonal will synthesize here.</span>";
             return;
         }
@@ -8776,41 +8796,27 @@ setupSegmented('patient-progress');
         });
         findingsHtml += `</div></div>`;
         
-        // Build Pattern HTML with pill badges
-        let patternHtml = `<div style="margin-top:10px;"><div style="font-size:11px; font-weight:700; color:var(--ink-faint); text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px;">Pattern Detected:</div>`;
-        let patternsFound = false;
-        let patternPills = `<div style="display:flex; flex-wrap:wrap; gap:8px;">`;
-        let detectedPatterns = [];
-        for (let [p, segSet] of Object.entries(planeCounts)) {
-            const count = segSet.size;
-            if (count >= 2) {
-                const [pName, pSide, pKind] = p.split(' ');
-                // Stecco terms: CFs on one plane form a diagonal; CCs on one plane form a sequence.
-                const term = pKind === 'cf' ? 'diagonal' : 'sequence';
-                const pCode = planeCode(pName);
-                const sLet = sideLetter(pSide);
-                detectedPatterns.push({
-                    pName, pSide, pKind, count,
-                    text: `${pCode} ${term} (${sLet})`
-                });
-                patternPills += `
-                    <span style="display:inline-flex; align-items:center; gap:6px; padding:4px 10px; background:#fff; border:1px solid var(--line); border-radius:var(--radius-pill); font-size:12px; font-weight:600;">
-                        <span style="width:7px; height:7px; border-radius:50%; background:var(--clinical);"></span>
-                        <b>${pCode}</b> ${term} <span style="color:var(--ink-faint);">${sLet}</span>
-                        <span style="background:var(--clinical-dim); color:var(--clinical); font-size:11px; padding:1px 7px; border-radius:10px; font-weight:700;">${count} segments</span>
-                    </span>`;
-                patternsFound = true;
-            }
-        }
-        patternPills += `</div>`;
+        // Patterns: >=2 segments graded 2 or higher on one plane and side (CFs = diagonal, CCs = sequence).
+        // Ordered by segment count, then strongest grade, so the list is stable. They are shown in Card 4,
+        // where tapping one adds its points to the treatment sequence.
+        const detectedPatterns = [];
+        Object.keys(planePts).forEach(k => {
+            const o = planePts[k], segs = Object.keys(o.pts);
+            if (segs.length < 2) return;
+            const term = o.kind === 'cf' ? 'diagonal' : 'sequence';
+            detectedPatterns.push({
+                pName: o.plane, pSide: o.side, pKind: o.kind, count: segs.length,
+                key: o.plane + '|' + o.side, term, segs,
+                points: segs.map(sg => ({ plane: o.plane, segment: sg, side: o.side })),
+                top: Math.max.apply(null, segs.map(sg => o.pts[sg])),
+                grades: o.pts,
+                text: `${planeCode(o.plane)} ${term} (${sideLetter(o.side)})`
+            });
+        });
+        detectedPatterns.sort((a, b) => b.count - a.count || b.top - a.top);
         window.__fmDetectedPatterns = detectedPatterns;
         if (window.updateFmDiagonal) window.updateFmDiagonal();
-        if (!patternsFound) {
-            patternHtml += `<div style="color:var(--ink-faint); font-size:12px;">No clear diagonal or sequence (needs ≥2 segments graded 2 or higher on the same plane).</div>`;
-        } else {
-            patternHtml += patternPills;
-        }
-        patternHtml += `</div>`;
+        window.__fmRenderPatternPanel();
         
         // Build Footer with KPI metric chips
         let footerHtml = `
@@ -8863,12 +8869,33 @@ setupSegmented('patient-progress');
             (histBySeg[code] = histBySeg[code] || []).push(bits);
         });
         denseSegs.forEach(seg => { if (histBySeg[seg]) hints.push(`${seg} is also in FM History (${histBySeg[seg][0] || 'previous event'})`); });
-        const hintsHtml = hints.length ? `<div id="fm-density-hints" style="margin-top:8px; font-size:12px; color:var(--ink-faint); line-height:1.5;">${hints.map(t => '· ' + t).join('<br>')}</div>` : '';
+        const hintsEl = document.getElementById('fm-density-hints');
+        if (hintsEl) hintsEl.innerHTML = hints.map(t => '· ' + t).join('<br>');
 
-        summaryDiv.innerHTML = findingsHtml + patternHtml + footerHtml + hintsHtml;
+        summaryDiv.innerHTML = findingsHtml + footerHtml;
     }
 
     window.updateDensitySummary = updateDensitySummary;
+
+    // Card 4 pattern chips. Reads the current patterns, so it can also be called when the sequence changes (chip ✓ state).
+    window.__fmRenderPatternPanel = function () {
+        const detectedPatterns = window.__fmDetectedPatterns || [];
+            const chipsEl = document.getElementById('fm-pattern-chips'), emptyEl = document.getElementById('fm-pattern-empty');
+            if (!chipsEl) return;
+            const inSeq = new Set(Array.from(document.querySelectorAll('#fm-seq-builder .seq-step')).map(st => [st.dataset.plane, String(st.dataset.segment || '').toUpperCase(), st.dataset.side].join('|')));
+            chipsEl.innerHTML = '';
+            detectedPatterns.forEach(pt => {
+                const added = pt.points.every(q => inSeq.has([q.plane, q.segment, q.side].join('|')));
+                const b = document.createElement('button');
+                b.type = 'button'; b.className = 'chip fm-pattern-chip' + (added ? ' selected' : ''); b.dataset.pattern = pt.key;
+                b.title = added ? 'All of this pattern\'s points are in the sequence' : 'Add this pattern\'s points to the treatment sequence';
+                b.innerHTML = '<span class="pat-dot"></span><b>' + planeCode(pt.pName) + '</b> ' + pt.term + ' ' + sideLetter(pt.pSide) +
+                    ' <span class="pat-count">' + pt.count + ' segments</span> <span class="pat-segs">' + pt.segs.join(' · ') + '</span>';
+                chipsEl.appendChild(b);
+            });
+            if (emptyEl) emptyEl.style.display = detectedPatterns.length ? 'none' : 'block';
+        };
+
 
     // Finding badge click: scroll to and highlight cell in grid
     document.addEventListener('click', function(e) {
@@ -10199,6 +10226,7 @@ setupSegmented('patient-progress');
         const steps = seqBuilder ? Array.from(seqBuilder.querySelectorAll('.seq-step')) : [];
         
         reindexSeqSteps();
+        if (window.__fmRenderPatternPanel) window.__fmRenderPatternPanel();   // refresh each pattern chip's ✓ state
 
         // Non-blocking hint: every planned point on one segment
         const seqHint = document.getElementById('fm-seq-hint');
@@ -10387,8 +10415,9 @@ setupSegmented('patient-progress');
         diagOutput.addEventListener('click', function(e) {
             const suggest = e.target.closest('.fm-hyp-suggest');
             if (suggest) {
-                const fromFindings = document.getElementById('fm-seq-from-findings');
-                if (fromFindings) fromFindings.click();
+                // The suggestion names the top detected pattern, so add that pattern's own points.
+                const top = (window.__fmDetectedPatterns || [])[0];
+                if (top && window.addFmPatternToSequence) window.addFmPatternToSequence(top.key);
             }
         });
     }
@@ -10460,6 +10489,25 @@ setupSegmented('patient-progress');
             });
         }
     }
+
+    // Tapping a detected pattern (Card 4 chips, or the banner suggestion) adds that pattern's own points —
+    // every segment graded 2 or higher on that plane and side — skipping any already in the sequence.
+    window.addFmPatternToSequence = function(key) {
+        const pat = (window.__fmDetectedPatterns || []).filter(x => x.key === key)[0];
+        if (!pat || !seqBuilder) return 0;
+        const keyOf = (pl, sg, sd) => [pl, String(sg || '').toUpperCase(), sd].join('|');
+        const existing = new Set(Array.from(seqBuilder.querySelectorAll('.seq-step')).map(st => keyOf(st.dataset.plane, st.dataset.segment, st.dataset.side)));
+        let added = 0;
+        pat.points.forEach(q => {
+            const k = keyOf(q.plane, q.segment, q.side);
+            if (!existing.has(k)) { existing.add(k); addSeqStep(q); added++; }
+        });
+        return added;
+    };
+    document.addEventListener('click', function(e) {
+        const chip = e.target.closest('.fm-pattern-chip');
+        if (chip) window.addFmPatternToSequence(chip.dataset.pattern);
+    });
 
     // -----------------------------------------
     // 4. Segment Assessment auto-routing — Chief Complaint ("Sipa"), Secondary

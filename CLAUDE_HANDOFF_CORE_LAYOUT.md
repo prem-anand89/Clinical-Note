@@ -1,6 +1,6 @@
 # Handoff: Core layout compaction + module-tab contract (prototype only)
 
-Status: **Steps 1, 6a, 7a DONE (30 Oct)** · remaining: 2–5, 6b, 7b · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only (no TheraNet changes).
+Status: **Steps 1, 2, 6a, 7a DONE (30 Oct)** · remaining: 3–5, 6b, 7b · Written 2026-10-30 · Scope: `/home/theranet/Clinical-Note` only (no TheraNet changes).
 
 ## Why
 A blank note renders **16 visible cards** and is **4,510 px tall** at 1280 px. Goal: Core shows only what

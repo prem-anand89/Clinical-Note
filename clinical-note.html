@@ -1791,7 +1791,7 @@
            complaint's pain profile is fully characterized, collapsed by
            default since most visits won't have anything here. -->
       <div class="card collapsible-card lean-tucked" id="card-systemic" style="margin-bottom:14px;">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Systemic Symptoms <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— optional, only if reported</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2103,7 +2103,7 @@
 
       <!-- Medical conditions -->
       <div class="card collapsible-card lean-tucked" id="medical-conditions-card">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div>Medical conditions <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— optional, only if relevant</span></div>
           <button type="button" class="bulk-clear" id="clear-medical-conditions" onclick="event.stopPropagation();" style="margin-right:8px;">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -2152,7 +2152,7 @@
       </div>
       <!-- Family history -->
       <div class="card collapsible-card lean-tucked" id="card-family">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Family history <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— relevant conditions in immediate family</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2167,7 +2167,7 @@
 
       <!-- Medications & allergies -->
       <div class="card collapsible-card lean-tucked" id="med-allergies-card">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Medications & Allergies</div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2197,7 +2197,7 @@
 
       <!-- Lifestyle fields -->
       <div class="card collapsible-card lean-tucked" id="card-lifestyle">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Lifestyle</div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2607,7 +2607,7 @@
 
       <!-- Joint mobility -->
       <div class="card collapsible-card lean-tucked" id="card-jointmob">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Joint mobility <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="Suspected systemic/generalized hypermobility is a separate flag in History → Medical Conditions, not graded here.">Maitland Grade I–IV, local accessory motion</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2619,7 +2619,7 @@
 
       <!-- Muscle length -->
       <div class="card collapsible-card lean-tucked" id="card-musclelength">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Muscle length <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— distinct from Strength/MMT, tests length not contraction</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2631,7 +2631,7 @@
 
       <!-- Functional screening -->
       <div class="card collapsible-card lean-tucked" id="card-funcscreen">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Functional screening <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="Loaded/compound movement quality, distinct from isolated-joint ROM">loaded/compound movements</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -2706,7 +2706,7 @@
 
       <!-- Neurodynamics -->
       <div class="card collapsible-card lean-tucked" id="card-neurodyn">
-        <div class="card-heading collapsible-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="card-heading collapsible-header" onclick="Lean.toggleCard(this.parentElement)">
           <div style="flex:1;">Neurodynamics <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">— structured block, not a Special Test row</span></div>
           <svg class="collapsible-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left:10px; flex:0 0 auto;"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
@@ -5078,7 +5078,7 @@
     document.getElementById('medical-conditions-body').style.display = 'none';
     this.style.display = 'none';
     document.getElementById('medical-conditions-summary').style.display = 'flex';
-    document.getElementById('medical-conditions-card').classList.add('open');
+    if(window.Lean) window.Lean.openCard('#medical-conditions-card');
   });
   document.getElementById('medical-conditions-edit').addEventListener('click', function(){
     document.getElementById('medical-conditions-body').style.display = '';
@@ -6316,22 +6316,28 @@
   // ---- "+"-addable subsections: toggle/remove live as sibling buttons in the
   // SAME header, swapping visibility, so "Remove" is reachable right where "+Add"
   // was clicked — not scrolled past every row to the bottom of a long section. ----
+  // The single way a "+ Add … / − Collapse" body opens or closes: its own buttons and the Lean "+" chips both call this
+  // (never a synthetic click). Pass the toggle button when the same target id can repeat in dynamically added rows.
+  function setSubsection(targetId, open, toggleBtn){
+    var body = document.getElementById(targetId);
+    if(!body) return;
+    var tBtn = toggleBtn || document.querySelector('.subsection-toggle[data-target="' + targetId + '"]');
+    var rBtn = (tBtn ? tBtn.parentElement : document).querySelector('.subsection-remove[data-target="' + targetId + '"]');
+    body.style.display = open ? 'block' : 'none';
+    if(tBtn) tBtn.style.display = open ? 'none' : 'inline-flex';
+    if(rBtn) rBtn.style.display = open ? 'inline-flex' : 'none';
+  }
+  window.setSubsection = setSubsection;
   function wireSubsectionPair(toggleBtn){
     var targetId = toggleBtn.getAttribute('data-target');
     var removeBtn = toggleBtn.parentElement.querySelector('.subsection-remove[data-target="' + targetId + '"]');
-    toggleBtn.addEventListener('click', function(){
-      document.getElementById(targetId).style.display = 'block';
-      toggleBtn.style.display = 'none';
-      if(removeBtn) removeBtn.style.display = 'inline-flex';
-    });
+    toggleBtn.addEventListener('click', function(){ setSubsection(targetId, true, toggleBtn); });
     if(removeBtn){
       removeBtn.addEventListener('click', function(){
         var body = document.getElementById(targetId);
-        body.style.display = 'none';
-        removeBtn.style.display = 'none';
-        toggleBtn.style.display = 'inline-flex';
         // clear any selections made while it was open
-        body.querySelectorAll('.chip.selected').forEach(function(c){ c.classList.remove('selected'); });
+        if(body) body.querySelectorAll('.chip.selected').forEach(function(c){ c.classList.remove('selected'); });
+        setSubsection(targetId, false, toggleBtn);
       });
     }
   }
@@ -11782,8 +11788,8 @@ window.hideAdvancedModule = function(key) {
     }
     const targetSec = document.getElementById(targetId);
     if (targetSec) {
-      if (targetSec.classList.contains('collapsible-card') && !targetSec.classList.contains('open')) {
-        targetSec.classList.add('open');
+      if (window.Lean && (targetSec.classList.contains('collapsible-card') || targetSec.classList.contains('lean-tucked'))) {
+        window.Lean.openCard(targetSec);
       }
       setTimeout(function() {
         targetSec.scrollIntoView({behavior: 'smooth', block: 'start'});
@@ -12586,15 +12592,34 @@ document.addEventListener('click', function(e){
   /* ---------- "+" chip groups ---------- */
   const groupTargets = g => g.targets.reduce((all, sel) => all.concat($$(sel)), []);
   const groupHasData = g => g.dataFn ? !!g.dataFn() : groupTargets(g).some(hasData);
+  /* ONE way to open a card. "+" chips, auto-open when a block holds data, template auto-open and sidebar
+     navigation all come through here — no synthetic clicks on toggle buttons.
+       openCard(el)         untuck it (.lean-shown) and expand it if it is a .collapsible-card (.open)
+       openCard(el, false)  collapse only (never re-hides a tucked card; the "+" chip does that)
+       toggleCard(el)       what a collapsible card's own header does
+     A card that belongs to a "+" group is opened through that group so its chip stays in step. */
+  L.openCard = function(el, open){
+    if(typeof el === 'string') el = $(el);
+    if(!el) return;
+    open = open !== false;
+    if(open){
+      const g = L.groups.filter(x => x._btn && !x._open && groupTargets(x).indexOf(el) > -1)[0];
+      if(g){ setOpen(g, true); return; }
+      el.classList.add('lean-shown');
+    }
+    if(el.classList.contains('collapsible-card')) el.classList.toggle('open', open);
+  };
+  L.toggleCard = function(el){ if(el) L.openCard(el, !el.classList.contains('open')); };
   function setOpen(g, open){
     g._open = open;
-    groupTargets(g).forEach(t => t.classList.toggle('lean-shown', open));
+    groupTargets(g).forEach(t => { if(open) L.openCard(t, true); else t.classList.remove('lean-shown'); });
     g._btn.classList.toggle('open', open);
     if(g.label){
       const txt = (open ? '− ' : '+ ') + g.label;
       if(g._btn.textContent !== txt) g._btn.textContent = txt;
     }
-    if(open && g.onOpen) g.onOpen();
+    if(open && g.body) window.setSubsection(g.body, true);   // a "+ Add" body inside the card (see setSubsection)
+    if(open && g.onOpen) g.onOpen();                          // only for widgets with their own accordion (Screening)
   }
   L.more = function(sectionId, cfg){
     const anchor = $(cfg.anchor);
@@ -12730,7 +12755,7 @@ document.addEventListener('click', function(e){
     { id: 'cc-return', label: 'Return-to activity', targets: ['#lean-fp-return'] },
     { id: 'cc-psy', label: 'Psychosocial', targets: ['#card-psychosocial'] },
     { id: 'cc-second', label: 'Secondary complaint', targets: ['#card-secondary'] },
-    { id: 'cc-systemic', label: 'Systemic symptoms', targets: ['#card-systemic'], onOpen: () => { const c = $('#card-systemic'); if(c) c.classList.add('open'); } },
+    { id: 'cc-systemic', label: 'Systemic symptoms', targets: ['#card-systemic'] },
     { id: 'cc-work', label: 'Work & sport', targets: ['#card-work'] }
   ]});
   L.notes($('#sec-chief-complaint'), 'subjective-notes', 'Subjective notes');
@@ -12749,13 +12774,12 @@ document.addEventListener('click', function(e){
       return bits.length || when ? label + ': ' + bits.join(', ') + (when ? ' (' + when + ')' : '') : '';
     }).filter(Boolean);
   }
-  const openCard = id => () => { const c = $(id); if(c) c.classList.add('open'); };
   const historyGroups = [
     { id: 'h-past',   label: 'Past history',     targets: ['#card-past'] },
-    { id: 'h-cond',   label: 'Conditions',        targets: ['#medical-conditions-card'], onOpen: openCard('#medical-conditions-card') },
-    { id: 'h-meds',   label: 'Meds & allergies',  targets: ['#med-allergies-card'], onOpen: openCard('#med-allergies-card') },
-    { id: 'h-family', label: 'Family',            targets: ['#card-family'], onOpen: openCard('#card-family') },
-    { id: 'h-life',   label: 'Lifestyle',         targets: ['#card-lifestyle'], onOpen: openCard('#card-lifestyle') }
+    { id: 'h-cond',   label: 'Conditions',        targets: ['#medical-conditions-card'] },
+    { id: 'h-meds',   label: 'Meds & allergies',  targets: ['#med-allergies-card'] },
+    { id: 'h-family', label: 'Family',            targets: ['#card-family'] },
+    { id: 'h-life',   label: 'Lifestyle',         targets: ['#card-lifestyle'] }
   ];
   const historyHasData = () => ['#card-past', '#medical-conditions-card', '#med-allergies-card', '#card-family', '#card-lifestyle'].some(sel => hasData($(sel)));
   L.section('sec-history', {
@@ -12972,12 +12996,12 @@ document.addEventListener('click', function(e){
   const tuckedRegionWrap = $('#add-region-block-wrap'); if(tuckedRegionWrap) tuckedRegionWrap.classList.add('lean-tucked');
   const neurodynSuggested = () => ['Cervical Spine', 'Lumbar Spine'].indexOf(val('region')) !== -1 || !!$('#primary-complaint .chip[data-chip="Numbness/tingling"].selected, #primary-complaint .chip[data-chip="Weakness"].selected');
   L.more('sec-objective', { id: 'obj-more', anchor: '#lean-obj-gate-note', where: 'afterend', groups: [
-    { id: 'o-jm',     label: 'Joint mobility',       targets: ['#card-jointmob'],     onOpen: openCard('#card-jointmob') },
-    { id: 'o-ml',     label: 'Muscle length',        targets: ['#card-musclelength'], onOpen: openCard('#card-musclelength') },
-    { id: 'o-fs',     label: 'Functional screening', targets: ['#card-funcscreen'],   onOpen: openCard('#card-funcscreen') },
-    { id: 'o-nd',     label: 'Neurodynamics',        targets: ['#card-neurodyn'],     onOpen: openCard('#card-neurodyn'), suggested: neurodynSuggested },
+    { id: 'o-jm',     label: 'Joint mobility',       targets: ['#card-jointmob'] },
+    { id: 'o-ml',     label: 'Muscle length',        targets: ['#card-musclelength'] },
+    { id: 'o-fs',     label: 'Functional screening', targets: ['#card-funcscreen'] },
+    { id: 'o-nd',     label: 'Neurodynamics',        targets: ['#card-neurodyn'], suggested: neurodynSuggested },
     { id: 'o-neuro',  label: 'Neuro screen',         targets: ['#card-obj-neuro-screen'],
-      onOpen: () => { const b = $('#obj-neuro-screen-body'), t = $('#obj-ns-toggle-row .subsection-toggle'); if(b && b.style.display === 'none' && t) t.click(); },
+      body: 'obj-neuro-screen-body',
       suggested: () => !!(window.activeSuggestions && window.activeSuggestions['neuro-screen']) },
     { id: 'o-region', label: 'Another region',       targets: ['#add-region-block-wrap'], visible: () => !!val('region') },
     { id: 'o-modules', label: 'Modules…',            targets: ['#lean-module-dock'] }
@@ -13099,11 +13123,10 @@ document.addEventListener('click', function(e){
       }
     }));
   })();
-  const openBody = (card, bodyId) => () => { const b = document.getElementById(bodyId), t = $(card + ' .subsection-toggle'); if(b && b.style.display === 'none' && t) t.click(); };
   L.more('sec-intervention', { id: 'tx', anchor: '#lean-tx-more-anchor', where: 'afterend', groups: [
-    { id: 'x-manual', label: 'All manual therapy', targets: ['#card-manual-therapy'],       onOpen: openBody('#card-manual-therapy', 'body-manual-therapy'),            dataFn: () => false },
-    { id: 'x-mod',    label: 'All modalities',     targets: ['#card-modalities'],           onOpen: openBody('#card-modalities', 'body-modalities'),                    dataFn: () => false },
-    { id: 'x-ex',     label: 'All exercises',      targets: ['#card-therapeutic-exercise'], onOpen: openBody('#card-therapeutic-exercise', 'body-therapeutic-exercise'), dataFn: () => false },
+    { id: 'x-manual', label: 'All manual therapy', targets: ['#card-manual-therapy'],       body: 'body-manual-therapy',            dataFn: () => false },
+    { id: 'x-mod',    label: 'All modalities',     targets: ['#card-modalities'],           body: 'body-modalities',                    dataFn: () => false },
+    { id: 'x-ex',     label: 'All exercises',      targets: ['#card-therapeutic-exercise'], body: 'body-therapeutic-exercise', dataFn: () => false },
     { id: 'x-load',   label: 'Load management',    targets: ['#card-load'] },
     { id: 'x-dur',    label: 'Session duration',   targets: ['#card-session'] }
   ]});

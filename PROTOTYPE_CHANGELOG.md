@@ -663,3 +663,11 @@ Blank note: **16 → 13 visible cards**. No field removed; every id kept (see `C
 - **Summary pills:** each chosen condition appears beside the trigger in its category colour with a ✕ that runs the real chip handler (template removed / module closed properly). The trigger reads "Change" once something is chosen.
 - All chip ids and handlers unchanged; the Impression echo link opens the picker.
 - Tests: `core-layout-step1` covers trigger, tabs, one visible group, pill, badge, ✕ and the echo link.
+
+## Core layout — Step 2: one way to open a card (30 Oct)
+No visible change; fewer ways for a "+" chip to leave a card half-open.
+- **`Lean.openCard(el)`** is the single path: it untucks the card and expands it if it is collapsible; `openCard(el, false)` collapses; `Lean.toggleCard` is what a collapsible header does. A card that belongs to a "+" group opens through that group, so its chip stays in step.
+- **`setSubsection(id, open)`** is the single path for "+ Add … / − Collapse" bodies (the buttons use it; so do the "+" chips through a new `body:` option). The synthetic `toggle.click()` hooks (manual therapy, modalities, exercises, neuro screen) and the per-group `openCard`/`openBody` helpers are gone.
+- Sidebar jumps, data auto-open, template auto-open (Load management) and the conditions-card summary all call the same function.
+- Screening keeps its own `onOpen` (it is a custom accordion, not a "+ Add" body).
+- **Tests:** new `tests/open-card.mjs` — every "+" chip opens its card in one click (expanded, body open), second tap hides, add/collapse buttons, header toggle, data auto-open, chip stays in step, template reveal, sidebar jump, signed-note lock, and source guards against synthetic clicks.

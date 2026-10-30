@@ -1009,6 +1009,11 @@
   .fm-role-badge[data-role="PaConc"] { background:var(--context-dim); color:var(--context); }
   .fm-role-badge[data-role="Int"] { background:var(--amber-dim); color:var(--amber); }
   .pv-seg-col .fm-role-badge { position:absolute; left:0; top:0; margin:0; padding:0 4px; font-size:8px; line-height:12px; pointer-events:none; }
+  .step-treat { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--line); background:#fff; color:var(--ink-faint); font-size:12px; line-height:1; font-weight:800; cursor:pointer; padding:0; display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; margin-left:2px; }
+  .step-treat:hover:not(:disabled) { border-color:var(--clinical); color:var(--clinical); }
+  .step-treat.on { background:var(--clinical); border-color:var(--clinical); color:#fff; }
+  .step-treat:disabled { opacity:.35; cursor:not-allowed; }
+  .seq-step.is-treated { border-color:var(--clinical); background:var(--clinical-dim); }
   .fm-pattern-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 11px; font-size:12.5px; }
   .fm-pattern-chip .pat-dot { width:7px; height:7px; border-radius:50%; background:var(--clinical); flex:0 0 auto; }
   .fm-pattern-chip .pat-count { background:var(--clinical-dim); color:var(--clinical); font-size:11px; font-weight:700; padding:1px 7px; border-radius:10px; }
@@ -8643,6 +8648,21 @@ setupSegmented('patient-progress');
         if (window.syncPalpatoryRecheck) window.syncPalpatoryRecheck();
     }
 
+    // Used by the Card 4 sequence pills: find today's grid cell for a point, and set its treated state
+    // through the same setCell path as the picker's tick (so totals, Card 5 re-check and the capsule follow).
+    window.__fmFindPvCell = function(plane, seg, side) {
+        const rows = Array.from(document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row):not(.pv-session-banner-row)'))
+            .filter(tr => String((tr.querySelector('.pv-seg-name') || {}).value || '').trim().toUpperCase() === String(seg || '').trim().toUpperCase());
+        const cells = rows.map(tr => tr.querySelector('.pv-cell[data-plane="' + plane + '"][data-side="' + side + '"]')).filter(Boolean);
+        return cells.filter(c => c.getAttribute('data-grade'))[0] || cells[0] || null;
+    };
+    window.__fmSetCellTreated = function(cell, treated) {
+        const g = cell && cell.getAttribute('data-grade');
+        if (!g) return false;
+        setCell(cell, g, treated);
+        return true;
+    };
+
     const picker = document.createElement('div');
     picker.id = 'pv-picker';
     picker.setAttribute('role', 'dialog');
@@ -8720,6 +8740,7 @@ setupSegmented('patient-progress');
     }
     function updateDensitySummary() {
         updateSideBadges();
+        if (window.__fmRefreshSeqTreat) window.__fmRefreshSeqTreat();   // sequence pills mirror the grid's treated state
         const cells = document.querySelectorAll('#fm-pv-table tbody tr:not(.fm-prior-row) .pv-cell');
         
         let highestIndex = 0;
@@ -10217,11 +10238,32 @@ setupSegmented('patient-progress');
             const num = c.querySelector('.point-num');
             if (num) num.textContent = idx + 1;
         });
-        const countEl = document.getElementById('fm-seq-count');
-        if (countEl) {
-            countEl.textContent = `${chips.length} point${chips.length === 1 ? '' : 's'} planned`;
-        }
+        refreshSeqTreat();
     }
+
+    // Each pill's ✓ mirrors its Card 3 cell; the count line reads "N points planned · K treated".
+    function refreshSeqTreat() {
+        if (!seqBuilder) return;
+        const steps = Array.from(seqBuilder.querySelectorAll('.seq-step'));
+        let treatedN = 0;
+        steps.forEach(st => {
+            const btn = st.querySelector('.step-treat');
+            if (!btn) return;
+            const cell = window.__fmFindPvCell ? window.__fmFindPvCell(st.dataset.plane, st.dataset.segment, st.dataset.side) : null;
+            const graded = !!(cell && cell.getAttribute('data-grade'));
+            const treated = graded && cell.getAttribute('data-treated') === 'true';
+            if (treated) treatedN++;
+            btn.disabled = !graded;
+            btn.classList.toggle('on', treated);
+            btn.setAttribute('aria-pressed', treated ? 'true' : 'false');
+            st.classList.toggle('is-treated', treated);
+            btn.title = !cell ? 'Not in the Card 3 grid yet — add this segment to the grid first'
+                : (!graded ? 'Grade this point in Card 3 first' : (treated ? 'Treated — tap to undo' : 'Mark treated'));
+        });
+        const countEl = document.getElementById('fm-seq-count');
+        if (countEl) countEl.textContent = `${steps.length} point${steps.length === 1 ? '' : 's'} planned` + (treatedN ? ` · ${treatedN} treated` : '');
+    }
+    window.__fmRefreshSeqTreat = refreshSeqTreat;
 
     function updateDiagonal() {
         if (!diagOutput) return;
@@ -10345,6 +10387,11 @@ setupSegmented('patient-progress');
                         </select>
                     </div>
                 </div>
+                <div id="fm-picker-move" style="display:none; align-items:center; gap:6px;">
+                    <span style="font-size:10px; font-weight:700; text-transform:uppercase; color:var(--ink-faint);">Order</span>
+                    <button type="button" id="fm-picker-earlier" class="btn" style="font-size:11px; padding:3px 8px; border:1px solid var(--line); background:#fff; cursor:pointer;">◂ Earlier</button>
+                    <button type="button" id="fm-picker-later" class="btn" style="font-size:11px; padding:3px 8px; border:1px solid var(--line); background:#fff; cursor:pointer;">Later ▸</button>
+                </div>
                 <div style="display:flex; justify-content:flex-end; gap:6px; margin-top:4px;">
                     <button type="button" id="fm-picker-cancel" class="btn" style="font-size:11px; padding:3px 8px; border:1px solid var(--line); background:#fff; cursor:pointer;">Cancel</button>
                     <button type="button" id="fm-picker-save" class="btn btn-primary" style="font-size:11px; padding:3px 10px; background:var(--clinical); color:#fff; border:none; border-radius:4px; cursor:pointer;">Save</button>
@@ -10352,6 +10399,23 @@ setupSegmented('patient-progress');
             </div>
         `;
 
+        // Move the point being edited one place earlier or later in the treatment order (the number is the order).
+        function moveStep(dir) {
+            const st = activeEditingStep;
+            if (!st) return;
+            if (dir < 0) {
+                const prev = st.previousElementSibling;
+                if (prev && prev.classList.contains('seq-step')) seqBuilder.insertBefore(st, prev);
+            } else {
+                const next = st.nextElementSibling;
+                if (next && next.classList.contains('seq-step')) seqBuilder.insertBefore(next, st);
+            }
+            reindexSeqSteps();
+            updateDiagonal();
+            openSeqPicker(st, st);   // stay open, re-anchored to the moved point
+        }
+        pickerEl.querySelector('#fm-picker-earlier').addEventListener('click', function() { moveStep(-1); });
+        pickerEl.querySelector('#fm-picker-later').addEventListener('click', function() { moveStep(1); });
         pickerEl.querySelector('#fm-picker-close').addEventListener('click', closeSeqPicker);
         pickerEl.querySelector('#fm-picker-cancel').addEventListener('click', closeSeqPicker);
         pickerEl.querySelector('#fm-picker-save').addEventListener('click', function() {
@@ -10368,6 +10432,7 @@ setupSegmented('patient-progress');
                 if (segEl) segEl.textContent = sg;
                 if (planeEl) planeEl.textContent = pl;
                 if (sideEl) sideEl.textContent = sd.toUpperCase();
+                refreshSeqTreat();
                 updateDiagonal();
             } else {
                 addSeqStep({ plane: pl, segment: sg, side: sd });
@@ -10392,6 +10457,15 @@ setupSegmented('patient-progress');
         const titleEl = picker.querySelector('#fm-picker-title');
         if (titleEl) titleEl.textContent = editingStep ? 'Edit Sequence Point' : 'Add Sequence Point';
         
+        const moveRow = picker.querySelector('#fm-picker-move');
+        if (moveRow) {
+            moveRow.style.display = editingStep ? 'flex' : 'none';
+            if (editingStep) {
+                const prev = editingStep.previousElementSibling, next = editingStep.nextElementSibling;
+                picker.querySelector('#fm-picker-earlier').disabled = !(prev && prev.classList.contains('seq-step'));
+                picker.querySelector('#fm-picker-later').disabled = !(next && next.classList.contains('seq-step'));
+            }
+        }
         if (editingStep) {
             picker.querySelector('#fm-picker-plane').value = editingStep.dataset.plane || planes[0];
             picker.querySelector('#fm-picker-seg').value = editingStep.dataset.segment || segments[0];
@@ -10449,12 +10523,21 @@ setupSegmented('patient-progress');
             <span class="point-seg">${p.segment}</span>
             <span class="point-plane">${p.plane}</span>
             <span class="point-side">${String(p.side || '').toUpperCase()}</span>
+            <button type="button" class="step-treat" aria-pressed="false" title="Mark treated">✓</button>
             <button type="button" class="del-step point-del" title="Remove point">×</button>
         `;
 
         div.addEventListener('click', function(e) {
-            if (e.target.closest('.del-step')) return;
+            if (e.target.closest('.del-step') || e.target.closest('.step-treat')) return;
             openSeqPicker(div, div);
+        });
+
+        // ✓ = treated today, written to the matching Card 3 cell (the single source of truth). Only possible
+        // for a graded point that is in today's grid; the app never invents a grade or adds a cell.
+        div.querySelector('.step-treat').addEventListener('click', function() {
+            const cell = window.__fmFindPvCell ? window.__fmFindPvCell(div.dataset.plane, div.dataset.segment, div.dataset.side) : null;
+            if (!cell || !cell.getAttribute('data-grade')) return;
+            window.__fmSetCellTreated(cell, cell.getAttribute('data-treated') !== 'true');
         });
 
         div.querySelector('.del-step').addEventListener('click', function(e) {

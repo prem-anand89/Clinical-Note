@@ -622,3 +622,12 @@ Written from the commit messages plus a hands-on check (every suite run, page pr
 - Each chip shows **every segment with its grade** (for example "CX 3 · GE 2 · TA 3") so the therapist has the data to decide from.
 - With **more than one** pattern the banner no longer says "Suggested: …"; it reads "N patterns detected — choose which line to treat from the patterns below". With exactly one, the banner still offers it as before.
 - Tests updated in `tests/fm-patterns.mjs`.
+
+## FM: one-tap "treated" on sequence pills, and Earlier / Later ordering (30 Oct)
+- **✓ on each Card 4 pill:** marks the point treated without scrolling back to Card 3. It writes the matching Card 3 cell (the single source of truth) through the same path as the grade picker's tick, so Card 3's totals, Card 5's palpatory re-check, the FM capsule, the auto-ticked "Fascial Manipulation (FM)" Intervention chip and the session-note points all follow. Treating in Card 3 turns the matching pill's ✓ on too (two-way), and tapping ✓ again undoes it.
+- **Only where it is honest:** the ✓ is disabled when the cell is ungraded ("Grade this point in Card 3 first") or the segment is not in today's grid ("add this segment to the grid first"). The app never invents a grade or adds a cell. A treated pill is tinted.
+- **Progress:** the sequence header reads "3 points planned · 1 treated".
+- **Order:** the pill's edit popup has **◂ Earlier / Later ▸** (shown when editing, hidden when adding; disabled at the ends). The popup stays open on the moved point and the numbers re-index. No drag and drop (unreliable on touch).
+- **Not built (decision):** a "mark all planned points as treated" action — it can record treatment that did not happen, and ticking each point as you go is 3–6 taps.
+- **Signed notes:** the ✓ and the order controls are blocked by the existing lock.
+- **Tests:** new `tests/fm-seq-treat.mjs` (30 checks: graded / ungraded / out-of-grid, two-way sync, ordering, signed note, 390 px fit). All 23 suites pass.

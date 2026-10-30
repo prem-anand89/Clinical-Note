@@ -112,7 +112,7 @@ ok('an empty hand-added tool offers Hide; hiding puts it back on the list', awai
 await page.locator('.ga-slot[data-neuro-tool="hoehn_yahr"] > .ga-slot-hide').click(); await page.waitForTimeout(300);
 ok('...hidden again, back in the Add list', !(await shown(page)).includes('hoehn_yahr') && (await menu()).includes('Hoehn & Yahr'));
 await page.locator('#ga-add-tool-mount .chip', { hasText: 'Peripheral sensory' }).click(); await page.waitForTimeout(300);
-await page.locator('.ga-slot[data-neuro-tool="sensory_peripheral"] .segmented button').first().click();
+await page.locator('.ga-slot[data-neuro-tool="sensory_peripheral"] .segmented button').first().click(); await page.waitForTimeout(300);   // the form re-syncs on the next tick
 ok('a tool holding data cannot be hidden (no Hide button)', await page.evaluate(() => document.querySelector('.ga-slot[data-neuro-tool="sensory_peripheral"] > .ga-slot-hide').style.display === 'none'));
 ok('core tools have no Hide button', await page.evaluate(() => !document.querySelector('.ga-slot[data-neuro-tool="tone_spasticity"] > .ga-slot-hide')));
 await page.close();

@@ -149,3 +149,6 @@ CoreAssessmentPayload {
 - Each registry entry names its slot with `payloadKey` (FM: `fm`). Patient-Profile modules (`placement: 'profile'` — Facial Palsy, Vestibular, Cardiothoracic) are **not** in the visit payload.
 - Core ↔ module contract: a tab module reaches Core only through `summaryLine()` (Key Findings strip), `interventionChip` (auto-tick, `data-auto="<id>"`), `printBlock()` (preview/PDF, optional `printSlot`; FM keeps `sec-objective`, default is after Core in tab order) and an optional `signWarning()` (warning only). The Core payload never contains a module's fields.
 - Port: registry → `src/features/patients/unifiedNote/modules/registry.ts`; each tab a lazy-loaded component.
+
+## Neuro Assessment — shared basic exam (N3)
+The module's **basic exam** (dermatomes, myotomes, reflexes) is the same data as Objective's Neuro screen — store it **once** in Core (`objective.neuroScreen`), not inside `modules.groupa`. `modules.groupa.tools` holds only the module-specific tools (tone, coordination, motor UMN, Fugl-Meyer, cognitive, Hoehn & Yahr, fatigue/relapse, peripheral sensory, symptom checklist, ISNCSCI) plus `conditions[]`. Removing the module never deletes the basic exam.

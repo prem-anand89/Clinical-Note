@@ -397,6 +397,13 @@
   .ga-conds{ margin:0 0 14px; }
   .ga-conds-lbl{ display:block; font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:6px; }
   .ga-conds .chip.selected{ background:#7b64b4; border-color:#7b64b4; }
+  .ga-addtool{ padding:0 2px; }
+  .ga-slot{ position:relative; }
+  .ga-slot-hide{ position:absolute; right:0; top:0; appearance:none; border:none; background:none; color:var(--ink-faint); font:inherit; font-size:12px; font-weight:600; cursor:pointer; padding:2px 4px; z-index:1; }
+  .ga-slot-hide:hover{ color:var(--clinical); }
+  /* the Objective Neuro screen, while the Neuro Assessment hosts it: no card chrome, no add/remove header */
+  .ns-hosted{ border:none; box-shadow:none; background:none; padding:0; margin:0; }
+  .ns-hosted #obj-ns-toggle-row{ display:none !important; }
   .ga-slot{ margin-top:18px; padding-top:18px; border-top:1px solid var(--line-soft); }
   .ga-slot.ga-first{ margin-top:0; padding-top:0; border-top:none; }
   .kc-hint{ font-size:12px; color:var(--ink-faint); margin:0 0 10px; }
@@ -2772,15 +2779,21 @@
           <button type="button" class="add-link subsection-remove" data-target="obj-neuro-screen-body" style="display:none; color:var(--ink-faint);">− Remove</button>
         </div>
         <div id="obj-neuro-screen-body" style="display:none;">
+          <div class="ns-grp" data-ns="derm">
           <div class="card-heading">Dermatomes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">Normal / Reduced / Absent, L/R compared</span></div>
           <div id="obj-ns-dermatome-rows"></div>
           <div id="obj-ns-dermatome-add" style="margin-bottom:18px;"></div>
+          </div>
+          <div class="ns-grp" data-ns="myo">
           <div class="card-heading">Myotomes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">MRC 0–5, L/R compared</span></div>
           <div id="obj-ns-myotome-rows"></div>
           <div id="obj-ns-myotome-add" style="margin-bottom:18px;"></div>
+          </div>
+          <div class="ns-grp" data-ns="reflex">
           <div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">0 (absent) – 4+ (clonus), L/R compared</span></div>
           <div id="obj-ns-reflex-rows"></div>
           <div id="obj-ns-reflex-add"></div>
+          </div>
         </div>
       </div>
 
@@ -2851,6 +2864,7 @@
         <div class="field-note" id="ga-cond-hint" style="margin:8px 0 0;">Choose every condition that applies — each adds its tools to this one assessment.</div>
       </div>
       <div class="card" id="group-a-body"></div>
+      <div class="ga-addtool" style="margin-top:12px;"><div class="ga-conds-lbl">Add a tool</div><div id="ga-add-tool-mount"></div></div>
     </section>
 
 
@@ -4663,6 +4677,7 @@
     if(weaknessSel || numbnessSel || cervicalRadMatch){
       // Owner decision: suggested only. Accept opens it; nothing opens automatically.
       setSuggestion('neuro-screen', 'Neurological screen', 'myotomes/dermatomes/reflexes · in Objective', function(){
+        if(window.__neuroModuleOn && window.__neuroModuleOn()){ if(window.openNeuroModule) window.openNeuroModule({switch: true}); return; }   // the exam lives in the Neuro Assessment now
         if(window.Lean) window.Lean.reveal('o-neuro');
         var body = document.getElementById('obj-neuro-screen-body');
         var toggleBtn = document.querySelector('#obj-ns-toggle-row .subsection-toggle');
@@ -7486,6 +7501,15 @@
     wireAdd('obj-ns-reflex-add', 'reflex', reflexEl, REFLEX_POOL, ['0','1+','2+','3+','4+']);
 
     window.__refreshNeuroScreen = populateDefaults;
+    // Used by the Neuro Assessment module (which hosts this same component): add rows without ever removing any
+    window.__neuroScreen = {
+      refresh: populateDefaults,
+      ensure: function(key, labels){
+        var map = { dermatome: [dermEl, ['Normal','Reduced','Absent']], myotome: [myoEl, ['0','1','2','3','4','5']], reflex: [reflexEl, ['0','1+','2+','3+','4+']] };
+        var cfg = map[key]; if(!cfg) return;
+        labels.forEach(function(l){ if(nsActive[key].indexOf(l) === -1) addRow(key, cfg[0], l, cfg[1]); });
+      }
+    };
     // Also populate at reveal time (manual "+Add" click or auto-trigger), not
     // just once at page load — Region is usually still unset at load time.
     var toggleBtn = document.querySelector('#obj-ns-toggle-row .subsection-toggle');
@@ -7511,7 +7535,7 @@
     "Stroke / TBI": ['tone_spasticity','motor_umn','fugl_meyer','coordination_cerebellar','cognitive_screen_light'],
     "Paraplegia / SCI": [], // handled specially in renderGroupA() via the full ISNCSCI worksheet below — this list is never consulted for this condition
     "Parkinson's": ['coordination_cerebellar','tone_spasticity','hoehn_yahr'],
-    "MS": ['coordination_cerebellar','sensory_dermatomal','fatigue_relapse_ms'],
+    "MS": ['coordination_cerebellar','fatigue_relapse_ms'],   // MS sensory = every dermatomal level in the basic exam (NEURO_ENSURE)
     "Peripheral Neuropathy": ['sensory_peripheral'],
     "Concussion": ['symptom_checklist_concussion','cognitive_screen_light']
   };
@@ -7554,6 +7578,7 @@
   }
   function hideGroupA(){
     groupASection.style.display = 'none';
+    unhostNeuroScreen();
     expandMSK();
     if(window.ModuleTabs) window.ModuleTabs.close('groupa');
   }
@@ -7664,35 +7689,6 @@
   // Dermatomes/myotomes remain reserved for genuinely root-level presentations —
   // the Tier 2 "Neuro Screen (minimal)" module (Cervical Radiculopathy / Weakness
   // / Numbness triggers) and the full ISNCSCI worksheet for Paraplegia/SCI.
-  function buildReflexesOnlyBlock(){
-    var el = document.createElement('div');
-    el.innerHTML = '<div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;" title="UMN screen — dermatomes/myotomes are root-level tests, not used for this condition (see Neuro Screen (minimal) or Cervical Radiculopathy for those)">0 (absent) – 4+ (clonus), L/R compared</span></div>' +
-      '<div class="ga-reflex-rows"></div>';
-    refreshReflexRows(el);
-    return el;
-  }
-  // Region decides which reflexes are offered. A region change only ADDS the missing rows — entered grades are never rebuilt away.
-  function refreshReflexRows(el){
-    var reflexEl = el.querySelector('.ga-reflex-rows');
-    var groupKey = neuroScreenGroupForRegion(regionSelect.value);
-    var groups = groupKey ? [groupKey] : ['cervical','lumbar'];
-    groups.forEach(function(g){
-      NEURO_SCREEN_CONFIG[g].reflexes.forEach(function(r){
-        var exists = Array.prototype.some.call(reflexEl.children, function(row){ return row.getAttribute('data-ga-label') === r; });
-        if(exists) return;
-        var row = makeGroupABilateralRow(r, ['0','1+','2+','3+','4+']);
-        row.setAttribute('data-ga-label', r);
-        reflexEl.appendChild(row);
-      });
-    });
-  }
-  function buildSciReflexBlock(){
-    var el = document.createElement('div');
-    el.innerHTML = '<div class="card-heading">Reflexes <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">supplementary — not part of the formal AIS calculation above, but clinically relevant for UMN signs</span></div>';
-    ['Patellar (L3–4)','Achilles (S1–2)'].forEach(function(r){ el.appendChild(makeGroupABilateralRow(r, ['0','1+','2+','3+','4+'])); });
-    return el;
-  }
-
   var GROUP_A_TOOL_BUILDERS = {
     tone_spasticity: function(){
       var el = document.createElement('div');
@@ -7770,16 +7766,6 @@
           el.querySelectorAll('.ga-rta-stage button').forEach(function(b){ b.classList.remove('selected'); });
           btn.classList.add('selected');
         });
-      });
-      return el;
-    },
-    sensory_dermatomal: function(){
-      // MS sensory exam is whole-body and patchy, so it isn't region-filtered
-      // like the minimal Neuro Screen: full C5-S2 level set, bilateral.
-      var el = document.createElement('div');
-      el.innerHTML = '<div class="card-heading">Sensory — dermatomal <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">Normal / Reduced / Absent, L/R compared — all levels (MS sensory change is patchy, not region-specific)</span></div>';
-      ['C5','C6','C7','C8','T1','L2','L3','L4','L5','S1','S2'].forEach(function(level){
-        el.appendChild(makeGroupABilateralRow(level, ['Normal','Reduced','Absent']));
       });
       return el;
     },
@@ -8110,49 +8096,133 @@
      Every tool is built ONCE, into its own slot in #group-a-body. Conditions only decide which slots are visible:
      a slot shows when any selected condition suggests its tool, or when it already holds data (so nothing recorded is ever
      hidden, and nothing is wiped by switching condition or changing region). Suggestions come from GROUP_A_TOOL_MAP. */
-  var NEURO_TOOL_ORDER = ['isncsci','reflexes','reflexes_sci','tone_spasticity','motor_umn','fugl_meyer','coordination_cerebellar','cognitive_screen_light','hoehn_yahr','sensory_dermatomal','fatigue_relapse_ms','sensory_peripheral','symptom_checklist_concussion'];
+  var NEURO_TOOL_ORDER = ['isncsci','basic_exam','tone_spasticity','coordination_cerebellar','motor_umn','fugl_meyer','cognitive_screen_light','hoehn_yahr','fatigue_relapse_ms','sensory_peripheral','symptom_checklist_concussion'];
+  var NEURO_TITLES = {
+    isncsci: 'ISNCSCI worksheet', basic_exam: 'Basic neuro exam', tone_spasticity: 'Tone / spasticity', coordination_cerebellar: 'Coordination / cerebellar',
+    motor_umn: 'Motor (UMN pattern)', fugl_meyer: 'Fugl-Meyer', cognitive_screen_light: 'Cognitive screen', hoehn_yahr: 'Hoehn & Yahr',
+    fatigue_relapse_ms: 'Fatigue / relapse (MS)', sensory_peripheral: 'Peripheral sensory', symptom_checklist_concussion: 'Symptom checklist (concussion)'
+  };
+  /* Core tools are always in the form; the rest are suggested by a condition or added by hand ("+ Add tool").
+     The basic exam (dermatomes, myotomes, reflexes) is the Objective "Neuro screen" itself, hosted here — one component, one set of data.
+     Conditions can also ask the basic exam for extra rows (MS: every dermatomal level; SCI: patellar + Achilles reflexes). */
   var NEURO_SPECIAL = {
-    isncsci:      { conditions: ['Paraplegia / SCI'], build: buildIsncsciWorksheet },
-    reflexes:     { conditions: GROUP_A_CONDITIONS.filter(function(c){ return c !== 'Paraplegia / SCI'; }), build: buildReflexesOnlyBlock, refresh: refreshReflexRows },   // UMN screen: every condition but SCI
-    reflexes_sci: { conditions: ['Paraplegia / SCI'], build: buildSciReflexBlock, supersededBy: 'reflexes' }   // SCI + another condition: the fuller UMN reflex screen covers it
+    isncsci:    { conditions: ['Paraplegia / SCI'], build: buildIsncsciWorksheet },
+    basic_exam: { core: true, conditions: [], build: buildBasicExamSlot, host: hostNeuroScreenIn }
+  };
+  var NEURO_CORE = { tone_spasticity: true, coordination_cerebellar: true };
+  var NEURO_ENSURE = {
+    'MS': { dermatome: ['C5','C6','C7','C8','T1','L2','L3','L4','L5','S1','S2'] },
+    'Paraplegia / SCI': { reflex: ['Patellar (L3–4)','Achilles (S1–2)'] }
   };
   var NEURO_TOOLS = NEURO_TOOL_ORDER.map(function(id){
-    if(NEURO_SPECIAL[id]) return Object.assign({ id: id }, NEURO_SPECIAL[id]);
-    return { id: id, build: GROUP_A_TOOL_BUILDERS[id], conditions: GROUP_A_CONDITIONS.filter(function(c){ return (GROUP_A_TOOL_MAP[c] || []).indexOf(id) > -1; }) };
+    var t;
+    if(NEURO_SPECIAL[id]) t = Object.assign({ id: id }, NEURO_SPECIAL[id]);
+    else t = { id: id, core: !!NEURO_CORE[id], build: GROUP_A_TOOL_BUILDERS[id], conditions: GROUP_A_CONDITIONS.filter(function(c){ return (GROUP_A_TOOL_MAP[c] || []).indexOf(id) > -1; }) };
+    t.title = NEURO_TITLES[id];
+    return t;
   });
   var neuroSlots = {};
+  var neuroOverride = {};     // id -> 'show' (added by hand) | 'hide' (hidden by hand, only possible while empty)
   var neuroSet = [];          // selected neuro conditions, in the order they were chosen (the picker's chips are the visual state)
   var neuroManual = false;    // the module was added from the dock / sidebar, so it stays even with no condition chosen
   // Lean.hasData does not see every control (the ISNCSCI grid is plain buttons), so any selected button counts here
   function neuroHasData(slot){ return !!((window.Lean && window.Lean.hasData(slot)) || slot.querySelector('button.selected')); }
   function neuroConditions(){ return neuroSet.slice(); }
+
+  // ---- the basic exam: the Objective Neuro screen card, moved in while the module is on and back when it is not ----
+  var nsCard = document.getElementById('card-obj-neuro-screen'), nsHome = null, nsWasOpen = false;
+  function buildBasicExamSlot(){
+    var el = document.createElement('div');
+    el.className = 'ga-basic';
+    el.innerHTML = '<div class="card-heading">Basic neuro exam <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">dermatomes, myotomes, reflexes — the same exam as Objective\'s Neuro screen (one set of data)</span></div><div class="ga-basic-host"></div>';
+    return el;
+  }
+  function hostNeuroScreenIn(slot){
+    var host = slot.querySelector('.ga-basic-host');
+    if(!nsCard || !host || nsCard.parentNode === host) return;
+    nsHome = document.createComment('neuro-screen-home');
+    nsCard.parentNode.insertBefore(nsHome, nsCard);
+    var body = document.getElementById('obj-neuro-screen-body');
+    nsWasOpen = !!body && body.style.display !== 'none';
+    host.appendChild(nsCard);
+    nsCard.classList.add('ns-hosted', 'lean-shown');
+    window.setSubsection('obj-neuro-screen-body', true);
+    if(window.__neuroScreen) window.__neuroScreen.refresh();
+  }
+  function unhostNeuroScreen(){
+    if(!nsCard || !nsHome || !nsHome.parentNode) return;
+    nsHome.parentNode.insertBefore(nsCard, nsHome);
+    nsHome.parentNode.removeChild(nsHome); nsHome = null;
+    nsCard.classList.remove('ns-hosted');
+    ['derm','myo','reflex'].forEach(function(k){ var g = nsCard.querySelector('.ns-grp[data-ns="' + k + '"]'); if(g) g.style.display = ''; });
+    var has = neuroHasData(nsCard);
+    if(!nsWasOpen && !has){ window.setSubsection('obj-neuro-screen-body', false); nsCard.classList.remove('lean-shown'); }
+    else nsCard.classList.add('lean-shown');
+    if(window.Lean && window.Lean.refresh) window.Lean.refresh();
+  }
+  window.__neuroModuleOn = function(){ return groupASection.style.display !== 'none'; };
+
   function syncNeuroForm(){
     var conds = neuroConditions(), firstShown = null;
-    var isWanted = function(t){ return t.conditions.some(function(c){ return conds.indexOf(c) > -1; }); };
+    var isWanted = function(t){ return t.core || t.conditions.some(function(c){ return conds.indexOf(c) > -1; }); };
     NEURO_TOOLS.forEach(function(tool){
-      var slot = neuroSlots[tool.id];
+      var slot = neuroSlots[tool.id], forced = neuroOverride[tool.id];
       var wanted = isWanted(tool);
-      // a tool covered by a fuller one that is showing is not built or shown twice (unless it already holds data)
-      var cover = tool.supersededBy && NEURO_TOOLS.filter(function(t){ return t.id === tool.supersededBy && isWanted(t); })[0];
-      if(cover && !(slot && neuroHasData(slot))) wanted = false;
-      if(!slot && wanted && tool.build){
+      if(!slot && (wanted || forced === 'show') && tool.build){
         slot = neuroSlots[tool.id] = document.createElement('div');
         slot.className = 'ga-slot'; slot.setAttribute('data-neuro-tool', tool.id);
         slot.appendChild(tool.build());
+        if(!tool.core){
+          var hide = document.createElement('button');
+          hide.type = 'button'; hide.className = 'ga-slot-hide'; hide.textContent = 'Hide'; hide.title = 'Hide this tool (only while nothing is recorded in it)';
+          hide.addEventListener('click', function(){ neuroOverride[tool.id] = 'hide'; syncNeuroForm(); });
+          slot.insertBefore(hide, slot.firstChild);
+        }
         groupABody.appendChild(slot);
       }
       if(!slot) return;
-      if(wanted && tool.refresh) tool.refresh(slot);
-      var show = wanted || neuroHasData(slot);
+      var has = neuroHasData(slot);
+      var show = forced === 'show' || (forced !== 'hide' && wanted) || has;
+      var hideBtn = slot.querySelector(':scope > .ga-slot-hide'); if(hideBtn) hideBtn.style.display = has ? 'none' : '';
       slot.style.display = show ? '' : 'none';
       slot.classList.remove('ga-first');
-      if(show && !firstShown){ firstShown = slot; slot.classList.add('ga-first'); }
+      if(show){ if(!firstShown){ firstShown = slot; slot.classList.add('ga-first'); } if(tool.host) tool.host(slot); }
     });
+    // conditions ask the basic exam for extra rows (additive only)
+    conds.forEach(function(c){ var e = NEURO_ENSURE[c]; if(e && window.__neuroScreen) Object.keys(e).forEach(function(k){ window.__neuroScreen.ensure(k, e[k]); }); });
+    // SCI: ISNCSCI replaces the generic dermatome + myotome blocks (reflexes stay) — unless something is already recorded there
+    if(nsCard && nsCard.classList.contains('ns-hosted')){
+      var sci = conds.indexOf('Paraplegia / SCI') > -1;
+      ['derm','myo'].forEach(function(k){ var g = nsCard.querySelector('.ns-grp[data-ns="' + k + '"]'); if(g) g.style.display = (!sci || neuroHasData(g)) ? '' : 'none'; });
+    }
     // keep slots in registry order even though they are built lazily
     NEURO_TOOLS.forEach(function(tool){ if(neuroSlots[tool.id]) groupABody.appendChild(neuroSlots[tool.id]); });
+    if(addToolMenu && addToolMenu.refresh) addToolMenu.refresh();
   }
+  // Entering something in a tool changes what may be hidden (Hide only while empty) and what the Add list offers: re-sync after any edit
+  var neuroSyncTimer = null;
+  ['click','input','change'].forEach(function(ev){
+    groupABody.addEventListener(ev, function(){ clearTimeout(neuroSyncTimer); neuroSyncTimer = setTimeout(syncNeuroForm, 0); });
+  });
+  // "+ Add tool": every tool is available to any therapist; conditions only suggest. Offers the ones not showing.
+  var addToolMenu = null;
+  (function(){
+    var mount = document.getElementById('ga-add-tool-mount');
+    if(!mount) return;
+    addToolMenu = buildAddMenu({
+      label: '+ Add tool',
+      allowCustom: false,
+      emptyHint: 'Every tool is already in this assessment.',
+      getData: function(){
+        return { items: NEURO_TOOLS.filter(function(t){ var sl = neuroSlots[t.id]; return !t.core && !(sl && sl.style.display !== 'none'); }).map(function(t){ return { value: t.id, label: t.title }; }) };
+      },
+      onPick: function(item){ neuroOverride[item.value] = 'show'; syncNeuroForm(); }
+    });
+    mount.appendChild(addToolMenu);
+  })();
   // explicit Remove only: forget everything entered in the neuro tools
-  function resetNeuroForm(){ groupABody.innerHTML = ''; neuroSlots = {}; }
+  // (the basic exam is Core data and goes back to Objective with whatever was entered)
+  function resetNeuroForm(){ unhostNeuroScreen(); groupABody.innerHTML = ''; neuroSlots = {}; neuroOverride = {}; }
   window.__resetNeuroForm = resetNeuroForm;
 
   // ==========================================================
@@ -11556,7 +11626,7 @@ window.openTier2Module = function(key) {
   var TAB_CFG = {
     vm:   { label: 'Visceral Manipulation', sec: 'sec-vm',  remove: function(){ window.hideAdvancedModule('vm'); } },
     cst:  { label: 'Craniosacral Therapy',  sec: 'sec-cst', remove: function(){ window.hideAdvancedModule('cst'); } },
-    groupa: { label: 'Neuro', sec: 'sec-group-a', remove: function(){ var b = document.getElementById('group-a-hide'); if (b) b.click(); } }
+    groupa: { label: 'Neuro', sec: 'sec-group-a', confirmText: 'Remove the Neuro Assessment from this visit note? The tools you recorded in it will not be part of the note. The basic neuro exam (dermatomes, myotomes, reflexes) stays in Objective.', remove: function(){ var b = document.getElementById('group-a-hide'); if (b) b.click(); } }
   };
   var tabState = {};   // key -> { btn, panel, label }
   function tabKeys() { return ['core', 'fm'].concat(Object.keys(tabState)); }
@@ -11607,7 +11677,7 @@ window.openTier2Module = function(key) {
     requestRemove: function(key) {
       var sec = document.getElementById(TAB_CFG[key].sec), t = tabState[key];
       var has = !!(sec && window.Lean && window.Lean.hasData(sec));
-      if (has && !window.confirm('Remove ' + (t ? t.label : 'this module') + ' from this visit note? What you recorded in it will not be part of the note.')) return;
+      if (has && !window.confirm(TAB_CFG[key].confirmText || ('Remove ' + (t ? t.label : 'this module') + ' from this visit note? What you recorded in it will not be part of the note.'))) return;
       TAB_CFG[key].remove();
     }
   };
@@ -13222,7 +13292,7 @@ document.addEventListener('click', function(e){
     { id: 'o-ml',     label: 'Muscle length',        targets: ['#card-musclelength'] },
     { id: 'o-fs',     label: 'Functional screening', targets: ['#card-funcscreen'] },
     { id: 'o-nd',     label: 'Neurodynamics',        targets: ['#card-neurodyn'], suggested: neurodynSuggested },
-    { id: 'o-neuro',  label: 'Neuro screen',         targets: ['#card-obj-neuro-screen'],
+    { id: 'o-neuro',  label: 'Neuro screen',         targets: ['#card-obj-neuro-screen'], visible: () => !(window.__neuroModuleOn && window.__neuroModuleOn()),   // hosted in the Neuro Assessment while that is on
       body: 'obj-neuro-screen-body',
       suggested: () => !!(window.activeSuggestions && window.activeSuggestions['neuro-screen']) },
     { id: 'o-region', label: 'Another region',       targets: ['#add-region-block-wrap'], visible: () => !!val('region') }

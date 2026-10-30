@@ -783,3 +783,4 @@ Found by driving real workflows (post-op template + Parkinson's + FM + VM in one
 
 ## Additional sections out of the "+ Module" list (31 Oct)
 The nine Additional sections (Vitals, Body Chart, PSFS, Gait, Palpation, Questionnaires, VOMS, Pain Science, Sports Profile) are no longer listed in the "+ Module" popover — they are part of Core. They are opened from the sidebar's "Additional Sections" group, directly under Core Assessment, which is now expanded by default. The popover lists the other 9 modules (tab / profile / frameworks). Registry unchanged (18 entries).
+NKT and DNS (inline frameworks) also left the list; their sidebar entries moved into Additional Sections. The popover now lists 7 modules.

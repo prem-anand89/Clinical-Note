@@ -21,7 +21,7 @@ let page = await fresh();
 ok('"+ Module" is the last control in the tab bar and is not itself a tab', await page.evaluate(() => { const bar = document.getElementById('module-tab-bar'); const last = bar.lastElementChild; return last.id === 'module-add-btn' && last.getAttribute('role') !== 'tab' && !last.classList.contains('module-tab'); }));
 ok('the module list is no longer inside Section 4', await page.evaluate(() => !document.getElementById('sec-objective').contains(document.getElementById('lean-module-dock'))));
 ok('Section 4 has no "Modules…" chip any more', !(await page.evaluate(() => [...document.querySelectorAll('#sec-objective .lean-chip')].some(b => /Modules…/.test(b.textContent)))));
-ok('the dock is hidden until asked for, and lists the 9 tab/profile/framework modules (Additional sections live in the sidebar)', !(await dockOpen(page)) && await page.locator('#lean-module-dock [data-dock-idx]').count() === 9);
+ok('the dock is hidden until asked for, and lists the 7 tab/profile/framework modules (Additional sections live in the sidebar)', !(await dockOpen(page)) && await page.locator('#lean-module-dock [data-dock-idx]').count() === 7);
 
 await page.click('#module-add-btn');
 ok('clicking "+ Module" opens the list', await dockOpen(page) && (await page.getAttribute('#module-add-btn', 'aria-expanded')) === 'true');

@@ -42,7 +42,7 @@ const regLabels = await page.evaluate(() => window.MODULE_REGISTRY.map(m => m.la
 ok('registry matches sidebar entries', JSON.stringify([...sidebarLabels].sort()) === JSON.stringify([...regLabels].sort()), { sidebarLabels, regLabels });
 // open a module through the dock
 const dockBtn = page.locator('#lean-module-dock [data-dock-idx]').first();
-ok('dock renders from registry', (await page.locator('#lean-module-dock [data-dock-idx]').count()) === 9);
+ok('dock renders from registry', (await page.locator('#lean-module-dock [data-dock-idx]').count()) === 7);
 await page.evaluate(() => document.getElementById('lean-module-dock').classList.remove('lean-tucked'));
 ok('dock no longer lists the Additional sections', (await page.locator('#lean-module-dock [data-dock-idx]', { hasText: 'Vitals' }).count()) === 0);
 await page.locator('#nav-t2-vitals').dispatchEvent('click');

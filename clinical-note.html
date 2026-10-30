@@ -1478,6 +1478,8 @@
       <div class="outline-item stub" id="nav-t2-voms" onclick="openTier2Module('voms')">VOMS (Vestibular/Oculomotor)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-t2-pain-science" onclick="openTier2Module('pain-science')">Pain Science<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-sports-profile" data-target="sec-sports-profile" onclick="openSportsProfile()">Sports Profile<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
+      <div class="outline-item stub" id="nav-nkt" onclick="openAdvancedModule('nkt')">NeuroKinetic Therapy (NKT)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
+      <div class="outline-item stub" id="nav-dns" onclick="openAdvancedModule('dns')">Dynamic Neuromuscular Stabilization (DNS)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
     </div>
 
     <div class="outline-group collapsed">
@@ -1497,8 +1499,6 @@
       <div class="outline-item stub" id="nav-fm" onclick="openAdvancedModule('fascial-manipulation')">Fascial Manipulation (FM)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-vm" onclick="openAdvancedModule('vm')">Visceral Manipulation (VM)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
       <div class="outline-item stub" id="nav-cst" onclick="openAdvancedModule('cst')">Craniosacral Therapy (CST)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-nkt" onclick="openAdvancedModule('nkt')">NeuroKinetic Therapy (NKT)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
-      <div class="outline-item stub" id="nav-dns" onclick="openAdvancedModule('dns')">Dynamic Neuromuscular Stabilization (DNS)<span class="add-badge" style="border-style:solid;color:var(--clinical);border-color:var(--clinical);">+</span></div>
     </div>
   </nav>
 
@@ -13391,8 +13391,8 @@ document.addEventListener('click', function(e){
   (function(){
     const dock = $('#lean-module-dock');
     const groups = {};
-    // The Additional sections (Vitals, Body Chart, PSFS, …) are part of Core: they are opened from the sidebar's "Additional Sections" group, not from this list
-    window.MODULE_REGISTRY.forEach((m, i) => { if(m.group === 'Clinical & functional tools') return; (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i, tag: m.placement === 'profile' ? 'profile' : (m.placement === 'tab' && m.id ? 'tab' : '') }); });
+    // The Additional sections (Vitals, Body Chart, PSFS, …) are part of Core: they (and the inline NKT / DNS frameworks) are opened from the sidebar's "Additional Sections" group, not from this list
+    window.MODULE_REGISTRY.forEach((m, i) => { if(m.group === 'Clinical & functional tools' || m.placement === 'inline') return; (groups[m.group] = groups[m.group] || []).push({ label: m.label, idx: i, tag: m.placement === 'profile' ? 'profile' : (m.placement === 'tab' && m.id ? 'tab' : '') }); });
     dock.innerHTML = '<div class="card-heading">Add a module <span class="hint" style="text-transform:none;letter-spacing:0;font-weight:500;">tap to add — <b>tab</b> opens its own workspace, <b>profile</b> belongs to the Patient Profile</span></div>' +
       Object.keys(groups).filter(k => groups[k].length).map(k => '<div class="lean-dock-group"><div class="field-note" style="margin:0 0 6px;">' + k + '</div><div class="chip-row">' +
         groups[k].map(m => '<button type="button" class="chip" data-dock-idx="' + m.idx + '">' + m.label + (m.tag ? '<span class="dock-tag">' + m.tag + '</span>' : '') + '</button>').join('') + '</div></div>').join('');
